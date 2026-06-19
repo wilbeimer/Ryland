@@ -1,4 +1,4 @@
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 
 export default function CoursePage() {
@@ -22,6 +22,8 @@ export default function CoursePage() {
          .then(data => setAssignments(data))
    }, [])
 
+   const navigate = useNavigate()
+
    if(loading) return <div className="page">Loading...</div>
    if (!course) return <div className="page">Course not found.</div>
 
@@ -44,7 +46,7 @@ export default function CoursePage() {
          <h1>{course?.name}</h1>
          <ul className="assignment-list">
             {assignments.map(assignment => (
-               <li key={assignment.id} className="assignment-card">
+               <li key={assignment.id} className="assignment-card" onClick={() => navigate(`/assignments/${assignment.id}`)}>
                   <span className="assignment-name">{assignment.title}</span>
                </li>
             ))} 

@@ -33,3 +33,18 @@ class AssignmentCreate(BaseModel):
     points: float = 100
     content: str = ''
     rubric: str = ''
+
+
+class Submission(BaseModel):
+    id: str
+    assignmentId: str
+    grade: float = 0
+    feedback: str = ''
+    content: str
+
+
+class SubmissionCreate(BaseModel):
+    assignmentId: str
+    grade: float = 0
+    feedback: str = ''
+    content: str

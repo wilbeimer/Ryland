@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import uuid
 from backend.database import init_db, get_db
-from backend.models import CourseCreate, Course, Assignment, AssignmentCreate
+from backend.models import CourseCreate, Course, Assignment, AssignmentCreate, Submission, SubmissionCreate
 import os
 
 
@@ -86,3 +86,26 @@ def get_assignment(id: str, conn=Depends(get_db)):
     if row is None:
         raise HTTPException(status_code=404, detail="Assignment not found")
     return dict(row)
+
+
+# Submissions
+@app.get("/assignments/{id}/submissions", response_model=list[Submission])
+def get_submissions(id: str, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM submissions WHERE assignmentId=?", (id,))
+    rows = cur.fetchall()
+    return [dict(row) for row in rows]
+
+
+@app.post("/submissions", response_model=Submission)
+def post_submission(submission: SubmissionCreate, conn=Depends(get_db)):
+    cur = conn.cursor()
+    submission_id = str(uuid.uuid4())
+    cur.execute("INSERT INTO submissions (id, assignmentId, grade, feedback, content) VALUES (?, ?, ?, ?, ?)", (submission_id, submission.assignmentId, submission.grade, submission.feedback, submission.content))
+    conn.commit()
+    return {"id": submission_id, **submission.model_dump()}
+
+
+@app.patch("/submissions")
+def patch_submission():
+    pass

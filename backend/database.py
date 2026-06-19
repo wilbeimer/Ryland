@@ -25,6 +25,16 @@ def init_db():
                 FOREIGN KEY (courseId) REFERENCES courses(id)
         )
     """)
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS submissions (
+                id TEXT PRIMARY KEY,
+                assignmentId TEXT NOT NULL,
+                grade REAL,
+                feedback TEXT,
+                content TEXT NOT NULL,
+                FOREIGN KEY (assignmentId) REFERENCES assignments(id)
+        )
+    """)
     conn.commit()
     conn.close()
 
