@@ -1,280 +1,164 @@
 {
-  "weekly_goals": [
+  "assignments": [
     {
       "week": 1,
-      "assignments": [
-        {
-          "title": "Introduction to NLP Quiz",
-          "type": "quiz"
-        },
-        {
-          "title": "Text Preprocessing Exercise",
-          "type": "written"
-        },
-        {
-          "title": "Tokenization Checklist",
-          "type": "checklist"
-        }
-      ]
+      "title": "Introduction to NLP Quiz",
+      "type": "quiz"
+    },
+    {
+      "week": 1,
+      "title": "Text Preprocessing Exercise",
+      "type": "written"
     },
     {
       "week": 2,
-      "assignments": [
-        {
-          "title": "Sentiment Analysis Quiz",
-          "type": "quiz"
-        },
-        {
-          "title": "Named Entity Recognition Exercise",
-          "type": "written"
-        },
-        {
-          "title": "Basic Machine Learning Concepts Checklist",
-          "type": "checklist"
-        }
-      ]
+      "title": "Sentiment Analysis Project",
+      "type": "written"
+    },
+    {
+      "week": 2,
+      "title": "Named Entity Recognition Quiz",
+      "type": "quiz"
     },
     {
       "week": 3,
-      "assignments": [
-        {
-          "title": "Machine Translation Basics",
-          "type": "written"
-        },
-        {
-          "title": "Language Modeling with Deep Learning",
-          "type": "quiz"
-        },
-        {
-          "title": "Implementing a Simple Machine Translation Model",
-          "type": "checklist"
-        }
-      ]
+      "title": "Machine Translation Assignment",
+      "type": "written"
+    },
+    {
+      "week": 3,
+      "title": "Language Modeling Quiz",
+      "type": "quiz"
     },
     {
       "week": 4,
-      "assignments": [
-        {
-          "title": "Data Preprocessing Techniques Exercise",
-          "type": "written"
-        },
-        {
-          "title": "Data Visualization Project",
-          "type": "written"
-        },
-        {
-          "title": "Data Quality Assessment Quiz",
-          "type": "quiz"
-        }
-      ]
+      "title": "Data Preprocessing Project",
+      "type": "written"
+    },
+    {
+      "week": 4,
+      "title": "Data Visualization Quiz",
+      "type": "quiz"
     },
     {
       "week": 5,
-      "assignments": [
-        {
-          "title": "NLTK Library Exploration",
-          "type": "written"
-        },
-        {
-          "title": "spaCy Tutorial Completion",
-          "type": "checklist"
-        },
-        {
-          "title": "TensorFlow NLP Basics Quiz",
-          "type": "quiz"
-        }
-      ]
+      "title": "NLP Libraries Comparison",
+      "type": "written"
+    },
+    {
+      "week": 5,
+      "title": "NLTK Exercise",
+      "type": "checklist"
     },
     {
       "week": 6,
-      "assignments": [
-        {
-          "title": "Text Classification Project",
-          "type": "written"
-        },
-        {
-          "title": "Information Retrieval Quiz",
-          "type": "quiz"
-        },
-        {
-          "title": "Question Answering System Checklist",
-          "type": "checklist"
-        }
-      ]
+      "title": "Text Classification Project",
+      "type": "written"
+    },
+    {
+      "week": 6,
+      "title": "Information Retrieval Quiz",
+      "type": "quiz"
     },
     {
       "week": 7,
-      "assignments": [
-        {
-          "title": "Word Embeddings Concept Quiz",
-          "type": "quiz"
-        },
-        {
-          "title": "Implementing Word2Vec",
-          "type": "written"
-        },
-        {
-          "title": "GloVe Embeddings Checklist",
-          "type": "checklist"
-        }
-      ]
+      "title": "Word Embeddings Assignment",
+      "type": "written"
+    },
+    {
+      "week": 7,
+      "title": "Word2Vec Quiz",
+      "type": "quiz"
     },
     {
       "week": 8,
-      "assignments": [
-        {
-          "title": "Recurrent Neural Network Implementation",
-          "type": "written"
-        },
-        {
-          "title": "LSTM and GRU Comparison Quiz",
-          "type": "quiz"
-        },
-        {
-          "title": "NLP Task using RNN Checklist",
-          "type": "checklist"
-        }
-      ]
+      "title": "Recurrent Neural Networks Project",
+      "type": "written"
+    },
+    {
+      "week": 8,
+      "title": "LSTM Exercise",
+      "type": "checklist"
     },
     {
       "week": 9,
-      "assignments": [
-        {
-          "title": "Designing a Simple Chatbot",
-          "type": "written"
-        },
-        {
-          "title": "Implementing a Virtual Assistant",
-          "type": "checklist"
-        },
-        {
-          "title": "Speech Recognition System Quiz",
-          "type": "quiz"
-        }
-      ]
+      "title": "Chatbots Project",
+      "type": "written"
+    },
+    {
+      "week": 9,
+      "title": "Speech Recognition Quiz",
+      "type": "quiz"
     },
     {
       "week": 10,
-      "assignments": [
-        {
-          "title": "Evaluation Metrics Quiz",
-          "type": "quiz"
-        },
-        {
-          "title": "Precision and Recall Calculation",
-          "type": "written"
-        },
-        {
-          "title": "F1-Score Calculation Checklist",
-          "type": "checklist"
-        }
-      ]
+      "title": "Evaluation Metrics Assignment",
+      "type": "written"
+    },
+    {
+      "week": 10,
+      "title": "Precision and Recall Quiz",
+      "type": "quiz"
     },
     {
       "week": 11,
-      "assignments": [
-        {
-          "title": "Implementing Self-Attention Mechanism",
-          "type": "written"
-        },
-        {
-          "title": "Multi-Head Attention Quiz",
-          "type": "quiz"
-        },
-        {
-          "title": "Attention Mechanisms in NLP Checklist",
-          "type": "checklist"
-        }
-      ]
+      "title": "Attention Mechanisms Project",
+      "type": "written"
+    },
+    {
+      "week": 11,
+      "title": "Self-Attention Exercise",
+      "type": "checklist"
     },
     {
       "week": 12,
-      "assignments": [
-        {
-          "title": "Transfer Learning in NLP",
-          "type": "written"
-        },
-        {
-          "title": "Fine-Tuning Pre-Trained Models",
-          "type": "quiz"
-        },
-        {
-          "title": "Applying Transfer Learning to Sentiment Analysis",
-          "type": "checklist"
-        }
-      ]
+      "title": "Transfer Learning Assignment",
+      "type": "written"
+    },
+    {
+      "week": 12,
+      "title": "Pre-trained Models Quiz",
+      "type": "quiz"
     },
     {
       "week": 13,
-      "assignments": [
-        {
-          "title": "Adversarial Attack Detection Quiz",
-          "type": "quiz"
-        },
-        {
-          "title": "Adversarial Training Assignment",
-          "type": "written"
-        },
-        {
-          "title": "Defending Against Adversarial Attacks Checklist",
-          "type": "checklist"
-        }
-      ]
+      "title": "Adversarial Attacks Project",
+      "type": "written"
+    },
+    {
+      "week": 13,
+      "title": "Adversarial Training Quiz",
+      "type": "quiz"
     },
     {
       "week": 14,
-      "assignments": [
-        {
-          "title": "Social Media Sentiment Analysis",
-          "type": "written"
-        },
-        {
-          "title": "Topic Modeling on Social Media Posts",
-          "type": "quiz"
-        },
-        {
-          "title": "Social Media Analysis Checklist",
-          "type": "checklist"
-        }
-      ]
+      "title": "Social Media Analysis Assignment",
+      "type": "written"
+    },
+    {
+      "week": 14,
+      "title": "Sentiment Analysis Exercise",
+      "type": "checklist"
     },
     {
       "week": 15,
-      "assignments": [
-        {
-          "title": "Clinical Text Analysis Project",
-          "type": "written"
-        },
-        {
-          "title": "Medical Question Answering Quiz",
-          "type": "quiz"
-        },
-        {
-          "title": "Healthcare Chatbot Design Checklist",
-          "type": "checklist"
-        }
-      ]
+      "title": "Clinical Text Analysis Project",
+      "type": "written"
+    },
+    {
+      "week": 15,
+      "title": "Medical Question Answering Quiz",
+      "type": "quiz"
     },
     {
       "week": 16,
-      "assignments": [
-        {
-          "title": "Project Proposal",
-          "type": "written"
-        },
-        {
-          "title": "Project Implementation",
-          "type": "checklist"
-        },
-        {
-          "title": "Project Presentation",
-          "type": "written"
-        },
-        {
-          "title": "Project Evaluation Report",
-          "type": "written"
-        }
-      ]
+      "title": "Final Project",
+      "type": "written"
+    },
+    {
+      "week": 16,
+      "title": "Final Project Presentation",
+      "type": "written"
     }
   ]
 }

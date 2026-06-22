@@ -1,0 +1,432 @@
+{
+  "assignments": [
+    {
+      "week": 1,
+      "title": "Introduction to NLP Quiz",
+      "type": "quiz",
+      "description": "Complete a 10-question multiple-choice quiz to assess your understanding of the fundamental concepts of Natural Language Processing, including text preprocessing, tokenization, and basic NLP tasks. The quiz will cover topics such as the definition of NLP, its applications, and the basic techniques used in the field.",
+      "requirements": [
+        "Answer each question to the best of your ability",
+        "Choose the correct answer from the provided options",
+        "Submit your quiz for grading"
+      ]
+    },
+    {
+      "week": 1,
+      "title": "Text Preprocessing Exercise",
+      "type": "written",
+      "description": "In this written exercise, you will practice text preprocessing techniques learned in the first week of the course. You will be provided with a sample text and will be required to perform the following tasks: (1) tokenize the text into individual words or tokens, (2) remove stop words, (3) apply stemming or lemmatization, and (4) remove any special characters or punctuation. Your submission should include the preprocessed text and a brief explanation of the steps you took to achieve the final result.",
+      "requirements": [
+        "Tokenize the text into individual words or tokens",
+        "Remove stop words",
+        "Apply stemming or lemmatization",
+        "Remove any special characters or punctuation",
+        "Submit the preprocessed text with a brief explanation of the steps taken"
+      ]
+    },
+    {
+      "week": 2,
+      "title": "Sentiment Analysis Project",
+      "type": "written",
+      "description": "For this assignment, you will implement a sentiment analysis project using a dataset of your choice. You should preprocess the text data, split it into training and testing sets, and train a machine learning model to classify the sentiment of the text as positive, negative, or neutral. You will then evaluate the performance of your model using metrics such as accuracy, precision, and recall.",
+      "requirements": [
+        "Preprocess the text data by removing stop words, punctuation, and converting all text to lowercase",
+        "Split the preprocessed data into training and testing sets (80% for training and 20% for testing)",
+        "Train a machine learning model (such as logistic regression, decision tree, or random forest) to classify the sentiment of the text",
+        "Evaluate the performance of your model using metrics such as accuracy, precision, and recall",
+        "Compare your results to a baseline model (such as a simple majority classifier) to demonstrate the effectiveness of your approach",
+        "Submit a written report detailing your approach, results, and conclusions, including any visualizations or plots that help to illustrate your findings"
+      ]
+    },
+    {
+      "week": 2,
+      "title": "Named Entity Recognition Quiz",
+      "type": "quiz",
+      "description": "For this assignment, you will complete a quiz to demonstrate your understanding of named entity recognition (NER) concepts. The quiz will cover key topics such as the definition and types of NER, its applications, and common techniques used in NER, including rule-based approaches and machine learning-based approaches. You will be required to answer a series of multiple-choice questions and short-answer questions. The quiz will be available on the course learning management system, and you will have 30 minutes to complete it.",
+      "requirements": [
+        "Define named entity recognition and its importance in NLP",
+        "Identify and explain the different types of NER, including person, organization, and location",
+        "Describe the applications of NER in real-world scenarios, such as text classification and information extraction",
+        "Explain the common techniques used in NER, including rule-based approaches and machine learning-based approaches",
+        "Complete all questions within the allotted 30 minutes"
+      ]
+    },
+    {
+      "week": 3,
+      "title": "Machine Translation Assignment",
+      "type": "written",
+      "description": "For this assignment, you will be working on a machine translation project. Your task is to develop a simple machine translation system using a deep learning model. You will be translating text from English to Spanish. You should use a pre-trained model and fine-tune it on a dataset of your choice. Your submission should include the code used to train and evaluate the model, as well as a brief report discussing the results and any challenges you faced.",
+      "requirements": [
+        "Implement a machine translation system using a deep learning model",
+        "Use a pre-trained model and fine-tune it on a dataset of your choice",
+        "Translate text from English to Spanish",
+        "Include the code used to train and evaluate the model in your submission",
+        "Write a brief report discussing the results and any challenges you faced"
+      ]
+    },
+    {
+      "week": 3,
+      "title": "Language Modeling Quiz",
+      "type": "quiz",
+      "description": "This quiz will assess your understanding of language modeling concepts, including the basics of language models, their applications, and evaluation metrics. You will be presented with a series of multiple-choice questions and will be required to select the correct answer for each question. The quiz will cover topics such as language model architectures, training objectives, and common language modeling tasks.",
+      "requirements": [
+        "Read and understand the course materials related to language modeling",
+        "Review the notes and slides from the relevant lectures",
+        "Practice with sample questions and problems to assess your knowledge",
+        "Bring a calculator and pen/pencil for any calculations or note-taking",
+        "Allocate 60 minutes to complete the quiz"
+      ]
+    },
+    {
+      "week": 4,
+      "title": "Data Preprocessing Project",
+      "type": "written",
+      "description": "In this assignment, you will work on a data preprocessing project. The goal is to preprocess a given dataset and apply various techniques to clean, transform, and prepare the data for analysis. You will be provided with a dataset and will be expected to perform the following tasks: (1) handle missing values, (2) remove duplicates, (3) perform data normalization, and (4) transform categorical variables into numerical variables. You will then submit a written report describing your approach, the techniques used, and the results obtained. The report should include visualizations of the data before and after preprocessing to demonstrate the effectiveness of your approach.",
+      "requirements": [
+        "Handle missing values using appropriate techniques such as mean, median, or imputation",
+        "Remove duplicates to ensure data consistency",
+        "Perform data normalization to ensure all features are on the same scale",
+        "Transform categorical variables into numerical variables using techniques such as one-hot encoding or label encoding",
+        "Submit a written report describing the approach, techniques used, and results obtained",
+        "Include visualizations of the data before and after preprocessing"
+      ]
+    },
+    {
+      "week": 4,
+      "title": "Data Visualization Quiz",
+      "type": "quiz",
+      "description": "For the Data Visualization Quiz, you are expected to demonstrate your understanding of data visualization techniques and their application in Natural Language Processing. The quiz will consist of multiple-choice questions and short-answer questions that test your knowledge of data visualization tools and methods. You will be given a set of sample data and will be asked to create visualizations using popular data visualization libraries such as Matplotlib or Seaborn. You will also be asked to interpret and analyze the visualizations, and to answer questions about the insights gained from the visualizations.",
+      "requirements": [
+        "Understand the basics of data visualization",
+        "Familiarity with popular data visualization libraries such as Matplotlib or Seaborn",
+        "Ability to create visualizations using sample data",
+        "Ability to interpret and analyze visualizations",
+        "Ability to answer questions about the insights gained from the visualizations"
+      ]
+    },
+    {
+      "week": 5,
+      "title": "NLP Libraries Comparison",
+      "type": "written",
+      "description": "For this assignment, you will compare and contrast three popular NLP libraries: NLTK, spaCy, and TensorFlow. Write a written report that includes the following: (1) an overview of each library, including its strengths and weaknesses, (2) a comparison of the libraries' performance on a specific NLP task, such as sentiment analysis or named entity recognition, (3) a discussion of the libraries' usability and ease of use, including any relevant APIs or interfaces, and (4) a conclusion that summarizes your findings and provides recommendations for which library to use in different scenarios.",
+      "requirements": [
+        "Provide an overview of NLTK, spaCy, and TensorFlow, including their strengths and weaknesses",
+        "Compare the performance of the three libraries on a specific NLP task",
+        "Discuss the usability and ease of use of each library, including any relevant APIs or interfaces",
+        "Provide recommendations for which library to use in different scenarios",
+        "Support your comparison and recommendations with examples and evidence from the literature",
+        "Use proper citation and referencing throughout the report",
+        "Submit your report as a written document, with a minimum of 500 words and a maximum of 1000 words"
+      ]
+    },
+    {
+      "week": 5,
+      "title": "NLTK Exercise",
+      "type": "checklist",
+      "description": "In this exercise, you will use the Natural Language Toolkit (NLTK) library to perform various tasks. The goal is to get familiar with the library and its functionalities. You will be working with text data and applying NLTK's tools to preprocess and analyze the text.",
+      "requirements": [
+        "Install the NLTK library if you haven't done so already",
+        "Download the necessary NLTK data using the 'nltk.download()' function",
+        "Tokenize a given text into individual words or tokens",
+        "Remove stopwords from the tokenized text",
+        "Perform stemming or lemmatization on the text",
+        "Use NLTK's corpus readers to read and process text data",
+        "Complete all tasks as per the provided checklist"
+      ]
+    },
+    {
+      "week": 6,
+      "title": "Text Classification Project",
+      "type": "written",
+      "description": "For this written assignment, you are expected to apply the concepts of text classification learned in the previous weeks to a real-world problem. You will be given a dataset of text samples and their corresponding labels, and you are required to develop a text classification model to classify new, unseen text samples into their respective categories. Your model should be trained and tested on the provided dataset, and you should evaluate its performance using appropriate metrics such as accuracy, precision, recall, and F1-score. You should also discuss the challenges faced during the development of the model, the techniques used to overcome them, and the potential applications of the model in real-world scenarios.",
+      "requirements": [
+        "Develop a text classification model using a suitable machine learning algorithm",
+        "Train and test the model on the provided dataset",
+        "Evaluate the performance of the model using metrics such as accuracy, precision, recall, and F1-score",
+        "Discuss the challenges faced during the development of the model and the techniques used to overcome them",
+        "Discuss the potential applications of the model in real-world scenarios",
+        "Submit a written report detailing the development and evaluation of the model, including any code used to implement the model"
+      ]
+    },
+    {
+      "week": 6,
+      "title": "Information Retrieval Quiz",
+      "type": "quiz",
+      "description": "The Information Retrieval Quiz is designed to assess your understanding of the key concepts and techniques in information retrieval. You will be presented with a series of questions that require you to apply your knowledge of information retrieval models, algorithms, and evaluation metrics. The quiz will cover topics such as Boolean retrieval, vector space models, probabilistic models, and evaluation metrics such as precision, recall, and F1-score.",
+      "requirements": [
+        "Answer all questions to the best of your ability",
+        "Use the concepts and techniques learned in the course to support your answers",
+        "Provide clear and concise explanations for each question",
+        "Use proper citation and referencing for any external sources used"
+      ]
+    },
+    {
+      "week": 7,
+      "title": "Word Embeddings Assignment",
+      "type": "written",
+      "description": "For this assignment, you are expected to demonstrate your understanding of word embeddings by completing the following tasks: (1) Read and summarize the key concepts of word embeddings, including their types, such as Word2Vec and GloVe, (2) Choose a dataset of your choice and create word embeddings using a library such as Gensim, (3) Visualize and compare the word embeddings using dimensionality reduction techniques such as PCA or t-SNE, and (4) Write a short report (approximately 2-3 pages) discussing the results, challenges, and applications of word embeddings in NLP tasks.",
+      "requirements": [
+        "Submit a written report in PDF format",
+        "Include a summary of key concepts of word embeddings",
+        "Provide code snippets for creating word embeddings using a library such as Gensim",
+        "Include visualizations of the word embeddings using dimensionality reduction techniques",
+        "Discuss the results, challenges, and applications of word embeddings in NLP tasks"
+      ]
+    },
+    {
+      "week": 7,
+      "title": "Word2Vec Quiz",
+      "type": "quiz",
+      "description": "Complete a quiz to demonstrate understanding of Word2Vec, including its applications, advantages, and disadvantages. The quiz will consist of multiple-choice questions and short-answer questions that test your knowledge of Word2Vec fundamentals, such as vector space models, word embeddings, and similarity measures.",
+      "requirements": [
+        "Understand the basics of Word2Vec, including CBOW and skip-gram models",
+        "Be able to explain the advantages and disadvantages of Word2Vec",
+        "Be able to apply Word2Vec to real-world problems, such as text classification and sentiment analysis",
+        "Complete all multiple-choice and short-answer questions to the best of your ability",
+        "Ensure that all answers are clear, concise, and well-organized"
+      ]
+    },
+    {
+      "week": 8,
+      "title": "Recurrent Neural Networks Project",
+      "type": "written",
+      "description": "For this project, you will implement a recurrent neural network (RNN) to solve a text classification problem. You will be given a dataset of labeled text samples and will be required to preprocess the data, design and implement an RNN model, and evaluate its performance. The RNN model should be able to learn the patterns and relationships in the text data and make accurate predictions on unseen data.",
+      "requirements": [
+        "Implement a recurrent neural network (RNN) using a library such as TensorFlow or PyTorch",
+        "Preprocess the text data by tokenizing the text, removing stop words, and converting the text to a numerical representation",
+        "Design and implement an RNN model architecture that is suitable for the text classification problem",
+        "Train the RNN model on the labeled dataset and evaluate its performance on a test dataset",
+        "Compare the performance of the RNN model with other machine learning models, such as support vector machines (SVMs) or random forests",
+        "Write a report that describes the RNN model, the dataset, the preprocessing steps, the training and evaluation process, and the results"
+      ]
+    },
+    {
+      "week": 8,
+      "title": "LSTM Exercise",
+      "type": "checklist",
+      "description": "In this exercise, you will implement a basic LSTM (Long Short-Term Memory) network using Python and the Keras library. Your task is to complete the code to build an LSTM model that can be used for text classification. The exercise is divided into several steps, and you will need to fill in the missing code in each step. The steps are: (1) import the necessary libraries, (2) load the dataset, (3) preprocess the data, (4) build the LSTM model, and (5) train the model. You will be provided with a checklist of tasks to complete in each step.",
+      "requirements": [
+        "Import the necessary libraries, including Keras, NumPy, and Pandas",
+        "Load the dataset, which consists of text data and corresponding labels",
+        "Preprocess the data by tokenizing the text, removing stop words, and converting the text to numerical representations",
+        "Build the LSTM model by defining the input shape, adding LSTM layers, and compiling the model",
+        "Train the model using the preprocessed data and evaluate its performance using accuracy and loss metrics"
+      ]
+    },
+    {
+      "week": 9,
+      "title": "Chatbots Project",
+      "type": "written",
+      "description": "For this project, you will design and implement a basic chatbot that can understand and respond to user queries. The chatbot should be able to perform the following tasks: greet the user, ask for the user's name, and respond to basic questions about the weather and time. You will use a natural language processing library such as NLTK or spaCy to process the user's input and generate responses. You will also use a machine learning model such as a neural network to train the chatbot on a dataset of example conversations.",
+      "requirements": [
+        "Design and implement a chatbot that can understand and respond to user queries",
+        "Use a natural language processing library such as NLTK or spaCy to process user input",
+        "Use a machine learning model such as a neural network to train the chatbot on a dataset of example conversations",
+        "Implement the following tasks: greet the user, ask for the user's name, and respond to basic questions about the weather and time",
+        "Test and evaluate the chatbot's performance on a test dataset"
+      ]
+    },
+    {
+      "week": 9,
+      "title": "Speech Recognition Quiz",
+      "type": "quiz",
+      "description": "For this speech recognition quiz, you will be presented with a series of audio recordings of spoken words or phrases. Your task is to accurately transcribe the audio recordings, taking into account any background noise, accents, or other factors that may affect the audio quality. You will be expected to demonstrate your understanding of speech recognition concepts, including acoustic modeling, language modeling, and decoding. You will have 30 minutes to complete the quiz, and you are allowed to use a dictionary or other reference materials, but you may not use any electronic devices or communicate with anyone during the quiz.",
+      "requirements": [
+        "Accurately transcribe the audio recordings",
+        "Demonstrate understanding of speech recognition concepts",
+        "Complete the quiz within the allotted time",
+        "Use only allowed reference materials",
+        "Work independently without electronic devices or external communication"
+      ]
+    },
+    {
+      "week": 10,
+      "title": "Evaluation Metrics Assignment",
+      "type": "written",
+      "description": "For this assignment, you will be responsible for understanding and applying various evaluation metrics used in Natural Language Processing (NLP). You will need to research and explain the differences between precision, recall, F1-score, and other relevant metrics. Additionally, you will be required to calculate these metrics for a given NLP task and analyze the results. Your submission should include a written report detailing your understanding of the metrics, their calculations, and the analysis of the results.",
+      "requirements": [
+        "Research and explain the differences between precision, recall, and F1-score",
+        "Calculate these metrics for a given NLP task",
+        "Analyze the results and provide insights",
+        "Submit a written report detailing the understanding of the metrics, calculations, and analysis"
+      ]
+    },
+    {
+      "week": 10,
+      "title": "Precision and Recall Quiz",
+      "type": "quiz",
+      "description": "In this quiz, students will be tested on their understanding of precision and recall in the context of Natural Language Processing. The quiz will cover topics such as the definition of precision and recall, how to calculate them, and their importance in evaluating the performance of NLP models. Students will be presented with a series of multiple-choice questions and will be expected to choose the correct answer for each question.",
+      "requirements": [
+        "Define precision and recall and explain their importance in NLP",
+        "Calculate precision and recall given a set of true positives, false positives, and false negatives",
+        "Explain the difference between precision and recall and how they are used in evaluating the performance of NLP models",
+        "Identify the strengths and weaknesses of using precision and recall as evaluation metrics in NLP"
+      ]
+    },
+    {
+      "week": 11,
+      "title": "Attention Mechanisms Project",
+      "type": "written",
+      "description": "In this written project, you will explore the concept of attention mechanisms in Natural Language Processing. You will be required to research and explain the self-attention mechanism, multi-head attention, and their applications in various NLP tasks. You should provide a detailed description of how attention mechanisms work, their advantages, and their limitations. Additionally, you will be asked to implement a simple attention mechanism using a popular deep learning library such as TensorFlow or PyTorch. Your project should include a brief introduction to attention mechanisms, a literature review of existing research, a description of your implementation, and a discussion of the results. The project should be well-organized, clearly written, and free of grammatical errors.",
+      "requirements": [
+        "Research and explain the self-attention mechanism",
+        "Research and explain the multi-head attention mechanism",
+        "Implement a simple attention mechanism using a popular deep learning library",
+        "Provide a detailed description of how attention mechanisms work",
+        "Discuss the advantages and limitations of attention mechanisms",
+        "Include a brief introduction to attention mechanisms",
+        "Include a literature review of existing research",
+        "Include a description of your implementation",
+        "Include a discussion of the results",
+        "Ensure the project is well-organized and clearly written",
+        "Ensure the project is free of grammatical errors"
+      ]
+    },
+    {
+      "week": 11,
+      "title": "Self-Attention Exercise",
+      "type": "checklist",
+      "description": "Implement a self-attention mechanism in a PyTorch model to demonstrate your understanding of the concept. The model should take a sequence of tokens as input and output a weighted sum of the input tokens based on the attention weights. You will need to define the Self-Attention class, initialize the weights, and implement the forward pass. The model should be trained on a simple dataset, such as a toy sequence classification task, to demonstrate the effectiveness of the self-attention mechanism.",
+      "requirements": [
+        "Implement the Self-Attention class in PyTorch",
+        "Initialize the weights and define the forward pass",
+        "Train the model on a simple dataset",
+        "Visualize the attention weights to demonstrate the effectiveness of the self-attention mechanism",
+        "Submit your code and a brief report describing your implementation and results"
+      ]
+    },
+    {
+      "week": 12,
+      "title": "Transfer Learning Assignment",
+      "type": "written",
+      "description": "For this written assignment, apply the concepts of transfer learning to a Natural Language Processing task. Choose a pre-trained model such as BERT, RoBERTa, or XLNet, and fine-tune it for a specific task like sentiment analysis, named entity recognition, or text classification. Write a report detailing your approach, including the model selection, dataset choice, training parameters, and evaluation metrics. Compare the performance of your fine-tuned model with the baseline performance of the pre-trained model. Submit your report, along with your code and any relevant visualizations or results.",
+      "requirements": [
+        "Choose a pre-trained model and NLP task",
+        "Select a suitable dataset for fine-tuning",
+        "Implement fine-tuning with appropriate training parameters",
+        "Evaluate the performance of the fine-tuned model",
+        "Compare with baseline performance of the pre-trained model",
+        "Submit a written report with code, visualizations, and results"
+      ]
+    },
+    {
+      "week": 12,
+      "title": "Pre-trained Models Quiz",
+      "type": "quiz",
+      "description": "Complete a quiz to demonstrate understanding of pre-trained models, including their applications, advantages, and limitations. The quiz will cover key concepts such as model fine-tuning, transfer learning, and the use of pre-trained models for various NLP tasks. Students will be expected to answer multiple-choice questions, short-answer questions, and provide examples of how pre-trained models can be used in real-world scenarios.",
+      "requirements": [
+        "Understand the concept of pre-trained models and their applications in NLP",
+        "Be able to explain the advantages and limitations of using pre-trained models",
+        "Demonstrate knowledge of popular pre-trained models such as BERT, RoBERTa, and XLNet",
+        "Provide examples of how pre-trained models can be fine-tuned for specific NLP tasks",
+        "Answer multiple-choice and short-answer questions to demonstrate understanding of pre-trained models"
+      ]
+    },
+    {
+      "week": 13,
+      "title": "Adversarial Attacks Project",
+      "type": "written",
+      "description": "In this project, you will explore the concept of adversarial attacks in Natural Language Processing (NLP). Your task is to design and implement an adversarial attack on a pre-trained NLP model. You will start by selecting a pre-trained model and a dataset, and then you will attempt to craft adversarial examples that can fool the model. You will also evaluate the effectiveness of your attack and discuss the implications of your findings.",
+      "requirements": [
+        "Select a pre-trained NLP model and a dataset",
+        "Design and implement an adversarial attack on the model",
+        "Evaluate the effectiveness of the attack",
+        "Discuss the implications of the findings",
+        "Submit a written report of the project, including code and results"
+      ]
+    },
+    {
+      "week": 13,
+      "title": "Adversarial Training Quiz",
+      "type": "quiz",
+      "description": "This quiz assesses the student's understanding of adversarial training in the context of Natural Language Processing. The quiz will cover the concepts of adversarial attacks, adversarial training, and defending against attacks. Students are expected to demonstrate their knowledge of how to train models to be robust against adversarial examples and how to evaluate the effectiveness of adversarial training methods. The quiz will include multiple-choice questions, short-answer questions, and a case study that requires students to apply their knowledge of adversarial training to a real-world scenario.",
+      "requirements": [
+        "Define adversarial training and its importance in NLP",
+        "Explain the difference between adversarial attacks and adversarial training",
+        "Describe the process of generating adversarial examples",
+        "Discuss the methods for defending against adversarial attacks",
+        "Evaluate the effectiveness of adversarial training methods using metrics such as accuracy and robustness",
+        "Apply adversarial training to a real-world NLP task, such as text classification or sentiment analysis"
+      ]
+    },
+    {
+      "week": 14,
+      "title": "Social Media Analysis Assignment",
+      "type": "written",
+      "description": "For this assignment, you will be required to analyze a social media platform of your choice (e.g., Twitter, Facebook, Instagram) and perform sentiment analysis on a specific topic or hashtag. You will need to collect a dataset of social media posts, preprocess the data, and then apply a sentiment analysis algorithm to determine the overall sentiment of the posts. You should also explore topic modeling techniques to identify underlying themes and trends in the data. Your analysis should include visualizations and discussions of your findings, as well as an evaluation of the limitations and potential biases of your approach.",
+      "requirements": [
+        "Collect and preprocess a dataset of social media posts",
+        "Apply a sentiment analysis algorithm to the dataset",
+        "Perform topic modeling to identify underlying themes and trends",
+        "Create visualizations to illustrate your findings",
+        "Discuss the limitations and potential biases of your approach",
+        "Submit a written report detailing your analysis and results"
+      ]
+    },
+    {
+      "week": 14,
+      "title": "Sentiment Analysis Exercise",
+      "type": "checklist",
+      "description": "In this sentiment analysis exercise, you will apply the concepts learned in week 14 to analyze the sentiment of a given text. You will use a checklist to evaluate the sentiment of the text based on the presence of positive, negative, or neutral keywords. Your task is to read the text carefully, identify the keywords that indicate the sentiment, and check the corresponding boxes in the checklist. You should also provide a brief explanation for your answer, stating why you think the text has a certain sentiment.",
+      "requirements": [
+        "Read the given text carefully",
+        "Identify the keywords that indicate the sentiment",
+        "Check the corresponding boxes in the checklist",
+        "Provide a brief explanation for your answer",
+        "Submit your completed checklist as a written assignment"
+      ]
+    },
+    {
+      "week": 15,
+      "title": "Clinical Text Analysis Project",
+      "type": "written",
+      "description": "For this project, you will be working on clinical text analysis. Your task is to analyze a given set of clinical notes and identify the most relevant information, such as patient history, diagnosis, treatment, and medication. You will need to preprocess the text data by tokenizing the text, removing stop words, and stemming or lemmatizing the words. Then, you will apply a named entity recognition (NER) technique to extract relevant entities such as diseases, medications, and medical procedures. Finally, you will need to evaluate the performance of your model using metrics such as precision, recall, and F1-score.",
+      "requirements": [
+        "Analyze a given set of clinical notes",
+        "Preprocess the text data by tokenizing the text, removing stop words, and stemming or lemmatizing the words",
+        "Apply a named entity recognition (NER) technique to extract relevant entities",
+        "Evaluate the performance of your model using metrics such as precision, recall, and F1-score",
+        "Submit a written report detailing your approach, results, and conclusions"
+      ]
+    },
+    {
+      "week": 15,
+      "title": "Medical Question Answering Quiz",
+      "type": "quiz",
+      "description": "This quiz assesses your understanding of medical question answering concepts, including clinical text analysis and information retrieval techniques. You will be presented with a set of questions that require you to apply your knowledge of medical terminology, disease diagnosis, and treatment options. The quiz consists of multiple-choice questions and short-answer questions, and you are expected to provide concise and accurate responses. You will have 60 minutes to complete the quiz, and it is recommended that you review the topics covered in weeks 13-15 before attempting the quiz.",
+      "requirements": [
+        "Review of clinical text analysis concepts",
+        "Understanding of medical terminology and disease diagnosis",
+        "Familiarity with information retrieval techniques",
+        "Ability to provide concise and accurate responses",
+        "Completion of the quiz within the allotted 60 minutes"
+      ]
+    },
+    {
+      "week": 16,
+      "title": "Final Project",
+      "type": "written",
+      "description": "For the final project, you will apply the concepts and techniques learned throughout the course to a real-world problem in Natural Language Processing. You will design, develop, and evaluate a project that demonstrates your understanding of NLP concepts, including text preprocessing, sentiment analysis, named entity recognition, machine translation, and language modeling. Your project should include a written report that describes your approach, methodology, and results, as well as any relevant code or data. The project should be a comprehensive application of NLP techniques to a real-world problem, and should demonstrate your ability to think critically and creatively about NLP applications.",
+      "requirements": [
+        "Clearly define a real-world problem in NLP and propose a solution",
+        "Design and develop a project that applies NLP concepts and techniques to the problem",
+        "Evaluate the project and report on the results, including any challenges or limitations",
+        "Submit a written report that describes the project, including the approach, methodology, and results",
+        "Include any relevant code or data with the report"
+      ]
+    },
+    {
+      "week": 16,
+      "title": "Final Project Presentation",
+      "type": "written",
+      "description": "For the final project presentation, you are expected to submit a written report that summarizes your project's key findings, methodology, and contributions to the field of Natural Language Processing. The report should be 5-7 pages in length, double-spaced, and include the following sections: introduction, literature review, methodology, results, discussion, and conclusion. You should also include any relevant visual aids, such as tables, figures, or diagrams, to support your presentation. The presentation should demonstrate your understanding of the course material and your ability to apply NLP concepts to a real-world problem.",
+      "requirements": [
+        "Submit a written report that summarizes your project's key findings, methodology, and contributions",
+        "Include an introduction, literature review, methodology, results, discussion, and conclusion",
+        "Include relevant visual aids, such as tables, figures, or diagrams",
+        "Demonstrate your understanding of the course material and your ability to apply NLP concepts to a real-world problem",
+        "Adhere to the 5-7 page length and double-spaced formatting requirements"
+      ]
+    }
+  ]
+}

@@ -1,7 +1,6 @@
 ---
 name: assignments
-version: 0.1
-loop_over: weekly_goals
+version: 0.2
 ---
 
 ## Inputs
@@ -10,17 +9,16 @@ loop_over: weekly_goals
 - 03_weekly_goals (week, goal, topics)
 
 ## Process
-Using this week's goal and topics, create a set of assignments that 
-progress the student toward the weekly goal.
-Make sure the total time to complete all assignments fits within the hours per week constraint.
-Each assignment should have a title and type.
+For each week in weekly_goals, create a set of assignments that progress the student toward that week's goal.
+Make sure total assignment time fits within hours_per_week.
+Return ALL weeks as a single flat list.
 
 ## Output
 Return as JSON:
 {
-    "week": 1,
     "assignments": [
         {
+            "week": 1,
             "title": "...",
             "type": "quiz | written | checklist"
         }

@@ -91,10 +91,22 @@ def run_stage(stage_name: str, user_inputs: dict = {}) -> dict:
                 ]
             )
             content = response.choices[0].message.content
+
             if content is None:
                 raise ValueError("No response from AI")
 
-            results.append(json.loads(content))
+            content = content.strip()
+            if content.startswith("```"):
+                content = content.split("```")[1]
+                if content.startswith("json"):
+                    content = content[4:]
+                content = content.strip()
+
+            content = json.loads(content)
+            if meta.get("merge_item"):
+                content = {**item, **content}
+
+            results.append(content)
 
         result = {loop_over: results}
 
@@ -110,6 +122,13 @@ def run_stage(stage_name: str, user_inputs: dict = {}) -> dict:
         content = response.choices[0].message.content
         if content is None:
             raise ValueError("No response from AI")
+
+        content = content.strip()
+        if content.startswith("```"):
+            content = content.split("```")[1]
+            if content.startswith("json"):
+                content = content[4:]
+            content = content.strip()
 
         result = json.loads(content)
 
@@ -133,3 +152,7 @@ if __name__ == "__main__":
 
     result_04 = run_stage("04_assignments")
     print("Stage 04:", result_04)
+
+    print()
+    result_05 = run_stage("05_assignment_description")
+    print("Stage 05:", result_05)
