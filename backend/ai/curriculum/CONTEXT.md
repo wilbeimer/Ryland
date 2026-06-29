@@ -1,14 +1,5 @@
 ---
 system_prompt: "You are an expert curriculum designer. Return only valid JSON, no markdown, no explanation."
 ---
-
 # Curriculum Generation Pipeline
-
-This pipeline generates a complete course curriculum from a course name.
-
-## Stages
-1. 01_course_description — generate description, domain, prerequisites
-2. 02_course_length — estimate weeks and hours per week
-3. 03_weekly_goals — generate a learning goal for each week
-4. 04_assignments — generate assignments for each weekly goal
-5. 05_rubrics — generate rubrics and grading scales for each assignment
+Generates a complete course curriculum from a course name and description. Each stage builds on the previous, passing context through the pipeline to produce a fully structured course with weeks, assignments, and resources.

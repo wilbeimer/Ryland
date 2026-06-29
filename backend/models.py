@@ -29,6 +29,7 @@ class Assignment(BaseModel):
     type: str
     description: str = ''
     requirements: list[str] = []
+    resources: list[dict] = []
 
     dueDate: str = ''
     points: float = 100

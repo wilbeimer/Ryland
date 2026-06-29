@@ -2,122 +2,87 @@
   "assignments": [
     {
       "week": 1,
-      "title": "Introduction to Organic Chemistry Quiz",
+      "title": "Set Theory Fundamentals",
+      "type": "written"
+    },
+    {
+      "week": 1,
+      "title": "Set Theory Operations",
       "type": "quiz"
     },
     {
       "week": 1,
-      "title": "Organic Chemistry Basics Checklist",
+      "title": "Basic Mathematical Structures",
       "type": "checklist"
     },
     {
       "week": 2,
-      "title": "Atomic Structure and Bonding Written Assignment",
+      "title": "Relations and Functions",
       "type": "written"
     },
     {
       "week": 2,
-      "title": "Molecular Orbitals and Hybridization Quiz",
+      "title": "Relations Properties",
       "type": "quiz"
     },
     {
       "week": 3,
-      "title": "Alkanes Structure and Nomenclature Practice",
-      "type": "checklist"
+      "title": "Graph Theory Basics",
+      "type": "written"
     },
     {
       "week": 3,
-      "title": "Alkanes Physical Properties Written Assignment",
+      "title": "Graph Structures",
+      "type": "checklist"
+    },
+    {
+      "week": 4,
+      "title": "Combinatorics Fundamentals",
       "type": "written"
     },
     {
       "week": 4,
-      "title": "Stereochemistry Concepts Quiz",
+      "title": "Permutations and Combinations",
       "type": "quiz"
     },
     {
-      "week": 4,
-      "title": "Isomers and Stereoisomers Written Assignment",
+      "week": 5,
+      "title": "Propositional Logic",
       "type": "written"
     },
     {
       "week": 5,
-      "title": "Alkanes Reactions Checklist",
-      "type": "checklist"
-    },
-    {
-      "week": 5,
-      "title": "Combustion and Substitution Reactions Written Assignment",
-      "type": "written"
-    },
-    {
-      "week": 6,
-      "title": "Alkenes and Alkynes Structure Quiz",
+      "title": "Predicate Logic",
       "type": "quiz"
     },
     {
       "week": 6,
-      "title": "Electrophilic Addition Reactions Written Assignment",
+      "title": "Mathematical Proofs",
       "type": "written"
     },
     {
-      "week": 7,
-      "title": "Reaction Mechanisms Concepts Checklist",
+      "week": 6,
+      "title": "Problem-Solving",
       "type": "checklist"
     },
     {
       "week": 7,
-      "title": "Types of Organic Reactions Written Assignment",
+      "title": "Graph Algorithms",
       "type": "written"
     },
     {
-      "week": 8,
-      "title": "Alcohols and Thiols Quiz",
+      "week": 7,
+      "title": "Graph Traversals",
       "type": "quiz"
     },
     {
       "week": 8,
-      "title": "Alcohols and Thiols Properties Written Assignment",
-      "type": "written"
-    },
-    {
-      "week": 9,
-      "title": "Ethers and Epoxides Checklist",
+      "title": "Course Review",
       "type": "checklist"
     },
     {
-      "week": 9,
-      "title": "Ethers and Epoxides Reactions Written Assignment",
-      "type": "written"
-    },
-    {
-      "week": 10,
-      "title": "Functional Group Transformations Quiz",
-      "type": "quiz"
-    },
-    {
-      "week": 10,
-      "title": "Oxidation and Reduction Reactions Written Assignment",
-      "type": "written"
-    },
-    {
-      "week": 11,
-      "title": "Applications of Organic Chemistry Checklist",
-      "type": "checklist"
-    },
-    {
-      "week": 11,
-      "title": "Pharmaceuticals and Materials Science Written Assignment",
-      "type": "written"
-    },
-    {
-      "week": 12,
-      "title": "Comprehensive Review Quiz",
-      "type": "quiz"
-    },
-    {
-      "week": 12,
-      "title": "Final Assessment Practice",
+      "week": 8,
+      "title": "Practice Problems",
       "type": "written"
     }
   ]

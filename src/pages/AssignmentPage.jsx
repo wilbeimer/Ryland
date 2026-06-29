@@ -47,8 +47,8 @@ export default function AssignmentPage() {
          headers: { "Content-Type": "application/json" },
          body: JSON.stringify({ assignmentId: id, content: submissionContent })
       })
-      .then(res => res.json())
-      .then(data => setSubmissions(prev => [...prev, data]))
+         .then(res => res.json())
+         .then(data => setSubmissions(prev => [...prev, data]))
       setSubmissionContent('')
    }
 
@@ -74,6 +74,21 @@ export default function AssignmentPage() {
                <ul>
                   {assignment.requirements.map((req, i) => (
                      <li key={i}>{req}</li>
+                  ))}
+               </ul>
+            </div>
+         )}
+
+         {assignment.resources?.length > 0 && (
+            <div className="assignment-resources">
+               <h2>Resources</h2>
+               <ul>
+                  {assignment.resources.map((r, i) => (
+                     <li key={i}>
+                        <a href={r.url} target="_blank" rel="noreferrer">{r.title}</a>
+                        <span className="resource-type">{r.type}</span>
+                        <p>{r.description}</p>
+                     </li>
                   ))}
                </ul>
             </div>

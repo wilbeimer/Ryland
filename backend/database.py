@@ -45,6 +45,7 @@ def init_db():
             dueDate TEXT,
             points REAL,
             rubric TEXT,
+            resources TEXT DEFAULT '[]',
             FOREIGN KEY (courseId) REFERENCES courses(id),
             FOREIGN KEY (weekId) REFERENCES course_weeks(id)
         )

@@ -1,7 +1,6 @@
 ---
 name: course_description
 version: 0.1
-model: llama-3.3-70b-versatile
 ---
 
 ## Inputs

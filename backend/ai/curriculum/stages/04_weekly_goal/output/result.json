@@ -2,110 +2,66 @@
   "weekly_goals": [
     {
       "week": 1,
-      "goal": "Understand the basics of organic chemistry, including the definition, importance, and historical background of the field.",
+      "goal": "Introduce students to the fundamental concepts of discrete mathematics, including set theory and basic mathematical structures.",
       "topics": [
-        "Introduction to Organic Chemistry",
-        "History and Importance of Organic Chemistry",
-        "Basic Concepts and Definitions"
+        "Introduction to Discrete Mathematics",
+        "Set Theory: Basic Definitions and Operations"
       ]
     },
     {
       "week": 2,
-      "goal": "Master the concepts of atomic structure, molecular orbitals, and types of chemical bonds.",
+      "goal": "Develop understanding of relations and functions, including their properties and applications.",
       "topics": [
-        "Atomic Structure and Electronic Configuration",
-        "Molecular Orbitals and Hybridization",
-        "Types of Chemical Bonds in Organic Molecules"
+        "Relations: Properties and Types",
+        "Functions: Definitions, Types, and Applications"
       ]
     },
     {
       "week": 3,
-      "goal": "Learn about alkanes, including their structure, nomenclature, and physical properties.",
+      "goal": "Cover the basics of graph theory, including graph structures and traversals.",
       "topics": [
-        "Structure and Nomenclature of Alkanes",
-        "Physical Properties of Alkanes",
-        "Sources and Uses of Alkanes"
+        "Introduction to Graph Theory",
+        "Graph Structures: Paths, Cycles, and Trees"
       ]
     },
     {
       "week": 4,
-      "goal": "Understand the concepts of stereochemistry, including isomers, configuration, and conformation.",
+      "goal": "Explore combinatorics, including permutations, combinations, and binomial coefficients.",
       "topics": [
-        "Introduction to Stereochemistry",
-        "Isomers and Stereoisomers",
-        "R/S Configuration and Fischer Projections"
+        "Permutations and Combinations",
+        "Binomial Coefficients and Pascal's Triangle"
       ]
     },
     {
       "week": 5,
-      "goal": "Study the reactions of alkanes, including combustion, substitution, and elimination reactions.",
+      "goal": "Introduce students to propositional and predicate logic, including logical operations and inference.",
       "topics": [
-        "Reactions of Alkanes",
-        "Combustion and Substitution Reactions",
-        "Elimination Reactions and Radical Halogenation"
+        "Propositional Logic: Statements, Operators, and Truth Tables",
+        "Predicate Logic: Quantifiers, Statements, and Inference"
       ]
     },
     {
       "week": 6,
-      "goal": "Explore the structure, nomenclature, and properties of alkenes and alkynes.",
+      "goal": "Apply discrete math concepts to solve problems, focusing on logical reasoning and mathematical proofs.",
       "topics": [
-        "Structure and Nomenclature of Alkenes and Alkynes",
-        "Physical Properties and Sources of Alkenes and Alkynes",
-        "Electrophilic Addition Reactions"
+        "Mathematical Proofs: Direct, Indirect, and Contrapositive Proofs",
+        "Problem-Solving with Discrete Mathematics"
       ]
     },
     {
       "week": 7,
-      "goal": "Understand the concepts of reaction mechanisms, including types of reactions and reaction conditions.",
+      "goal": "Review and apply graph theory concepts, including graph algorithms and traversals.",
       "topics": [
-        "Introduction to Reaction Mechanisms",
-        "Types of Organic Reactions",
-        "Reaction Conditions and Catalysts"
+        "Graph Algorithms: Dijkstra's, Bellman-Ford, and Topological Sort",
+        "Graph Traversals: DFS, BFS, and Applications"
       ]
     },
     {
       "week": 8,
-      "goal": "Learn about alcohols and thiols, including their structure, nomenclature, and properties.",
+      "goal": "Comprehensive review of course material and preparation for final assessment.",
       "topics": [
-        "Structure and Nomenclature of Alcohols and Thiols",
-        "Physical Properties and Uses of Alcohols and Thiols",
-        "Reactions of Alcohols and Thiols"
-      ]
-    },
-    {
-      "week": 9,
-      "goal": "Study the structure, nomenclature, and reactions of ethers and epoxides.",
-      "topics": [
-        "Structure and Nomenclature of Ethers and Epoxides",
-        "Physical Properties and Uses of Ethers and Epoxides",
-        "Reactions of Ethers and Epoxides"
-      ]
-    },
-    {
-      "week": 10,
-      "goal": "Explore the concepts of functional group transformations, including oxidation, reduction, and substitution reactions.",
-      "topics": [
-        "Introduction to Functional Group Transformations",
-        "Oxidation and Reduction Reactions",
-        "Substitution Reactions and Elimination Reactions"
-      ]
-    },
-    {
-      "week": 11,
-      "goal": "Understand the applications of organic chemistry to real-world problems, including pharmaceuticals, materials science, and environmental issues.",
-      "topics": [
-        "Applications of Organic Chemistry in Pharmaceuticals",
-        "Applications of Organic Chemistry in Materials Science",
-        "Environmental Applications and Issues"
-      ]
-    },
-    {
-      "week": 12,
-      "goal": "Review and synthesize the key concepts learned throughout the course, preparing for final assessment.",
-      "topics": [
-        "Comprehensive Review of Organic Chemistry Concepts",
-        "Practice Problems and Case Studies",
-        "Final Assessment Preparation"
+        "Review of Discrete Mathematics Concepts",
+        "Practice Problems and Final Assessment Preparation"
       ]
     }
   ]

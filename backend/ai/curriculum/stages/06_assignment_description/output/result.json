@@ -2,311 +2,208 @@
   "assignments": [
     {
       "week": 1,
-      "title": "Introduction to Organic Chemistry Quiz",
-      "type": "quiz",
-      "description": "This quiz will assess your understanding of the fundamental concepts of organic chemistry, including the definition of organic chemistry, its importance, and the basic structure of organic compounds.",
+      "title": "Set Theory Fundamentals",
+      "type": "written",
+      "description": "For this assignment, you will provide a written response to the following questions: Define the basic set operations, including union, intersection, and difference. Explain the concept of a power set and how to calculate it for a given set. Provide examples of set theory applications in real-world scenarios. Your response should be well-organized, clearly written, and approximately 500-750 words in length.",
       "requirements": [
-        "The quiz will consist of 10 multiple-choice questions.",
-        "Each question will test your knowledge of key terms and concepts, such as the difference between organic and inorganic compounds, the types of bonds found in organic molecules, and the basic functional groups.",
-        "You will have 30 minutes to complete the quiz.",
-        "You must achieve a minimum score of 70% to pass."
+        "Define and explain the basic set operations (union, intersection, difference).",
+        "Describe the concept of a power set and provide a step-by-step example of how to calculate it for a given set.",
+        "Provide at least two real-world examples of set theory applications.",
+        "Ensure the response is 500-750 words in length.",
+        "Use proper mathematical notation and terminology."
       ]
     },
     {
       "week": 1,
-      "title": "Organic Chemistry Basics Checklist",
-      "type": "checklist",
-      "description": "Complete a comprehensive checklist to demonstrate understanding of Organic Chemistry basics, including key concepts and terminology.",
+      "title": "Set Theory Operations",
+      "type": "quiz",
+      "description": "For this quiz, students will demonstrate their understanding of set theory operations, including union, intersection, difference, and complement. The quiz will consist of multiple-choice questions and short-answer problems that require students to apply set theory concepts to solve problems.",
       "requirements": [
-        "Define organic chemistry and its relevance to biological systems",
-        "Identify and describe the main branches of organic chemistry",
-        "List and explain the basic types of chemical bonds in organic molecules",
-        "Describe the importance of atomic orbitals and hybridization in organic chemistry",
-        "Identify and explain the key functional groups in organic chemistry"
+        "Complete 10 multiple-choice questions on set theory operations within 30 minutes.",
+        "Solve 2 short-answer problems that require students to show their work and explain their reasoning.",
+        "Achieve a minimum score of 70% to pass the quiz."
+      ]
+    },
+    {
+      "week": 1,
+      "title": "Basic Mathematical Structures",
+      "type": "checklist",
+      "description": "For this assignment, students will review and familiarize themselves with basic mathematical structures. This includes understanding sets, relations, and functions, which form the foundation of discrete mathematics. Students are expected to identify and list the key properties and types of these structures.",
+      "requirements": [
+        "Read sections 1.1-1.3 in the textbook 'Discrete Mathematics and Its Applications' by Kenneth H. Rosen.",
+        "List and define the key types of sets (e.g., empty set, finite set, infinite set).",
+        "Identify and describe the properties of relations (e.g., reflexive, symmetric, transitive).",
+        "Provide examples of different types of functions (e.g., one-to-one, onto, bijective).",
+        "Submit a checklist with the following items:\n            - Definition of a set\n            - Properties of relations\n            - Types of functions\n            - Examples of each"
       ]
     },
     {
       "week": 2,
-      "title": "Atomic Structure and Bonding Written Assignment",
+      "title": "Relations and Functions",
       "type": "written",
-      "description": "In this written assignment, students will demonstrate their understanding of atomic structure and bonding in organic chemistry. The task is to explain the basic principles of atomic structure, including electron configuration, orbitals, and hybridization, and how these concepts relate to chemical bonding in organic molecules.",
+      "description": "For this assignment, students will demonstrate their understanding of relations and functions in discrete mathematics. Students are expected to provide clear and concise written responses to the following prompts: Define what a relation is and provide examples of relations in real-world scenarios. Explain the properties of relations, including reflexivity, symmetry, and transitivity. Describe the concept of a function, including the definition of domain and range. Provide examples of functions and explain how they differ from relations. Use mathematical notation to represent relations and functions.",
       "requirements": [
-        "Write a clear and concise explanation of the relationship between atomic structure and chemical bonding in organic chemistry, including the role of electron configuration, orbitals, and hybridization.",
-        "Provide examples of different types of chemical bonds (sigma and pi bonds) and explain their formation in terms of atomic orbitals and electron configuration.",
-        "Include diagrams or illustrations to support your explanations, such as orbital overlap diagrams and electron configuration charts.",
-        "Ensure your writing is clear, concise, and free of grammatical errors, and that your examples and diagrams are accurate and relevant to the topic."
+        "The submission should be in a written format (e.g., PDF, Word document, or text file).",
+        "The submission should include a clear and concise definition of a relation and its properties.",
+        "The submission should include examples of relations and functions in real-world scenarios.",
+        "The submission should use proper mathematical notation to represent relations and functions.",
+        "The submission should be 2-3 pages in length, double-spaced."
       ]
     },
     {
       "week": 2,
-      "title": "Molecular Orbitals and Hybridization Quiz",
+      "title": "Relations Properties",
       "type": "quiz",
-      "description": "This quiz assesses students' understanding of molecular orbitals and hybridization concepts in organic chemistry. Students will identify and explain the different types of molecular orbitals, describe the process of hybridization, and apply these concepts to predict molecular shapes.",
+      "description": "For this quiz, students will demonstrate their understanding of the properties of relations, including reflexivity, symmetry, and transitivity. Students will be given a set of relations and asked to identify which properties each relation satisfies. The quiz will consist of multiple-choice questions and short-answer questions that require students to provide explanations for their answers.",
       "requirements": [
-        "Complete a 10-question multiple-choice quiz on molecular orbitals and hybridization.",
-        "Provide short-answer explanations for 3 questions, demonstrating understanding of sigma and pi bonds, sp3, sp2, and sp hybridization, and molecular orbital theory.",
-        "Submit a single PDF document with all answers clearly labeled and organized."
+        "Read sections 6.2-6.4 in the textbook, Discrete Mathematics and Its Applications by Kenneth H. Rosen.",
+        "Complete the provided practice problems on relations properties before taking the quiz.",
+        "Answer all multiple-choice questions correctly.",
+        "Provide clear and concise explanations for short-answer questions, demonstrating understanding of reflexivity, symmetry, and transitivity."
       ]
     },
     {
       "week": 3,
-      "title": "Alkanes Structure and Nomenclature Practice",
-      "type": "checklist",
-      "description": "Complete a checklist to demonstrate understanding of the structure and nomenclature of alkanes, including identifying and naming different types of alkanes, and understanding their structural formulas.",
+      "title": "Graph Theory Basics",
+      "type": "written",
+      "description": "For this assignment, students will provide a written response to the topic of graph theory basics. Students should review the relevant chapters in the textbook, specifically focusing on the definition and properties of graphs, including vertices, edges, and adjacency. The response should include a clear explanation of these concepts, along with examples to illustrate their understanding. Students are expected to use proper mathematical notation and terminology throughout their response.",
       "requirements": [
-        "Identify and name at least 10 different alkanes using their structural formulas",
-        "Draw and label the structural formulas for 5 different alkanes",
-        "Complete a table matching alkane names with their corresponding structural formulas",
-        "Answer a series of short-answer questions explaining the nomenclature rules for alkanes"
+        "A clear and concise definition of a graph, including its components (vertices, edges).",
+        "An explanation of the concept of adjacency in graphs, with examples.",
+        "Discussion of at least two types of graphs (e.g., simple graphs, weighted graphs) and their characteristics.",
+        "Proper use of mathematical notation and terminology related to graph theory.",
+        "Examples or diagrams to support explanations."
       ]
     },
     {
       "week": 3,
-      "title": "Alkanes Physical Properties Written Assignment",
-      "type": "written",
-      "description": "In this written assignment, students will explore the physical properties of alkanes, including boiling point, melting point, and solubility. Students will be required to explain the trends in these physical properties based on the structure and intermolecular forces present in alkanes.",
+      "title": "Graph Structures",
+      "type": "checklist",
+      "description": "For this assignment, students will demonstrate their understanding of various graph structures by identifying and describing key properties. Students should review the relevant sections in the textbook, specifically focusing on graph terminology, types of graphs (such as simple graphs, multigraphs, pseudographs, directed graphs, and weighted graphs), and common graph structures like complete graphs, cycles, and wheels. Students will then complete a checklist that requires them to correctly classify and describe different graph structures based on their properties.",
       "requirements": [
-        "Write a 2-3 page essay explaining the relationship between the molecular weight and boiling point of alkanes.",
-        "Discuss how the branching of alkane chains affects their melting points, providing examples to support your explanation.",
-        "Describe the solubility of alkanes in water and organic solvents, explaining why alkanes are insoluble in water but soluble in organic solvents.",
-        "Include at least two examples of alkanes and their physical properties in your essay.",
-        "Use proper scientific notation and units throughout your work."
+        "Identify and describe the properties of simple graphs, multigraphs, pseudographs, directed graphs, and weighted graphs.",
+        "Recognize and explain the characteristics of complete graphs, cycles, wheels, and other common graph structures.",
+        "Classify given graph structures into their respective categories.",
+        "Provide accurate descriptions of the properties and features of each graph structure type."
       ]
     },
     {
       "week": 4,
-      "title": "Stereochemistry Concepts Quiz",
-      "type": "quiz",
-      "description": "Complete a quiz to assess understanding of stereochemistry concepts, including definitions, principles, and applications.",
+      "title": "Combinatorics Fundamentals",
+      "type": "written",
+      "description": "For this assignment, students will demonstrate their understanding of combinatorics fundamentals by solving a series of problems related to counting principles, permutations, and combinations. Students should provide detailed solutions to each problem, showing all necessary steps and calculations. The goal is to apply mathematical concepts to solve real-world problems and develop problem-solving skills.",
       "requirements": [
-        "The quiz will consist of 10 multiple-choice questions.",
-        "Each question will assess a specific concept related to stereochemistry, such as chirality, enantiomers, diastereomers, and meso compounds.",
-        "Students must complete the quiz within 30 minutes.",
-        "The quiz will be closed-book and notes.",
-        "Students must achieve a minimum score of 70% to pass the quiz."
+        "Read sections 5.1-5.3 in the textbook 'Discrete Mathematics and Its Applications' by Kenneth H. Rosen.",
+        "Complete problems 1-10 on page 125 of the textbook, showing all work and calculations.",
+        "Solve the following additional problems: If a set contains 10 elements, how many subsets does it have? A committee of 3 people is to be formed from a group of 10 people. How many different committees are possible?",
+        "Submit your solutions as a single PDF document, with each problem clearly labeled and numbered."
       ]
     },
     {
       "week": 4,
-      "title": "Isomers and Stereoisomers Written Assignment",
-      "type": "written",
-      "description": "In this written assignment, students will demonstrate their understanding of isomers and stereoisomers in organic chemistry. Students will be required to identify and explain the differences between various types of isomers, including structural isomers, configurational isomers, and conformational isomers. Students will also need to provide examples of each type of isomer and explain their significance in organic chemistry.",
-      "requirements": [
-        "Identify and define the three main types of isomers in organic chemistry: structural isomers, configurational isomers, and conformational isomers.",
-        "Provide a clear and concise example of each type of isomer, including structural formulas and 3D representations where applicable.",
-        "Explain the significance of each type of isomer in organic chemistry, including their role in determining the physical and chemical properties of molecules.",
-        "Write a 2-3 page essay that clearly and accurately communicates the concepts of isomerism and stereoisomerism in organic chemistry.",
-        "Use proper scientific notation, formatting, and citations throughout the essay."
-      ]
-    },
-    {
-      "week": 5,
-      "title": "Alkanes Reactions Checklist",
-      "type": "checklist",
-      "description": "Complete a checklist to demonstrate understanding of various reactions of alkanes, including combustion, substitution, and radical halogenation reactions.",
-      "requirements": [
-        "Identify and write the balanced chemical equations for the combustion of different alkanes.",
-        "Describe the conditions required for substitution reactions in alkanes, including the role of light and heat.",
-        "List and explain the major types of radical halogenation reactions that alkanes can undergo.",
-        "Provide examples of each type of reaction, including the reactants, products, and any necessary catalysts or conditions.",
-        "Complete a table or chart summarizing the key characteristics of each type of alkane reaction."
-      ]
-    },
-    {
-      "week": 5,
-      "title": "Combustion and Substitution Reactions Written Assignment",
-      "type": "written",
-      "description": "In this written assignment, students will demonstrate their understanding of combustion and substitution reactions in alkanes. Students will be provided with a set of alkane structures and reaction conditions. For each reaction, students must write the balanced chemical equation, identify the products, and classify the type of reaction (combustion or substitution).",
-      "requirements": [
-        "Write balanced chemical equations for 5 combustion reactions and 5 substitution reactions of alkanes.",
-        "Identify and label all reactants and products in each reaction.",
-        "Classify each reaction as either combustion or substitution.",
-        "Provide a brief explanation (1-2 sentences) for each reaction, describing the conditions that favor the reaction and the significance of the reaction products."
-      ]
-    },
-    {
-      "week": 6,
-      "title": "Alkenes and Alkynes Structure Quiz",
+      "title": "Permutations and Combinations",
       "type": "quiz",
-      "description": "Complete a quiz to demonstrate understanding of the structure of alkenes and alkynes, including identifying and naming these types of hydrocarbons, recognizing their functional groups, and understanding their geometric and structural properties.",
+      "description": "In this quiz, students will demonstrate their understanding of permutations and combinations. The quiz will consist of multiple-choice questions and problems that require students to calculate permutations and combinations in various scenarios. Students will need to apply formulas and concepts learned in the course to solve problems.",
       "requirements": [
-        "The quiz will consist of 10 multiple-choice questions.",
-        "Each question will assess knowledge of alkene and alkyne structures, including isomerism and nomenclature.",
-        "Students must achieve a minimum score of 70% to pass the quiz.",
-        "The quiz will be timed for 30 minutes."
-      ]
-    },
-    {
-      "week": 6,
-      "title": "Electrophilic Addition Reactions Written Assignment",
-      "type": "written",
-      "description": "For this written assignment, you will demonstrate your understanding of electrophilic addition reactions in organic chemistry. You are expected to explain the mechanisms and provide examples of different types of electrophilic addition reactions, including but not limited to, the addition of hydrogen halides to alkenes, the addition of water to alkenes, and the addition of hydrogen to alkenes.",
-      "requirements": [
-        "Write a clear and concise explanation of the general mechanism of electrophilic addition reactions.",
-        "Provide and explain three specific examples of electrophilic addition reactions, including the reactants, products, and conditions required for each reaction.",
-        "Include a detailed discussion on the role of the electrophile in each reaction and how it influences the outcome.",
-        "Use proper organic chemistry nomenclature and notation throughout your assignment.",
-        "Ensure your work is well-organized, clearly written, and free of grammatical errors.",
-        "Include references to relevant course materials and cite any external sources used."
-      ]
-    },
-    {
-      "week": 7,
-      "title": "Reaction Mechanisms Concepts Checklist",
-      "type": "checklist",
-      "description": "For this assignment, students will demonstrate their understanding of reaction mechanisms concepts by completing a comprehensive checklist. The checklist will cover key concepts related to reaction mechanisms, including but not limited to, types of reactions, reaction conditions, and major products.",
-      "requirements": [
-        "Students must complete a checklist of 20 key concepts related to reaction mechanisms.",
-        "The checklist must include, but not be limited to, the following topics: SN1 and SN2 reactions, E1 and E2 reactions, reaction intermediates, and major product formation.",
-        "Students must provide a brief explanation (1-2 sentences) for each concept to demonstrate their understanding.",
-        "The checklist must be submitted in a format that is easy to review, such as a table or a list with checkboxes."
-      ]
-    },
-    {
-      "week": 7,
-      "title": "Types of Organic Reactions Written Assignment",
-      "type": "written",
-      "description": "For this written assignment, students will provide a comprehensive overview of various types of organic reactions, including but not limited to substitution, elimination, addition, and rearrangement reactions. Students are expected to discuss the mechanisms, conditions, and examples of each reaction type.",
-      "requirements": [
-        "The assignment should be 2-3 pages in length, double-spaced.",
-        "Students must provide at least three examples of each reaction type, including the reactants, products, and reaction conditions.",
-        "The discussion of reaction mechanisms should include detailed step-by-step descriptions and any relevant transition states or intermediates.",
-        "Students should use proper IUPAC nomenclature for all compounds.",
-        "The assignment should include a reference list in APA or Chicago style, if applicable."
-      ]
-    },
-    {
-      "week": 8,
-      "title": "Alcohols and Thiols Quiz",
-      "type": "quiz",
-      "description": "The student will complete a quiz to assess their understanding of alcohols and thiols, including their properties, structures, and nomenclature.",
-      "requirements": [
-        "The quiz will consist of 10 multiple-choice questions.",
-        "Each question will assess a specific concept related to alcohols and thiols, such as their classification, physical properties, and chemical reactions.",
-        "The student must achieve a minimum score of 70% to pass the quiz.",
-        "The quiz will be timed for 30 minutes."
-      ]
-    },
-    {
-      "week": 8,
-      "title": "Alcohols and Thiols Properties Written Assignment",
-      "type": "written",
-      "description": "In this written assignment, you will explore the properties of alcohols and thiols, including their physical properties, such as boiling point and solubility, and their chemical properties, such as acidity and reactivity. You will be asked to explain the differences in properties between alcohols and thiols, and to provide examples of each.",
-      "requirements": [
-        "Write a 2-3 page essay that describes the physical properties of alcohols and thiols, including boiling point, solubility, and viscosity.",
-        "Compare and contrast the acidity of alcohols and thiols, including their pKa values and reactivity with strong bases.",
-        "Provide examples of alcohols and thiols that demonstrate their different properties, such as methanol, ethanol, and thiophenol.",
-        "Include at least two diagrams or illustrations that show the molecular structure of alcohols and thiols, and their interactions with other molecules.",
-        "Use proper scientific notation and formatting, including units, labels, and references."
-      ]
-    },
-    {
-      "week": 9,
-      "title": "Ethers and Epoxides Checklist",
-      "type": "checklist",
-      "description": "For this checklist assignment on Ethers and Epoxides, students will review and identify key concepts related to the structure, nomenclature, properties, and reactions of ethers and epoxides in organic chemistry.",
-      "requirements": [
-        "List and describe the general structure and nomenclature rules for ethers.",
-        "Identify and explain the different types of ethers (symmetrical and unsymmetrical).",
-        "Describe the physical properties of ethers, including boiling point, solubility, and acidity.",
-        "Outline the common methods for preparing ethers.",
-        "List and describe the major reactions of ethers, including cleavage and oxidation reactions.",
-        "Identify and describe the structure and nomenclature of epoxides.",
-        "Explain the properties and reactivity of epoxides, including ring-opening reactions.",
-        "Provide examples of common ethers and epoxides and their applications in organic chemistry and industry."
-      ]
-    },
-    {
-      "week": 9,
-      "title": "Ethers and Epoxides Reactions Written Assignment",
-      "type": "written",
-      "description": "In this written assignment, students will demonstrate their understanding of ethers and epoxides reactions in organic chemistry. Students will be required to write a detailed explanation of the different types of reactions involving ethers and epoxides, including their mechanisms, conditions, and examples.",
-      "requirements": [
-        "Provide a clear and concise definition of ethers and epoxides.",
-        "Explain the different types of reactions involving ethers and epoxides, including nucleophilic substitution, elimination, and rearrangement reactions.",
-        "Write the detailed mechanisms for at least two example reactions, including the role of reagents and conditions.",
-        "Provide at least three examples of ethers and epoxides reactions, including their products and reaction conditions.",
-        "Use proper organic chemistry nomenclature and notation throughout the assignment.",
-        "The assignment should be 2-3 pages in length, double-spaced, and submitted in a standard font."
-      ]
-    },
-    {
-      "week": 10,
-      "title": "Functional Group Transformations Quiz",
-      "type": "quiz",
-      "description": "This quiz assesses students' understanding of functional group transformations in organic chemistry. Students will be required to identify and explain various types of reactions that result in the transformation of functional groups.",
-      "requirements": [
-        "Identify and name different functional groups that can undergo transformations.",
-        "Explain the mechanisms of at least three types of reactions that result in functional group transformations (e.g., oxidation, reduction, substitution).",
-        "Provide examples of reagents and conditions required for specific functional group transformations.",
-        "Predict the products of given reactions involving functional group transformations."
-      ]
-    },
-    {
-      "week": 10,
-      "title": "Oxidation and Reduction Reactions Written Assignment",
-      "type": "written",
-      "description": "For this written assignment, students will demonstrate their understanding of oxidation and reduction reactions in organic chemistry. Students will be provided with a set of reaction equations and will need to identify which reactions are oxidation reactions and which are reduction reactions. Students will also be required to explain the reasoning behind their classification, including the changes in oxidation state of key atoms and the types of reagents used.",
-      "requirements": [
-        "Read and analyze the provided reaction equations.",
-        "Classify each reaction as an oxidation or reduction reaction.",
-        "Explain the reasoning behind each classification, including changes in oxidation state and reagent types.",
-        "Provide clear and concise answers, using proper chemical notation and terminology.",
-        "Submit a typed document with a maximum of 2 pages, double-spaced, and in a standard font."
-      ]
-    },
-    {
-      "week": 11,
-      "title": "Applications of Organic Chemistry Checklist",
-      "type": "checklist",
-      "description": "Complete a comprehensive checklist that highlights the various applications of organic chemistry in real-world scenarios. The checklist should cover applications in pharmaceuticals, materials science, and other relevant fields.",
-      "requirements": [
-        "The checklist must include at least 10 distinct applications of organic chemistry.",
-        "Each application must be clearly described in 1-2 sentences.",
-        "The checklist should be organized into categories (e.g., pharmaceuticals, materials science, environmental science).",
-        "The student must provide a brief explanation of the significance of each application."
-      ]
-    },
-    {
-      "week": 11,
-      "title": "Pharmaceuticals and Materials Science Written Assignment",
-      "type": "written",
-      "description": "For this written assignment, you will explore the applications of organic chemistry in pharmaceuticals and materials science. Your task is to research and write a 3-4 page paper on how organic chemistry principles are used in the development of new pharmaceuticals or materials.",
-      "requirements": [
-        "The paper should be 3-4 pages in length, not including the title page or references.",
-        "Use at least 3 credible sources to support your discussion.",
-        "The paper should be written in APA or MLA format.",
-        "Include a title page with your name, the title of the assignment, and the date.",
-        "The paper should include an introduction that provides background on the topic and a clear thesis statement.",
-        "The body of the paper should discuss specific examples of how organic chemistry is applied in pharmaceuticals or materials science.",
-        "The paper should include a conclusion that summarizes the main points and reiterates the thesis.",
-        "Include a reference page or bibliography with all sources cited in the paper."
-      ]
-    },
-    {
-      "week": 12,
-      "title": "Comprehensive Review Quiz",
-      "type": "quiz",
-      "description": "The Comprehensive Review Quiz is a comprehensive assessment that covers all the key concepts and topics learned throughout the course on Organic Chemistry. Students will be required to complete a quiz that tests their understanding and knowledge of the course material.",
-      "requirements": [
-        "The quiz will consist of multiple-choice questions, short-answer questions, and possibly some problem-solving questions.",
-        "Students are expected to review all course materials, notes, and assignments from weeks 1-11.",
-        "The quiz will be timed, and students will have 2 hours to complete it.",
-        "No notes, textbooks, or electronic devices are allowed during the quiz.",
+        "Students must complete all questions within the given time limit.",
+        "Students must show all work and calculations for each problem.",
         "Students must achieve a minimum score of 70% to pass the quiz."
       ]
     },
     {
-      "week": 12,
-      "title": "Final Assessment Practice",
+      "week": 5,
+      "title": "Propositional Logic",
       "type": "written",
-      "description": "For the final assessment practice, students will complete a comprehensive written assignment that tests their understanding of key concepts in organic chemistry. The assignment will require students to apply their knowledge to solve problems and answer questions related to various topics covered throughout the course.",
+      "description": "For this assignment, students will demonstrate an understanding of propositional logic by providing detailed solutions to a set of problems. The goal is to apply the concepts of propositional logic to evaluate and simplify logical expressions, and to construct truth tables for given propositions.",
       "requirements": [
-        "The assignment should be 5-7 pages in length, double-spaced.",
-        "Students must answer all questions and complete all problems accurately.",
-        "The assignment should demonstrate a clear understanding of atomic structure and bonding, molecular orbitals and hybridization, stereochemistry, reaction mechanisms, and functional group transformations.",
-        "Students should provide clear and concise explanations for all answers.",
-        "The assignment should be submitted in a format that is easy to read and understand."
+        "Read sections 1.4 and 1.5 of the textbook, 'Discrete Mathematics and Its Applications' by Kenneth H. Rosen.",
+        "Complete the following problems:\n      1. Let p, q, and r be the propositions:\n         p: You have the flu.\n         q: You miss the final examination.\n         r: You pass the course.\n         Express the following propositions as logical expressions:\n         a) You have the flu and miss the final examination.\n         b) You have the flu and pass the course.\n         c) You miss the final examination and pass the course.\n      2. Construct truth tables for the following propositions:\n         a) (p \u2227 q) \u2192 r\n         b) (p \u2228 q) \u2194 r\n      3. Determine whether the following propositions are tautologies:\n         a) (p \u2227 q) \u2192 (p \u2228 q)\n         b) (p \u2192 q) \u2194 (\u00acq \u2192 \u00acp)",
+        "Submit a written document with clear explanations and justifications for all answers.",
+        "Include your name, course number, week number, and assignment title at the top of the page."
+      ]
+    },
+    {
+      "week": 5,
+      "title": "Predicate Logic",
+      "type": "quiz",
+      "description": "For this quiz on Predicate Logic, students will need to understand the concepts of predicates, quantifiers (universal and existential), and how to apply them to express statements in a formal and precise manner. The quiz will test their ability to interpret and construct predicate logic expressions, as well as reason about the truth values of statements involving predicates and quantifiers.",
+      "requirements": [
+        "Read sections 1.4 (Predicate Logic) in the textbook.",
+        "Complete the provided practice problems on predicate logic expressions and quantifiers.",
+        "Be prepared to define and explain key terms such as predicate, domain, universal quantifier, and existential quantifier.",
+        "Work through sample quiz questions that illustrate the application of predicate logic in expressing and evaluating statements."
+      ]
+    },
+    {
+      "week": 6,
+      "title": "Mathematical Proofs",
+      "type": "written",
+      "description": "For this assignment, students will write a detailed mathematical proof for a given problem. The goal is to apply logical reasoning and mathematical principles to derive a valid conclusion. Students should carefully read the problem statement, identify the premises and the conclusion to be proven, and then construct a step-by-step proof using appropriate mathematical notation and logical rules.",
+      "requirements": [
+        "The proof should start with a clear statement of what is to be proven.",
+        "Each step in the proof must be justified by a relevant mathematical principle or previously established fact.",
+        "The proof should conclude with a clear statement of the proven result.",
+        "Students must use proper mathematical notation and terminology throughout the proof.",
+        "The assignment should be submitted in a clear and legible format, either typed or handwritten with clear scans or photographs."
+      ]
+    },
+    {
+      "week": 6,
+      "title": "Problem-Solving",
+      "type": "checklist",
+      "description": "For this assignment, students will complete a checklist to demonstrate their understanding of problem-solving strategies in discrete mathematics. The checklist will cover various problem-solving techniques learned throughout the course, including but not limited to, analyzing problem statements, identifying key concepts, and applying relevant theorems and algorithms.",
+      "requirements": [
+        "Complete a checklist of 10 problem-solving strategies in discrete mathematics.",
+        "For each strategy, provide a brief description (1-2 sentences) of how it can be applied to solve problems in discrete mathematics.",
+        "Ensure that all checklist items are accurately completed and submitted on time."
+      ]
+    },
+    {
+      "week": 7,
+      "title": "Graph Algorithms",
+      "type": "written",
+      "description": "For this written assignment, you will explore and describe various graph algorithms. Using the concepts learned in class and the textbook 'Discrete Mathematics and Its Applications' by Kenneth H. Rosen, you are expected to provide a detailed explanation of at least three fundamental graph algorithms: Breadth-First Search (BFS), Depth-First Search (DFS), and Dijkstra's algorithm. Your response should include a clear description of each algorithm, their applications, and examples of how they are used in real-world scenarios. Make sure to use proper mathematical notation and provide any necessary diagrams to support your explanations.",
+      "requirements": [
+        "Provide a detailed description of the Breadth-First Search (BFS) algorithm, including its steps and an example of its application.",
+        "Explain the Depth-First Search (DFS) algorithm, including its steps and an example of its application.",
+        "Describe Dijkstra's algorithm for finding the shortest path in a graph, including its steps and an example of its application.",
+        "Use proper mathematical notation and include any necessary diagrams to support your explanations.",
+        "Ensure your work is well-organized and clearly written."
+      ]
+    },
+    {
+      "week": 7,
+      "title": "Graph Traversals",
+      "type": "quiz",
+      "description": "In this quiz, students will demonstrate their understanding of graph traversals, including depth-first search (DFS) and breadth-first search (BFS) algorithms. Students will be given a set of graph structures and asked to identify the correct traversal order for each graph.",
+      "requirements": [
+        "Read sections 10.3 and 10.4 in the textbook, Discrete Mathematics and Its Applications by Kenneth H. Rosen.",
+        "Complete the provided practice problems on graph traversals.",
+        "Take the quiz within the given time frame and submit it through the course platform."
+      ]
+    },
+    {
+      "week": 8,
+      "title": "Course Review",
+      "type": "checklist",
+      "description": "For this course review assignment, students will verify their understanding of key concepts covered throughout the course. The task involves reviewing all the major topics in discrete mathematics, including set theory, relations, functions, graph theory, combinatorics, propositional and predicate logic, and mathematical proofs.",
+      "requirements": [
+        "Review and summarize the main concepts from weeks 1 through 7.",
+        "Ensure understanding of set theory, relations, functions, graph theory, combinatorics, and logic.",
+        "Complete a checklist of key terms and concepts to confirm familiarity.",
+        "Submit the completed checklist for review."
+      ]
+    },
+    {
+      "week": 8,
+      "title": "Practice Problems",
+      "type": "written",
+      "description": "For this assignment, students will work on a variety of practice problems that cover all the topics studied throughout the course. The goal is to reinforce understanding and problem-solving skills in discrete mathematics. Students should review all previous material and attempt to solve problems from each week's topics. The submission should include detailed solutions to the problems, clearly showing the steps taken to reach the answers.",
+      "requirements": [
+        "Complete a minimum of 20 practice problems covering at least 5 different topics from the course.",
+        "Provide detailed solutions to each problem, including all steps and explanations.",
+        "Organize solutions in a clear and readable format, using proper mathematical notation and terminology.",
+        "Submit solutions in a single document, either in PDF or Word format."
       ]
     }
   ]

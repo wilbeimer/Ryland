@@ -197,4 +197,5 @@ def deserialize_week(row: dict) -> dict:
 
 def deserialize_assignment(row: dict) -> dict:
     row["requirements"] = json.loads(row.get("requirements") or "[]")
+    row["resources"] = json.loads(row.get("resources") or "[]")
     return row

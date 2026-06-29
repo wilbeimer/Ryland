@@ -18,8 +18,10 @@ export default function Courses() {
       const pending = courses.filter(c => c.status === 'pending')
       if (pending.length === 0) return
 
+      let delay = 3000
+      let timeout
 
-      const interval = setInterval(() => {
+      function poll(){
          pending.forEach( course => {
             fetch(`${import.meta.env.VITE_API_URL}/courses/${course.id}`)
                .then(res => res.json())
@@ -29,9 +31,12 @@ export default function Courses() {
                   }
               })
          })
-      }, 3000);
+         delay = Math.min(delay * 1.5, 15000)
+         timeout = setTimeout(poll, delay)
+      }
 
-      return () => clearInterval(interval)
+      timeout = setTimeout(poll, delay)
+      return () => clearInterval(timeout)
    }, [courses])
 
    function addCourse() {

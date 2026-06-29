@@ -239,3 +239,46 @@ body {
    padding: 24px;
    margin-top: 16px;
 }
+
+.assignment-resources {
+    background: var(--bg-secondary);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 32px;
+}
+.assignment-resources h2 {
+    font-size: 15px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+}
+.assignment-resources ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.assignment-resources li {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.assignment-resources a {
+    color: var(--accent);
+    font-size: 14px;
+    font-weight: 500;
+    text-decoration: none;
+}
+.assignment-resources a:hover {
+    text-decoration: underline;
+}
+.resource-type {
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+}
+.assignment-resources p {
+    font-size: 13px;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}

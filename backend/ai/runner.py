@@ -2,7 +2,9 @@ import json
 import sys
 import yaml
 from pathlib import Path
+from concurrent.futures import ThreadPoolExecutor
 import time
+
 
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -11,23 +13,43 @@ from backend.ai.client import client
 
 AI_DIR = Path(__file__).parent
 DEFAULT_SYSTEM_PROMPT = "You are an expert AI assistant. Return only valid JSON, no markdown, no explanation."
+
 DEFAULT_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
+FALLBACK_MODELS = [
+    "meta-llama/llama-4-scout-17b-16e-instruct",  # 30K TPM, 500K TPD
+    "llama-3.3-70b-versatile",                     # 12K TPM, 100K TPD
+    "qwen/qwen3-32b",                               # 6K TPM, 500K TPD
+    "llama-3.1-8b-instant",                         # 6K TPM, 500K TPD
+    "allam-2-7b",                                   # 6K TPM, 500K TPD
+]
 
 
 # --- Model ---
 
 def call_model(prompt: str, system_prompt: str, model: str = DEFAULT_MODEL) -> str:
-    response = client.chat.completions.create(
-        model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": prompt}
-        ]
-    )
-    content = response.choices[0].message.content
-    if content is None:
-        raise ValueError("No response from AI")
-    return content
+    models_to_try = [model] + [m for m in FALLBACK_MODELS if m != model]
+
+    for m in models_to_try:
+        try:
+            response = client.chat.completions.create(
+                model=m,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            content = response.choices[0].message.content
+            if content is None:
+                raise ValueError("No response from AI")
+            return content
+
+        except Exception as e:
+            if "rate_limit" in str(e) or "429" in str(e):
+                print(f"Rate limit hit for {m}, trying next model...")
+                continue
+            raise
+
+    raise RuntimeError("All models rate limited")
 
 
 def parse_json_response(content: str) -> dict:
@@ -37,7 +59,12 @@ def parse_json_response(content: str) -> dict:
         if content.startswith("json"):
             content = content[4:]
         content = content.strip()
-    return json.loads(content, strict=False)
+    try:
+        return json.loads(content, strict=False)
+    except json.JSONDecodeError:
+        import re
+        content = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', content)
+        return json.loads(content, strict=False)
 
 
 # --- Context loading ---
@@ -116,8 +143,7 @@ def build_prompt(identity_md: str, workspace_context: str, context: str, referen
 
 
 # --- Stage execution ---
-
-def run_loop_stage(loop_over: str, full_prompt: str, previous_outputs: dict, merge_item: bool, system_prompt: str) -> dict:
+def run_loop_stage(loop_over: str, full_prompt: str, previous_outputs: dict, merge_item: bool, system_prompt: str, model: str) -> dict:
     items = None
     for stage_output in previous_outputs.values():
         if loop_over in stage_output:
@@ -127,16 +153,28 @@ def run_loop_stage(loop_over: str, full_prompt: str, previous_outputs: dict, mer
     if items is None:
         raise ValueError(f"loop_over key '{loop_over}' not found in previous outputs")
 
-    results = []
-    for item in items:
-        content = call_model(full_prompt + f"\n\n## Current Item\n{json.dumps(item, indent=2)}", system_prompt)
+    def process_item(item):
+        content = call_model(
+            full_prompt + f"\n\n## Current Item\n{json.dumps(item, indent=2)}",
+            system_prompt,
+            model
+        )
         result = parse_json_response(content)
         if merge_item:
             result = {**item, **result}
-        results.append(result)
-        time.sleep(2)
+        return result
 
-    return {loop_over: results}
+    results = {}
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = {}
+        for i, item in enumerate(items):
+            futures[executor.submit(process_item, item)] = i
+            time.sleep(1)
+        
+        for future, i in futures.items():
+            results[i] = future.result()
+
+    return {loop_over: [results[i] for i in range(len(items))]}
 
 
 def run_stage(stage_name: str, user_inputs: dict = {}, stages_dir: Path = AI_DIR / "curriculum" / "stages") -> dict:
@@ -155,10 +193,11 @@ def run_stage(stage_name: str, user_inputs: dict = {}, stages_dir: Path = AI_DIR
     full_prompt = build_prompt(identity_md, workspace_context, context, references, previous_outputs)
 
     loop_over = meta.get("loop_over")
+    model = meta.get("model", DEFAULT_MODEL)
+
     if loop_over:
-        result = run_loop_stage(loop_over, full_prompt, previous_outputs, meta.get("merge_item", False), system_prompt)
+        result = run_loop_stage(loop_over, full_prompt, previous_outputs, meta.get("merge_item", False), system_prompt, model)
     else:
-        model = meta.get("model", DEFAULT_MODEL)
         content = call_model(full_prompt, system_prompt, model)
         result = parse_json_response(content)
 

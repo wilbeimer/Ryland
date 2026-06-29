@@ -1,0 +1,191 @@
+{
+  "assignment_resources": [
+    {
+      "assignment_title": "Set Theory Fundamentals",
+      "resources": [
+        {
+          "title": "Set Theory Playlist \u2014 Dantes.io",
+          "url": "https://dantes.io/resource/set-theory-playlist-692a6465d8979d1c3728121a",
+          "type": "article",
+          "description": "Video playlist covering the fundamentals of set theory, including definitions, notation, and basic operations."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Set Theory Operations",
+      "resources": [
+        {
+          "title": "Brilliant.org \u2013 Set Operations",
+          "url": "https://brilliant.org/wiki/set-operations/",
+          "type": "article",
+          "description": "Interactive explanations and practice problems on union, intersection, difference, and complement."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Basic Mathematical Structures",
+      "resources": [
+        {
+          "title": "Khan Academy \u2013 Introduction to Mathematical Structures",
+          "url": "https://www.khanacademy.org/math/discrete-math",
+          "type": "article",
+          "description": "Overview of sets, relations, functions, and other foundational structures in discrete mathematics."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Relations and Functions",
+      "resources": [
+        {
+          "title": "MIT OpenCourseWare \u2013 Mathematics for Computer Science (Lecture Notes)",
+          "url": "https://ocw.mit.edu/courses/6-042j-mathematics-for-computer-science-fall-2005/",
+          "type": "documentation",
+          "description": "Comprehensive lecture notes covering relations, functions, and their properties."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Relations Properties",
+      "resources": [
+        {
+          "title": "Wikipedia \u2013 Relation (mathematics)",
+          "url": "https://en.wikipedia.org/wiki/Relation_(mathematics)",
+          "type": "article",
+          "description": "Detailed description of reflexive, symmetric, transitive, and antisymmetric properties."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Graph Theory Basics",
+      "resources": [
+        {
+          "title": "Khan Academy \u2013 Graph Theory Introduction",
+          "url": "https://www.khanacademy.org/computing/computer-science/algorithms/graph-representation/v/graph-theory-introduction",
+          "type": "article",
+          "description": "Video and text introducing vertices, edges, and basic graph terminology."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Graph Structures",
+      "resources": [
+        {
+          "title": "MathWorld \u2013 Graph (mathematics)",
+          "url": "https://mathworld.wolfram.com/Graph.html",
+          "type": "article",
+          "description": "Formal definitions of different graph types, including directed, weighted, and bipartite graphs."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Combinatorics Fundamentals",
+      "resources": [
+        {
+          "title": "Brilliant.org \u2013 Combinatorics",
+          "url": "https://brilliant.org/wiki/combinatorics/",
+          "type": "article",
+          "description": "Conceptual overview and practice problems on counting principles."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Permutations and Combinations",
+      "resources": [
+        {
+          "title": "Khan Academy \u2013 Permutations and Combinations",
+          "url": "https://www.khanacademy.org/math/statistics-probability/counting-permutations-and-combinations",
+          "type": "article",
+          "description": "Step\u2011by\u2011step lessons on calculating permutations, combinations, and related problems."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Propositional Logic",
+      "resources": [
+        {
+          "title": "Stanford Encyclopedia of Philosophy \u2013 Propositional Logic",
+          "url": "https://plato.stanford.edu/entries/logic-propositional/",
+          "type": "article",
+          "description": "In\u2011depth philosophical and technical treatment of propositional logic syntax and semantics."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Predicate Logic",
+      "resources": [
+        {
+          "title": "Stanford Encyclopedia of Philosophy \u2013 Predicate Logic",
+          "url": "https://plato.stanford.edu/entries/logic-predicate/",
+          "type": "article",
+          "description": "Comprehensive overview of first\u2011order logic, quantifiers, and formal proof techniques."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Mathematical Proofs",
+      "resources": [
+        {
+          "title": "MIT OpenCourseWare \u2013 How to Write Proofs",
+          "url": "https://ocw.mit.edu/courses/18-904-seminar-on-proofs/",
+          "type": "documentation",
+          "description": "Course materials focusing on proof strategies, logic, and common proof styles."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Problem-Solving",
+      "resources": [
+        {
+          "title": "Art of Problem Solving \u2013 Introduction to Problem Solving",
+          "url": "https://artofproblemsolving.com/wiki/index.php/Problem_Solving",
+          "type": "article",
+          "description": "Guidelines and techniques for tackling mathematical problems effectively."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Graph Algorithms",
+      "resources": [
+        {
+          "title": "GeeksforGeeks \u2013 Graph Algorithms",
+          "url": "https://www.geeksforgeeks.org/graph-data-structures-and-algorithms/",
+          "type": "article",
+          "description": "Explanation of common graph algorithms such as shortest path, spanning tree, and flow."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Graph Traversals",
+      "resources": [
+        {
+          "title": "GeeksforGeeks \u2013 Graph Traversal (BFS & DFS)",
+          "url": "https://www.geeksforgeeks.org/graph-traversal-bfs-and-dfs/",
+          "type": "article",
+          "description": "Detailed walkthrough of breadth\u2011first and depth\u2011first search with code examples."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Course Review",
+      "resources": [
+        {
+          "title": "Coursera \u2013 Discrete Mathematics Review",
+          "url": "https://www.coursera.org/learn/discrete-mathematics-review",
+          "type": "documentation",
+          "description": "A short review course covering key concepts from set theory to graph algorithms."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Practice Problems",
+      "resources": [
+        {
+          "title": "Project Euler \u2013 Mathematics Problems",
+          "url": "https://projecteuler.net/",
+          "type": "article",
+          "description": "A collection of challenging problems that reinforce concepts across the entire curriculum."
+        }
+      ]
+    }
+  ]
+}

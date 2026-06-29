@@ -1,28 +1,29 @@
 ---
 name: assignment_resources
 version: 0.1
-model: groq/compound-beta-mini
-loop_over: assignments
-merge_item: true
+model: groq/compound-mini
 depends_on:
-  - 05_assignment_description
+    - 05_assignments
 ---
 
-## Inputs
-- course: {course_name}
-
 ## Process
-Search the web for 2-3 high quality learning resources for this specific assignment. Look for articles, research papers, or documentation that would help a student complete this assignment. Return only real URLs that you have verified exist.
+Search the web for 1 learning resources for each assignment listed in the previous stage outputs.
+Return resources for all assignments in a single response.
 
 ## Output
 Return as JSON:
 {
-    "resources": [
+    "assignment_resources": [
         {
-            "title": "...",
-            "url": "...",
-            "type": "article | paper | documentation",
-            "description": "..."
+            "assignment_title": "...",
+            "resources": [
+                {
+                    "title": "...",
+                    "url": "...",
+                    "type": "article | paper | documentation",
+                    "description": "..."
+                }
+            ]
         }
     ]
 }
