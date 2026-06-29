@@ -25,7 +25,7 @@ export default function Layout() {
       </nav>
 
       {/* Main content */}
-      <main style={{ flex: 1, overflow: 'auto', background: '#f5f5f5' }}>
+      <main className='main-content' style={{ flex: 1, overflow: 'auto' }}>
         <Outlet />
       </main>
 

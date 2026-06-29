@@ -16,6 +16,9 @@
    margin: 0;
    padding: 0;
 }
+.main-content {
+   background: var(--bg-page);
+}
 body {
    font-family: 'Segoe UI', sans-serif;
    background: var(--bg-primary);
@@ -23,6 +26,8 @@ body {
 }
 .page {
    padding: 32px;
+   max-width: 860px;
+   margin: 0 auto;
    min-height: 100vh;
    background: var(--bg-page);
 }
@@ -130,7 +135,7 @@ body {
 .course-card--pending { opacity: 0.6; cursor: default; }
 .course-card--pending:hover { transform: none; }
 .course-card-banner { height: 80px; width: 100%; }
-.course-page-banner { height: 80px; width: 100%; border-radius: 8px; margin-bottom: 10px; }
+.course-page-banner { height: 80px; width: 100%; border-radius: 8px; margin-bottom: 24px; }
 .course-card-body { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
 .course-card-info { display: flex; flex-direction: column; gap: 4px; }
 .course-name { font-weight: 600; font-size: 15px; }
@@ -138,7 +143,68 @@ body {
 .course-status { font-size: 13px; color: var(--accent); font-style: italic; }
 .course-status--failed { color: var(--danger); }
 
+
+/* Course page */
+.course-description {
+   font-size: 15px;
+   color: var(--text-secondary);
+   line-height: 1.6;
+   margin-top: 8px;
+}
+.assignment-list {
+   list-style: none;
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+   margin-top: 24px;
+}
+.assignment-card {
+   background: var(--bg-secondary);
+   border-radius: 8px;
+   padding: 16px 20px;
+   cursor: pointer;
+   display: flex;
+   align-items: center;
+   justify-content: space-between;
+   transition: background 0.15s;
+}
+.assignment-card:hover {
+   background: var(--border);
+}
+.assignment-name {
+   font-size: 14px;
+   font-weight: 500;
+}
+.assignment-card-info {
+   display: flex;
+   flex-direction: column;
+   gap: 4px;
+}
+.assignment-card .assignment-week {
+   font-size: 12px;
+   color: var(--text-muted);
+}
+.assignment-card .assignment-type {
+   font-size: 12px;
+   color: var(--text-secondary);
+   text-transform: capitalize;
+   background: var(--bg-primary);
+   padding: 3px 10px;
+   border-radius: 20px;
+}
+
 /* Assignment page */
+.week-group {
+   margin-top: 32px;
+}
+.week-title {
+   font-size: 13px;
+   font-weight: 600;
+   color: var(--text-muted);
+   text-transform: uppercase;
+   letter-spacing: 0.08em;
+   margin-bottom: 8px;
+}
 .assignment-header {
    margin-bottom: 32px;
 }
@@ -241,44 +307,44 @@ body {
 }
 
 .assignment-resources {
-    background: var(--bg-secondary);
-    border-radius: 10px;
-    padding: 20px 24px;
-    margin-bottom: 32px;
+   background: var(--bg-secondary);
+   border-radius: 10px;
+   padding: 20px 24px;
+   margin-bottom: 32px;
 }
 .assignment-resources h2 {
-    font-size: 15px;
-    font-weight: 600;
-    margin-bottom: 12px;
-    color: var(--text-secondary);
+   font-size: 15px;
+   font-weight: 600;
+   margin-bottom: 12px;
+   color: var(--text-secondary);
 }
 .assignment-resources ul {
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
+   list-style: none;
+   display: flex;
+   flex-direction: column;
+   gap: 12px;
 }
 .assignment-resources li {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
+   display: flex;
+   flex-direction: column;
+   gap: 4px;
 }
 .assignment-resources a {
-    color: var(--accent);
-    font-size: 14px;
-    font-weight: 500;
-    text-decoration: none;
+   color: var(--accent);
+   font-size: 14px;
+   font-weight: 500;
+   text-decoration: none;
 }
 .assignment-resources a:hover {
-    text-decoration: underline;
+   text-decoration: underline;
 }
 .resource-type {
-    font-size: 11px;
-    color: var(--text-muted);
-    text-transform: uppercase;
+   font-size: 11px;
+   color: var(--text-muted);
+   text-transform: uppercase;
 }
 .assignment-resources p {
-    font-size: 13px;
-    color: var(--text-secondary);
-    line-height: 1.5;
+   font-size: 13px;
+   color: var(--text-secondary);
+   line-height: 1.5;
 }

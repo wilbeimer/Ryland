@@ -81,7 +81,7 @@ export default function AssignmentPage() {
 
          {assignment.resources?.length > 0 && (
             <div className="assignment-resources">
-               <h2>Resources</h2>
+               <h2>Supplimental Resources</h2>
                <ul>
                   {assignment.resources.map((r, i) => (
                      <li key={i}>
