@@ -1,5 +1,5 @@
 {
-  "weeks": 10,
-  "hours_per_week": 6,
-  "reasoning": "Given the comprehensive nature of the course description, covering key concepts such as set theory, combinatorics, graph theory, and number theory, it is estimated that the course will require 10 weeks to complete. The estimated hours per week are 6, considering the need for students to thoroughly understand and apply the discrete mathematical structures and their applications, while also taking into account the prerequisites of Algebra and Basic Mathematical Reasoning."
+  "weeks": 8,
+  "hours_per_week": 5,
+  "reasoning": "The course provides an introduction to fundamental principles and concepts of mathematics, covering topics such as algebra, geometry, and basic calculus. Given the breadth of topics and the prerequisite knowledge, an 8-week course with 5 hours of study per week is estimated. This allows for a thorough exploration of each topic without overwhelming the student, and aligns with the depth of coverage suggested by the provided textbook."
 }

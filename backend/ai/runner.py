@@ -189,6 +189,8 @@ def run_loop_stage(loop_over: str, full_prompt: str, previous_outputs: dict, mer
 
 
 def run_stage(stage_name: str, user_inputs: dict = {}, stages_dir: Path = AI_DIR / "curriculum" / "stages") -> dict:
+    print(f"Running stage {stage_name}")
+
     stage_path = stages_dir / stage_name
     output_path = stage_path / "output"
     output_path.mkdir(exist_ok=True)

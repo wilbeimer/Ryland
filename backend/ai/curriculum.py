@@ -19,15 +19,19 @@ def get_stages():
 
 
 def generate_curriculum(course_id: str, course: CourseCreate):
-    conn = sqlite3.connect("curriculum.db")
+    conn = sqlite3.connect("curriculum.db", check_same_thread=False, timeout=30)
     conn.row_factory = sqlite3.Row
     cur = conn.cursor()
     try:
         stages = get_stages()
         results = {}
 
+        SKIP_STAGES = {"07_assignment_resources"}
+
         # Run all stages, first stage gets course inputs
         for i, stage in enumerate(stages):
+            if stage in SKIP_STAGES:
+                continue
             if i == 0:
                 results[stage] = run_stage(stage, {
                     "course_name": course.name,
@@ -69,9 +73,12 @@ def generate_curriculum(course_id: str, course: CourseCreate):
             json.dumps(r01["prerequisites"]),
             r03["weeks"],
             r03["hours_per_week"],
-            course_id,
-            json.dumps(r02.get("textbook", {}))
+            json.dumps(r02.get("textbook", {})),
+            course_id
         ))
+
+        if cur.rowcount == 0:
+            raise RuntimeError(f"Course update matched 0 rows for id={course_id} — check parameter order")
 
         # Insert weeks
         week_id_map = {}
@@ -83,15 +90,21 @@ def generate_curriculum(course_id: str, course: CourseCreate):
                 VALUES (?, ?, ?, ?, ?)
             """, (week_id, course_id, week["week"], week["goal"], json.dumps(week["topics"])))
 
-        # Insert assignments
-        for assignment in r06["assignments"]:
-            query = f"{assignment['title']} {r01['domain']} tutorials"
+        print(f"course rows affected: {cur.rowcount}")
 
+        # Insert assignments
+        print("Starting Youtube resource fetch..."),
+        for assignment in r06["assignments"]:
+            print(f"Fetching YouTube for: {assignment['title']}")
+
+            query = f"{assignment['title']} {r01['domain']} tutorials"
             try:
                 videos = search_youtube(query, max_results=2)
             except Exception as e:
                 print(f"YouTube search failed for {assignment['title']}: {e}")
                 videos = []
+
+            print("YouTube fetch complete, saving to db...")
 
             cur.execute("""
                 INSERT INTO assignments (id, courseId, weekId, week, title, type, description, requirements, resources)
@@ -107,6 +120,10 @@ def generate_curriculum(course_id: str, course: CourseCreate):
                 json.dumps(videos),
             ))
 
+            print(f"assignment rows affected: {cur.rowcount}")
+
+        print("committing course")
+
         conn.commit()
     except Exception as e:
         import traceback
@@ -117,3 +134,5 @@ def generate_curriculum(course_id: str, course: CourseCreate):
         print(f"Pipeline failed for course {course_id}: {e}")
     finally:
         conn.close()
+
+        print("connection closed")

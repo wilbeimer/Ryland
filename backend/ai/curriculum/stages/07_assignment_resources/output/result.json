@@ -1,167 +1,178 @@
 {
   "assignment_resources": [
     {
-      "assignment_title": "Introduction to Discrete Mathematics Quiz",
+      "assignment_title": "Introduction to NLP Challenges",
       "resources": [
         {
-          "title": "Discrete Mathematics Overview",
-          "url": "https://www.khanacademy.org/computing/computer-science/discrete-math",
+          "title": "Natural language processing - Challenges",
+          "url": "https://en.wikipedia.org/wiki/Natural_language_processing#Challenges",
           "type": "article",
-          "description": "Khan Academy lesson covering the fundamentals of discrete mathematics, suitable for quiz preparation."
+          "description": "Wikipedia overview of the main challenges faced by NLP systems, including ambiguity, context, and cultural nuances."
         }
       ]
     },
     {
-      "assignment_title": "Set Theory and Relations Worksheet",
+      "assignment_title": "NLP Fundamentals Quiz",
       "resources": [
         {
-          "title": "Relations Practice (Roster Form)",
-          "url": "https://www.khanacademy.org/math/class-12-bridge/x09646558c1ff0797:set-theory/x09646558c1ff0797:relations/e/relations",
+          "title": "Natural language processing - Overview",
+          "url": "https://en.wikipedia.org/wiki/Natural_language_processing",
           "type": "article",
-          "description": "Khan Academy interactive worksheet that asks students to find relations between two sets in roster form."
+          "description": "Comprehensive Wikipedia article covering the fundamental concepts of NLP, suitable for creating quiz questions."
         }
       ]
     },
     {
-      "assignment_title": "Set Operations and Proofs Checklist",
+      "assignment_title": "Language Models and Word Embeddings",
       "resources": [
         {
-          "title": "Set Theory Lecture Notes (MIT OCW)",
-          "url": "https://ocw.mit.edu/courses/6-042j-mathematics-for-computer-science-fall-2005/pages/lecture-notes/",
+          "title": "Word embedding",
+          "url": "https://en.wikipedia.org/wiki/Word_embedding",
+          "type": "article",
+          "description": "Detailed description of word embedding techniques and their role in language models."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Contextualized Embeddings Practice",
+      "resources": [
+        {
+          "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+          "url": "https://www.youtube.com/watch?v=8rXD5-xhemo",
+          "type": "article",
+          "description": "YouTube tutorial that explains contextualized embeddings using BERT and provides hands\u2011on code examples."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Text Processing Techniques",
+      "resources": [
+        {
+          "title": "Text preprocessing",
+          "url": "https://en.wikipedia.org/wiki/Preprocessing#Text_preprocessing",
+          "type": "article",
+          "description": "Wikipedia section covering common text cleaning steps such as tokenization, stemming, lemmatization, and stop\u2011word removal."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Text Representation Quiz",
+      "resources": [
+        {
+          "title": "Bag\u2011of\u2011words model",
+          "url": "https://en.wikipedia.org/wiki/Bag-of-words_model",
+          "type": "article",
+          "description": "Explanation of the bag\u2011of\u2011words representation, providing material for quiz questions on text representation."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Machine Learning in NLP",
+      "resources": [
+        {
+          "title": "Machine learning for natural language processing",
+          "url": "https://en.wikipedia.org/wiki/Machine_learning_for_natural_language_processing",
+          "type": "article",
+          "description": "Overview of how traditional machine\u2011learning algorithms are applied to NLP tasks."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Deep Learning for NLP Practice",
+      "resources": [
+        {
+          "title": "Deep Learning for NLP \u2013 Tutorial",
+          "url": "https://www.youtube.com/watch?v=Vx3JZxF3xZc",
+          "type": "article",
+          "description": "YouTube video introducing deep\u2011learning architectures for NLP with practical coding demos."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Syntax and Semantics in NLP",
+      "resources": [
+        {
+          "title": "Syntax (linguistics) and Semantics (linguistics)",
+          "url": "https://en.wikipedia.org/wiki/Syntax_(linguistics)",
+          "type": "article",
+          "description": "Wikipedia pages that explain syntactic and semantic analysis, essential for NLP understanding."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Syntax and Semantics Quiz",
+      "resources": [
+        {
+          "title": "Syntax and Semantics \u2013 Khan Academy",
+          "url": "https://www.khanacademy.org/humanities/grammar/syntax-and-semantics",
+          "type": "article",
+          "description": "Khan Academy lessons on syntax and semantics that can be used to generate quiz items."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Advanced NLP Topics",
+      "resources": [
+        {
+          "title": "Advanced natural language processing",
+          "url": "https://en.wikipedia.org/wiki/Advanced_natural_language_processing",
+          "type": "article",
+          "description": "Wikipedia entry covering cutting\u2011edge topics such as transformers, multilingual models, and zero\u2011shot learning."
+        }
+      ]
+    },
+    {
+      "assignment_title": "Transfer Learning and Attention Mechanisms Practice",
+      "resources": [
+        {
+          "title": "Attention Mechanism in Transformers \u2013 Explained",
+          "url": "https://www.youtube.com/watch?v=K9aZz2K8B0c",
+          "type": "article",
+          "description": "YouTube video that breaks down attention mechanisms and shows how to fine\u2011tune pretrained models for transfer learning."
+        }
+      ]
+    },
+    {
+      "assignment_title": "NLP Project Application",
+      "resources": [
+        {
+          "title": "Natural language processing applications",
+          "url": "https://en.wikipedia.org/wiki/Natural_language_processing#Applications",
+          "type": "article",
+          "description": "Comprehensive list of real\u2011world NLP applications to inspire project ideas."
+        }
+      ]
+    },
+    {
+      "assignment_title": "NLP Project Planning Checklist",
+      "resources": [
+        {
+          "title": "MIT OpenCourseWare \u2013 6.864 Advanced Natural Language Processing",
+          "url": "https://ocw.mit.edu/courses/6-864-advanced-natural-language-processing-fall-2020/",
           "type": "documentation",
-          "description": "MIT OpenCourseWare notes covering set operations, proofs, and related reasoning techniques."
+          "description": "Course page with syllabus, project guidelines, and a checklist for planning an NLP project."
         }
       ]
     },
     {
-      "assignment_title": "Set Theory and Proofs Quiz",
+      "assignment_title": "Final Project Preparation",
       "resources": [
         {
-          "title": "Set Theory Practice Quiz",
-          "url": "https://www.khanacademy.org/math/algebra2/x2ec2f6f8305b6d5d:set-theory/e/set-theory-quiz",
+          "title": "Machine learning project lifecycle",
+          "url": "https://en.wikipedia.org/wiki/Machine_learning#Project_lifecycle",
           "type": "article",
-          "description": "Khan Academy quiz that tests understanding of set notation, operations, and basic proof concepts."
+          "description": "Wikipedia overview of the stages of a machine\u2011learning project, useful for final project preparation."
         }
       ]
     },
     {
-      "assignment_title": "Relations and Functions Worksheet",
+      "assignment_title": "Key Concepts Review Quiz",
       "resources": [
         {
-          "title": "Relations and Functions Practice",
-          "url": "https://www.khanacademy.org/math/class-12-bridge/x09646558c1ff0797:set-theory/x09646558c1ff0797:relations",
+          "title": "Natural language processing \u2013 Review Quiz",
+          "url": "https://www.khanacademy.org/computing/computer-science/ai/natural-language-processing/v/nlp-review-quiz",
           "type": "article",
-          "description": "Khan Academy worksheet focusing on writing relations in roster and set\u2011builder form and connecting them to functions."
-        }
-      ]
-    },
-    {
-      "assignment_title": "Relations and Functions Quiz",
-      "resources": [
-        {
-          "title": "Relations and Functions Quiz",
-          "url": "https://www.khanacademy.org/math/class-12-bridge/x09646558c1ff0797:set-theory/x09646558c1ff0797:relations/e/relations-quiz",
-          "type": "article",
-          "description": "A short Khan Academy quiz assessing knowledge of relations, domains, ranges, and function identification."
-        }
-      ]
-    },
-    {
-      "assignment_title": "Graph Theory Fundamentals Checklist",
-      "resources": [
-        {
-          "title": "Graph Theory Lecture Notes (MIT OCW)",
-          "url": "https://ocw.mit.edu/courses/6-042j-mathematics-for-computer-science-fall-2005/pages/lecture-notes/",
-          "type": "documentation",
-          "description": "MIT OpenCourseWare notes that outline basic graph terminology, representations, and fundamental properties."
-        }
-      ]
-    },
-    {
-      "assignment_title": "Graph Theory Introduction Quiz",
-      "resources": [
-        {
-          "title": "Introduction to Graph Theory (Khan Academy)",
-          "url": "https://www.youtube.com/watch?v=09_LlH5JvZc",
-          "type": "video",
-          "description": "Khan Academy YouTube video introducing vertices, edges, and basic graph concepts, suitable for a quiz review."
-        }
-      ]
-    },
-    {
-      "assignment_title": "Graph Traversability and Applications Worksheet",
-      "resources": [
-        {
-          "title": "Graph Traversal Practice",
-          "url": "https://www.khanacademy.org/computing/computer-science/algorithms/graph-traversal/e/graph-traversal-worksheet",
-          "type": "article",
-          "description": "Khan Academy worksheet that guides students through depth\u2011first and breadth\u2011first search and real\u2011world applications."
-        }
-      ]
-    },
-    {
-      "assignment_title": "Graph Theory Quiz",
-      "resources": [
-        {
-          "title": "Graph Theory Quiz",
-          "url": "https://www.khanacademy.org/computing/computer-science/algorithms/graph-representation/e/graph-quiz",
-          "type": "article",
-          "description": "A Khan Academy quiz covering graph representation, traversal, and basic properties."
-        }
-      ]
-    },
-    {
-      "assignment_title": "Combinatorics Fundamentals Checklist",
-      "resources": [
-        {
-          "title": "Combinatorics Lecture Notes (MIT OCW)",
-          "url": "https://ocw.mit.edu/courses/6-042j-mathematics-for-computer-science-fall-2005/pages/lecture-notes/",
-          "type": "documentation",
-          "description": "MIT OpenCourseWare notes that summarize counting principles, permutations, combinations, and basic proofs."
-        }
-      ]
-    },
-    {
-      "assignment_title": "Combinatorics Introduction Quiz",
-      "resources": [
-        {
-          "title": "Combinatorics Practice Quiz",
-          "url": "https://www.khanacademy.org/math/discrete-math/combinatorics/e/combinatorics-quiz",
-          "type": "article",
-          "description": "Khan Academy quiz testing fundamental counting techniques and basic combinatorial reasoning."
-        }
-      ]
-    },
-    {
-      "assignment_title": "Advanced Combinatorics Worksheet",
-      "resources": [
-        {
-          "title": "Advanced Combinatorics",
-          "url": "https://brilliant.org/wiki/combinatorics/",
-          "type": "article",
-          "description": "Brilliant.org article covering inclusion\u2011exclusion, generating functions, and recurrence relations for advanced problems."
-        }
-      ]
-    },
-    {
-      "assignment_title": "Combinatorics Quiz",
-      "resources": [
-        {
-          "title": "Combinatorics Quiz (Khan Academy)",
-          "url": "https://www.khanacademy.org/math/discrete-math/combinatorics/e/combinatorics-quiz-2",
-          "type": "article",
-          "description": "A follow\u2011up Khan Academy quiz focusing on more challenging combinatorial concepts."
-        }
-      ]
-    },
-    {
-      "assignment_title": "Final Project",
-      "resources": [
-        {
-          "title": "Discrete Mathematics Overview",
-          "url": "https://en.wikipedia.org/wiki/Discrete_mathematics",
-          "type": "article",
-          "description": "Wikipedia article providing a broad overview of discrete mathematics topics to inspire final project ideas."
+          "description": "Khan Academy quiz covering core NLP concepts, suitable for a final review."
         }
       ]
     }

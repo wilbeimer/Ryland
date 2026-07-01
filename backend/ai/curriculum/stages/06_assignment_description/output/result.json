@@ -2,187 +2,204 @@
   "assignments": [
     {
       "week": 1,
-      "title": "Introduction to Discrete Mathematics Quiz",
+      "title": "Basic Arithmetic Operations Quiz",
       "type": "quiz",
-      "description": "The Introduction to Discrete Mathematics Quiz assesses your understanding of the fundamental concepts of discrete mathematics, including sets, relations, and functions. This quiz will cover the basic definitions, properties, and operations of these mathematical structures.",
+      "description": "In this quiz, students will demonstrate their understanding of basic arithmetic operations, including addition, subtraction, multiplication, and division. The quiz will assess their ability to perform calculations and solve problems using these operations.",
       "requirements": [
-        "Read chapters 1-2 of the textbook 'Discrete Mathematics and Its Applications' by Kenneth H. Rosen.",
-        "Review the lecture notes and class discussions on the introduction to discrete mathematics.",
-        "Complete the practice problems provided in the textbook and class materials.",
-        "The quiz will consist of multiple-choice questions, short-answer questions, and problem-solving questions.",
-        "You are expected to demonstrate an understanding of the definitions and properties of sets, relations, and functions, as well as basic operations and proofs involving these structures."
+        "Students must complete a series of multiple-choice questions that test their knowledge of basic arithmetic operations.",
+        "Students must solve a set of problems that require the application of arithmetic operations to find the solution.",
+        "The quiz will have a time limit of 30 minutes.",
+        "Students are expected to show their work and calculations for each problem."
       ]
     },
     {
       "week": 1,
-      "title": "Set Theory and Relations Worksheet",
+      "title": "Introduction to Mathematical Reasoning Written Assignment",
       "type": "written",
-      "description": "Complete the Set Theory and Relations Worksheet by solving problems related to set theory and relations. The worksheet will cover topics such as set operations, relations, and functions. Students are expected to demonstrate their understanding of these concepts by providing step-by-step solutions to the problems.",
+      "description": "In this written assignment, you will demonstrate your understanding of basic mathematical concepts and develop your skills in mathematical reasoning. You are expected to provide clear and concise solutions to a series of problems that cover fundamental arithmetic operations, algebraic expressions, and logical reasoning.",
       "requirements": [
-        "Read sections 1.1-1.5 in the textbook 'Discrete Mathematics and Its Applications' by Kenneth H. Rosen to review set theory and relations concepts.",
-        "Complete all problems on the Set Theory and Relations Worksheet, showing all work and explanations.",
-        "Ensure that all solutions are clearly labeled and organized.",
-        "Submit the completed worksheet as a typed document or handwritten with clear, legible writing."
+        "Read and review chapters 1-2 in the textbook 'Mathematics: A Very Short Introduction' by Timothy Gowers.",
+        "Complete the following problems and provide detailed solutions:",
+        "Solve 5 arithmetic expressions with fractions and decimals.",
+        "Simplify 3 algebraic expressions using basic laws of arithmetic.",
+        "Explain the reasoning behind your solutions to 2 logical reasoning questions.",
+        "Your submission should include all work and solutions, clearly labeled and organized.",
+        "The assignment should be submitted in a format that is easy to read and understand (e.g., typed or neatly handwritten)."
       ]
     },
     {
       "week": 2,
-      "title": "Set Operations and Proofs Checklist",
+      "title": "Algebra Basics Checklist",
       "type": "checklist",
-      "description": "For this assignment, students will complete a checklist to demonstrate their understanding of set operations and proofs. The checklist will cover the following topics: union and intersection of sets, difference and complement of sets, and basic proof techniques. Students should review the relevant sections in the textbook and complete the checklist accurately.",
+      "description": "For this assignment, students will review the fundamental concepts of algebra, including variables, expressions, and basic equations. The goal is to ensure students have a solid understanding of algebra basics, which will be crucial for more advanced mathematical concepts throughout the course.",
       "requirements": [
-        "Define and provide examples of set union, intersection, difference, and complement.",
-        "Apply basic proof techniques to verify set equalities.",
-        "Complete the checklist accurately and thoroughly."
+        "Review the sections in the textbook that cover variables, expressions, and basic equations.",
+        "Complete a self-assessment checklist that covers the following topics: defining variables, simplifying expressions, solving basic linear equations, and understanding the order of operations.",
+        "Verify your understanding by checking your answers against the textbook examples and solutions.",
+        "Submit your completed checklist to demonstrate your mastery of algebra basics."
       ]
     },
     {
       "week": 2,
-      "title": "Set Theory and Proofs Quiz",
+      "title": "Solving Simple Equations Quiz",
       "type": "quiz",
-      "description": "In this quiz, students will demonstrate their understanding of set theory and proofs by answering a series of questions that test their knowledge of set operations, properties of relations, and basic proof techniques. The quiz will cover topics such as union, intersection, and difference of sets, as well as direct proofs and proof by contrapositive.",
+      "description": "For this quiz, students will need to demonstrate their ability to solve simple equations. The quiz will consist of a set of equations that require basic algebraic manipulations to solve for the variable. Students should be able to apply basic algebraic properties and operations to isolate the variable and find its value.",
       "requirements": [
-        "Read sections 2.1-2.3 in the textbook to review set operations and properties of relations.",
-        "Complete the provided practice problems on set theory and proofs before taking the quiz.",
-        "Answer all questions to the best of your ability, showing work and explanations as needed.",
-        "The quiz will consist of multiple-choice, short-answer, and problem-solving questions."
+        "Solve linear equations with one variable",
+        "Apply basic algebraic properties (e.g., addition, subtraction, multiplication, division) to isolate the variable",
+        "Simplify expressions and equations",
+        "Show all work and steps to solve the equations"
       ]
     },
     {
       "week": 3,
-      "title": "Relations and Functions Worksheet",
+      "title": "Geometric Concepts Written Assignment",
       "type": "written",
-      "description": "For this written assignment, students will apply their understanding of relations and functions to solve a series of problems. The worksheet will cover topics such as identifying relations and functions, determining the domain and range of a relation or function, and applying set theory concepts to relations and functions.",
+      "description": "For this written assignment, students will demonstrate their understanding of basic geometric concepts, including points, lines, angles, and planes. Students should provide clear and concise explanations, using relevant mathematical terminology and notation. The assignment will assess students' ability to apply geometric concepts to solve problems and explain their reasoning.",
       "requirements": [
-        "Complete the provided worksheet problems on relations and functions, showing all work and explanations.",
-        "Ensure that all answers are clearly labeled and correspond to the correct problem number.",
-        "Use proper mathematical notation and terminology throughout the worksheet.",
-        "Check all work for accuracy and completeness before submission."
+        "Define and explain the concepts of points, lines, angles, and planes, including their notation and representation.",
+        "Provide examples of each concept, illustrating their properties and relationships.",
+        "Solve problems involving basic geometric concepts, such as finding angle measures, identifying types of angles, and determining properties of lines and planes.",
+        "Use proper mathematical terminology and notation throughout the assignment.",
+        "Show all work and calculations, and provide clear explanations for each step."
       ]
     },
     {
       "week": 3,
-      "title": "Relations and Functions Quiz",
-      "type": "quiz",
-      "description": "For this quiz, students will demonstrate their understanding of relations and functions in discrete mathematics. The quiz will assess their ability to define and identify relations and functions, understand the properties of relations (reflexive, symmetric, transitive), and apply function concepts (one-to-one, onto, composition).",
+      "title": "Points, Lines, and Angles Checklist",
+      "type": "checklist",
+      "description": "In this checklist, students will review and demonstrate their understanding of fundamental geometric concepts, including points, lines, and angles. Students should identify and describe the characteristics of each concept, including definitions, properties, and relationships.",
       "requirements": [
-        "Complete a multiple-choice section testing knowledge of relation and function definitions, properties, and types.",
-        "Solve short-answer problems that require identifying and explaining properties of given relations and functions.",
-        "Work through a few proof-based questions that ask students to verify if a relation is reflexive, symmetric, or transitive, or to determine if a function is one-to-one or onto."
+        "Define and explain the concept of a point in geometry.",
+        "Describe the different types of lines (e.g., line segment, ray, line) and their properties.",
+        "Identify and explain the different types of angles (e.g., acute, obtuse, right, straight) and their properties.",
+        "Provide examples of real-world applications of points, lines, and angles.",
+        "Complete a self-assessment checklist to verify understanding of the concepts."
       ]
     },
     {
       "week": 4,
-      "title": "Graph Theory Fundamentals Checklist",
-      "type": "checklist",
-      "description": "For this assignment, students will complete a checklist to demonstrate their understanding of the fundamental concepts in graph theory. The checklist will cover key terms, definitions, and basic properties of graphs, including types of graphs, graph representations, and basic graph algorithms.",
+      "title": "Calculus Introduction Quiz",
+      "type": "quiz",
+      "description": "In this quiz, students will demonstrate their understanding of the basic concepts of calculus, including limits, derivatives, and the fundamental theorems of calculus. The quiz will assess students' ability to apply mathematical reasoning and problem-solving skills to solve calculus-related problems.",
       "requirements": [
-        "Define and identify basic graph terminology, including vertices, edges, degree, and adjacency.",
-        "Recognize and describe different types of graphs, such as simple graphs, weighted graphs, and directed graphs.",
-        "Understand and apply basic graph representations, including adjacency matrices and adjacency lists.",
-        "Identify and explain basic graph properties, such as connectivity, traversability, and graph isomorphism.",
-        "Complete a series of tasks to demonstrate understanding of graph theory fundamentals, including labeling graph components, identifying graph types, and applying basic graph algorithms."
+        "Read chapters 1-3 of the textbook 'Mathematics: A Very Short Introduction' by Timothy Gowers to review the basic concepts of calculus.",
+        "Complete practice problems related to limits and derivatives to reinforce understanding of the concepts.",
+        "Take a 30-minute quiz consisting of 10 multiple-choice questions and 2 short-answer questions that cover the introduction to calculus, limits, and derivatives.",
+        "Submit the quiz within the given time frame, following the submission guidelines provided in the course."
       ]
     },
     {
       "week": 4,
-      "title": "Graph Theory Introduction Quiz",
-      "type": "quiz",
-      "description": "In this quiz, students will demonstrate their understanding of the fundamental concepts of graph theory, including graphs, vertices, edges, degrees, and basic graph terminology. The quiz will assess students' ability to identify and explain key graph theory concepts, as well as their capacity to apply these concepts to simple problems.",
-      "requirements": [
-        "Read chapters 8-10 in the textbook 'Discrete Mathematics and Its Applications' by Kenneth H. Rosen.",
-        "Complete the study guide for graph theory, focusing on key terms and concepts.",
-        "Take a 30-minute quiz consisting of 10 multiple-choice questions and 2 short-answer questions that cover graph theory basics.",
-        "Submit your quiz answers in the designated format."
-      ]
-    },
-    {
-      "week": 5,
-      "title": "Graph Traversability and Applications Worksheet",
+      "title": "Limits and Derivatives Written Assignment",
       "type": "written",
-      "description": "For this worksheet, students will apply graph theory concepts to solve problems related to graph traversability and its applications. Students should read chapters 10 and 11 in the textbook 'Discrete Mathematics and Its Applications' by Kenneth H. Rosen. They will then complete a series of problems that involve determining if a graph is traversable, finding Euler paths and circuits, and applying these concepts to real-world scenarios.",
+      "description": "For this assignment, students will demonstrate their understanding of limits and derivatives by completing a series of problems that require them to apply mathematical concepts to solve real-world problems. Students should use the concepts learned in class to evaluate limits, find derivatives, and interpret the results in the context of the given problems.",
       "requirements": [
-        "Read chapters 10 and 11 in the textbook 'Discrete Mathematics and Its Applications' by Kenneth H. Rosen.",
-        "Complete the following problems:",
-        "Determine if a given graph is traversable.",
-        "Find Euler paths and circuits in graphs.",
-        "Apply graph traversability concepts to solve real-world problems.",
-        "Show all work and explanations for each problem."
+        "Complete all assigned problems on limits and derivatives from the textbook, specifically focusing on evaluating limits using algebraic manipulation and finding derivatives using the power rule and sum rule.",
+        "Show all work and provide clear explanations for each problem, including a brief description of the mathematical concepts used and the steps taken to solve the problem.",
+        "Use proper mathematical notation and formatting throughout the assignment.",
+        "Submit the assignment in the required format, ensuring that all pages are numbered and the work is organized in a logical and easy-to-follow manner."
       ]
     },
     {
       "week": 5,
-      "title": "Graph Theory Quiz",
-      "type": "quiz",
-      "description": "Complete a quiz that tests your understanding of graph theory concepts covered in week 5, including graph traversability, paths, cycles, and applications. The quiz will consist of multiple-choice questions and short-answer questions that require you to apply graph theory principles to solve problems.",
-      "requirements": [
-        "Review the graph theory concepts covered in week 5, including graph traversability, paths, cycles, and applications.",
-        "Complete the quiz within the given time frame, which will be specified by your instructor.",
-        "Answer all questions accurately, using the concepts and principles learned in week 5.",
-        "For short-answer questions, provide clear and concise solutions, showing all relevant work and explanations."
-      ]
-    },
-    {
-      "week": 6,
-      "title": "Combinatorics Fundamentals Checklist",
+      "title": "Equations and Inequalities Checklist",
       "type": "checklist",
-      "description": "Complete a checklist to demonstrate understanding of the fundamentals of combinatorics. This checklist will cover basic concepts such as permutations, combinations, and basic counting principles. Students should review the relevant sections in the textbook and ensure they can apply these concepts to solve problems.",
+      "description": "For this assignment, students will complete a checklist to demonstrate their understanding of equations and inequalities. The checklist should cover key concepts such as solving linear equations, graphing linear inequalities, and understanding the properties of inequalities. Students are expected to review the relevant sections in the textbook and complete the checklist accurately.",
       "requirements": [
-        "Define and explain the concept of permutations and provide examples.",
-        "Define and explain the concept of combinations and provide examples.",
-        "Apply basic counting principles to solve problems involving permutations and combinations.",
-        "Complete all checklist items accurately and thoroughly."
+        "Define and explain the concept of linear equations and inequalities.",
+        "Solve simple linear equations and inequalities.",
+        "Graph linear inequalities on a coordinate plane.",
+        "Identify and apply the properties of inequalities (e.g., addition, subtraction, multiplication, and division properties).",
+        "Provide examples of real-world applications of equations and inequalities."
+      ]
+    },
+    {
+      "week": 5,
+      "title": "Graphing and Functions Quiz",
+      "type": "quiz",
+      "description": "For this quiz, students will need to demonstrate their understanding of graphing and functions by accurately identifying and interpreting various types of graphs, including linear, quadratic, and other basic functions. Students will be presented with a series of questions that require them to analyze graphs, identify key features such as intercepts, maxima, and minima, and apply their knowledge of functions to solve problems.",
+      "requirements": [
+        "Students must complete all questions within the allotted time.",
+        "Students must achieve a minimum score of 70% to pass.",
+        "Students should review the textbook chapters on graphing and functions, specifically sections on linear and quadratic equations, before attempting the quiz.",
+        "Students should be able to identify and explain the key features of different types of graphs."
       ]
     },
     {
       "week": 6,
-      "title": "Combinatorics Introduction Quiz",
-      "type": "quiz",
-      "description": "This quiz assesses the student's understanding of combinatorial concepts, including permutations, combinations, and binomial coefficients. Students will be expected to apply these concepts to solve problems, demonstrating their ability to reason and calculate accurately. The quiz will cover the material from Chapter 6 of the textbook, 'Discrete Mathematics and Its Applications' by Kenneth H. Rosen.",
-      "requirements": [
-        "Complete all questions within the allotted time frame",
-        "Answer each question to the best of your ability, using the provided space for calculations and explanations as needed",
-        "Do not use any external resources or references during the quiz, except for the provided textbook",
-        "Ensure all work is shown and explanations are clear for each problem",
-        "Submit your quiz as instructed, making sure all pages are included and in the correct order"
-      ]
-    },
-    {
-      "week": 7,
-      "title": "Advanced Combinatorics Worksheet",
+      "title": "Geometric Measurements Written Assignment",
       "type": "written",
-      "description": "For this assignment, students will apply advanced combinatorics concepts to solve complex problems. Using the textbook and class notes, complete the provided worksheet, which includes problems on permutations, combinations, and other advanced combinatorial topics. Show all work and explanations for each problem.",
+      "description": "For this written assignment, students will apply geometric measurement concepts to solve problems involving perimeter, area, and volume of various shapes. Students should refer to Chapter 5 of the textbook 'Mathematics: A Very Short Introduction' by Timothy Gowers, which covers geometric concepts. The assignment should include at least 5 problems that demonstrate an understanding of how to calculate perimeter, area, and volume of different shapes, including rectangles, triangles, circles, and 3D objects. Each problem should be clearly labeled and include any relevant diagrams or formulas used to solve the problem. The assignment should be typed and submitted as a single document.",
       "requirements": [
-        "Complete all problems on the worksheet.",
-        "Show detailed work and explanations for each problem.",
-        "Use proper mathematical notation and terminology.",
-        "Ensure all answers are clearly marked."
+        "Calculate the perimeter and area of at least 2 different polygons",
+        "Calculate the volume of at least 2 different 3D shapes",
+        "Include diagrams or illustrations to support calculations where necessary",
+        "Use proper mathematical notation and formulas throughout the assignment",
+        "Submit the assignment as a typed document with clear labels and headings"
+      ]
+    },
+    {
+      "week": 6,
+      "title": "Perimeter, Area, and Volume Checklist",
+      "type": "checklist",
+      "description": "For this assignment, students will complete a checklist to demonstrate their understanding of perimeter, area, and volume concepts. The checklist will cover various geometric shapes, including triangles, quadrilaterals, polygons, and 3D objects. Students should review the relevant sections in the textbook, 'Mathematics: A Very Short Introduction' by Timothy Gowers, and ensure they can identify and calculate perimeter, area, and volume for each shape.",
+      "requirements": [
+        "Define and explain the concepts of perimeter, area, and volume.",
+        "Identify and calculate the perimeter of triangles, quadrilaterals, and polygons.",
+        "Identify and calculate the area of triangles, quadrilaterals, and polygons.",
+        "Identify and calculate the volume of 3D objects, including prisms and cylinders.",
+        "Complete a checklist with specific problems and examples to demonstrate understanding."
       ]
     },
     {
       "week": 7,
-      "title": "Combinatorics Quiz",
+      "title": "Mathematical Modeling Quiz",
       "type": "quiz",
-      "description": "The student needs to complete a quiz that assesses their understanding of combinatorics concepts covered in week 7, including permutations, combinations, and other counting techniques. The quiz will consist of multiple-choice questions and/or short-answer problems that require the application of combinatorial principles to solve.",
+      "description": "For this quiz, students will apply mathematical concepts to real-world problems. They will analyze a given scenario, identify the relevant mathematical models, and use problem-solving skills to select the correct answers. The quiz will assess students' ability to think critically and make connections between mathematical principles and practical applications.",
       "requirements": [
-        "Review the textbook chapters on combinatorics, specifically sections on permutations and combinations.",
-        "Complete practice problems from the textbook to reinforce understanding of combinatorial concepts.",
-        "Take the quiz within the designated time frame, ensuring to read each question carefully and provide accurate responses."
+        "Read and understand the quiz questions and any provided context.",
+        "Identify the relevant mathematical concepts and models applicable to each question.",
+        "Apply problem-solving strategies to arrive at the correct answers.",
+        "Select the correct answers from the provided options."
+      ]
+    },
+    {
+      "week": 7,
+      "title": "Real-World Applications Written Assignment",
+      "type": "written",
+      "description": "For this written assignment, you will apply mathematical concepts to real-world scenarios. You are expected to select a real-world problem or scenario that interests you and describe how mathematical principles can be used to analyze or solve it. Your response should clearly articulate the problem, explain the mathematical concepts relevant to the problem, and demonstrate how these concepts are applied to find a solution or interpret the results.",
+      "requirements": [
+        "The assignment should be 2-3 pages in length, not including any references or appendices.",
+        "Include a clear and concise statement of the problem.",
+        "Identify and explain the relevant mathematical concepts and principles.",
+        "Apply the mathematical concepts to analyze or solve the problem.",
+        "Provide examples or case studies to support your analysis.",
+        "Cite any sources used in your analysis.",
+        "Submit your assignment in a format compatible with common word processing software."
       ]
     },
     {
       "week": 8,
-      "title": "Final Project",
-      "type": "written",
-      "description": "For the final project, you will apply the concepts learned throughout the course to solve a real-world problem or explore a topic of interest in discrete mathematics. Your project should demonstrate a clear understanding of at least three key concepts covered in the course, such as set theory, relations, graph theory, or combinatorics.",
+      "title": "Key Concepts Review Checklist",
+      "type": "checklist",
+      "description": "In this assignment, you will review and verify your understanding of the key concepts covered throughout the course. You will go through a series of statements or criteria that outline the main ideas and skills you have learned, and you will confirm that you can recall and apply them accurately.",
       "requirements": [
-        "Choose a topic or problem that interests you and is relevant to discrete mathematics.",
-        "Provide a clear statement of the problem or topic and explain its significance.",
-        "Apply at least three key concepts from the course to analyze or solve the problem.",
-        "Include any necessary mathematical derivations, proofs, or algorithms.",
-        "Present your findings in a clear and organized manner, using proper mathematical notation and terminology.",
-        "The final project should be 5-10 pages in length, not including references or appendices.",
-        "Include a bibliography or reference list of sources used in your research."
+        "Review the course materials and notes from weeks 1 to 7.",
+        "Go through the checklist of key concepts provided.",
+        "For each item on the checklist, verify that you understand the concept and can provide a brief example or explanation.",
+        "Submit your completed checklist with confirmation of your understanding for each key concept."
+      ]
+    },
+    {
+      "week": 8,
+      "title": "Practice Problems and Review Quiz",
+      "type": "quiz",
+      "description": "For this quiz, students will review and practice problems covering key concepts from the entire course. The quiz will assess students' understanding of mathematical principles and concepts, including algebra, geometry, calculus, and mathematical reasoning. Students should expect to solve problems that require application of mathematical concepts to various scenarios.",
+      "requirements": [
+        "Complete a set of multiple-choice questions that test understanding of algebraic operations, geometric concepts, and calculus principles.",
+        "Solve short-answer problems that require mathematical reasoning and application of concepts learned throughout the course.",
+        "Review and practice problems from the textbook, specifically chapters related to algebra, geometry, and calculus."
       ]
     }
   ]

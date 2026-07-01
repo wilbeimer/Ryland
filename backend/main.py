@@ -71,7 +71,10 @@ def get_course(id: str, conn=Depends(get_db)):
     row = cur.fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Course not found")
-    return deserialize_course(dict(row))
+
+    result = deserialize_course(dict(row))
+    print(f"get_course status: {result['status']}")
+    return result
 
 
 @app.delete("/courses/{id}", status_code=204)
@@ -187,7 +190,7 @@ def post_submission(submission: SubmissionCreate, background_tasks: BackgroundTa
 def deserialize_course(row: dict) -> dict:
     row["subdomains"] = json.loads(row.get("subdomains") or "[]")
     row["prerequisites"] = json.loads(row.get("prerequisites") or "[]")
-    row["textbook"] = json.loads(row.get("textbook") or "[]")
+    row["textbook"] = json.loads(row.get("textbook") or "{}")
     return row
 
 

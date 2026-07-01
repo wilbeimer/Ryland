@@ -2,92 +2,70 @@
   "weekly_goals": [
     {
       "week": 1,
-      "goal": "Understand the basic principles of set theory and its relevance to discrete mathematics",
+      "goal": "Review basic arithmetic operations and understand the importance of mathematical reasoning",
       "topics": [
-        "Introduction to set theory",
-        "Set operations",
-        "Set properties"
+        "Basic Arithmetic Operations",
+        "Introduction to Mathematical Reasoning"
       ]
     },
     {
       "week": 2,
-      "goal": "Apply set theory to solve problems in discrete mathematics",
+      "goal": "Develop foundational knowledge in algebra, including variables, expressions, and simple equations",
       "topics": [
-        "Set theory applications",
-        "Relations and functions",
-        "Equivalence relations"
+        "Introduction to Algebra",
+        "Variables and Expressions",
+        "Simple Equations"
       ]
     },
     {
       "week": 3,
-      "goal": "Comprehend the fundamental concepts of combinatorics",
+      "goal": "Explore geometric concepts, including points, lines, angles, and basic shapes",
       "topics": [
-        "Introduction to combinatorics",
-        "Permutations and combinations",
-        "Recurrence relations"
+        "Introduction to Geometry",
+        "Points, Lines, and Angles",
+        "Basic Shapes and Properties"
       ]
     },
     {
       "week": 4,
-      "goal": "Analyze and solve combinatorial problems using various techniques",
+      "goal": "Understand basic calculus concepts, including limits, derivatives, and applications",
       "topics": [
-        "Combinatorial proof techniques",
-        "Inclusion-exclusion principle",
-        "Generating functions"
+        "Introduction to Calculus",
+        "Limits and Derivatives",
+        "Applications of Derivatives"
       ]
     },
     {
       "week": 5,
-      "goal": "Understand the basics of graph theory and its applications",
+      "goal": "Apply algebraic techniques to solve equations and inequalities",
       "topics": [
-        "Introduction to graph theory",
-        "Graph terminology",
-        "Graph types"
+        "Solving Equations and Inequalities",
+        "Graphing and Functions"
       ]
     },
     {
       "week": 6,
-      "goal": "Apply graph theory to solve problems in computer science and mathematics",
+      "goal": "Develop problem-solving skills using geometric concepts and measurements",
       "topics": [
-        "Graph algorithms",
-        "Shortest paths",
-        "Network flows"
+        "Geometric Measurements",
+        "Perimeter, Area, and Volume",
+        "Surface Area and Volume of 3D Shapes"
       ]
     },
     {
       "week": 7,
-      "goal": "Study the fundamental principles of number theory",
+      "goal": "Explore real-world applications of mathematical concepts, including finance, science, and engineering",
       "topics": [
-        "Introduction to number theory",
-        "Divisibility and prime numbers",
-        "Congruences"
+        "Mathematical Modeling",
+        "Real-World Applications of Mathematics"
       ]
     },
     {
       "week": 8,
-      "goal": "Analyze and solve problems in number theory using various techniques",
+      "goal": "Review and synthesize key concepts, prepare for final assessment",
       "topics": [
-        "Diophantine equations",
-        "Fermat's little theorem",
-        "Euler's totient function"
-      ]
-    },
-    {
-      "week": 9,
-      "goal": "Integrate knowledge of discrete mathematical structures to solve complex problems",
-      "topics": [
-        "Applications of discrete mathematics",
-        "Case studies",
-        "Project work"
-      ]
-    },
-    {
-      "week": 10,
-      "goal": "Review and apply knowledge of discrete mathematics to real-world scenarios",
-      "topics": [
-        "Review of key concepts",
-        "Practice problems",
-        "Final project presentations"
+        "Review of Key Concepts",
+        "Practice Problems and Review"
       ]
     }
   ]

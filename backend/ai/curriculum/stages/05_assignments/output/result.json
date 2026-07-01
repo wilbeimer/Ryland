@@ -2,83 +2,83 @@
   "assignments": [
     {
       "week": 1,
-      "title": "Introduction to Set Theory Quiz",
+      "title": "Basic Arithmetic Operations Quiz",
       "type": "quiz"
     },
     {
       "week": 1,
-      "title": "Set Operations Exercise",
+      "title": "Introduction to Mathematical Reasoning Written Assignment",
       "type": "written"
     },
     {
       "week": 2,
-      "title": "Set Theory Applications Problem Set",
-      "type": "written"
-    },
-    {
-      "week": 2,
-      "title": "Relations and Functions Checklist",
+      "title": "Algebra Basics Checklist",
       "type": "checklist"
     },
     {
-      "week": 3,
-      "title": "Combinatorics Introduction Quiz",
+      "week": 2,
+      "title": "Solving Simple Equations Quiz",
       "type": "quiz"
     },
     {
       "week": 3,
-      "title": "Permutations and Combinations Exercise",
+      "title": "Geometric Concepts Written Assignment",
       "type": "written"
+    },
+    {
+      "week": 3,
+      "title": "Points, Lines, and Angles Checklist",
+      "type": "checklist"
     },
     {
       "week": 4,
-      "title": "Combinatorial Proof Techniques Problem Set",
+      "title": "Calculus Introduction Quiz",
+      "type": "quiz"
+    },
+    {
+      "week": 4,
+      "title": "Limits and Derivatives Written Assignment",
       "type": "written"
     },
     {
       "week": 5,
-      "title": "Graph Theory Introduction Quiz",
-      "type": "quiz"
-    },
-    {
-      "week": 5,
-      "title": "Graph Terminology Checklist",
+      "title": "Equations and Inequalities Checklist",
       "type": "checklist"
     },
     {
+      "week": 5,
+      "title": "Graphing and Functions Quiz",
+      "type": "quiz"
+    },
+    {
       "week": 6,
-      "title": "Graph Algorithms Problem Set",
+      "title": "Geometric Measurements Written Assignment",
       "type": "written"
     },
     {
+      "week": 6,
+      "title": "Perimeter, Area, and Volume Checklist",
+      "type": "checklist"
+    },
+    {
       "week": 7,
-      "title": "Number Theory Introduction Quiz",
+      "title": "Mathematical Modeling Quiz",
       "type": "quiz"
     },
     {
       "week": 7,
-      "title": "Divisibility and Prime Numbers Exercise",
+      "title": "Real-World Applications Written Assignment",
       "type": "written"
     },
     {
       "week": 8,
-      "title": "Diophantine Equations Problem Set",
-      "type": "written"
-    },
-    {
-      "week": 9,
-      "title": "Discrete Mathematics Case Study",
-      "type": "written"
-    },
-    {
-      "week": 10,
-      "title": "Final Project Presentation",
-      "type": "written"
-    },
-    {
-      "week": 10,
-      "title": "Practice Problems Checklist",
+      "title": "Key Concepts Review Checklist",
       "type": "checklist"
+    },
+    {
+      "week": 8,
+      "title": "Practice Problems and Review Quiz",
+      "type": "quiz"
     }
   ]
 }
