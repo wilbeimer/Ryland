@@ -51,18 +51,13 @@ export default function CoursePage() {
             <p className="course-description">{course.description}</p>
          )}
 
-         {course.textbook?.length > 0 && (
+         {course.textbook?.title && (
             <div className="course-textbook">
                <h2>Course Textbook</h2>
-               <ul>
-                  {course.textbook.map((t, i) => (
-                     <li key={i}>
-                        <a href={t.url} target="_blank" rel="noreferrer">{t.title}</a>
-                        <span className="author">{t.author}</span>
-                        <p>{t.description}</p>
-                     </li>
-                  ))}
-               </ul>
+
+               <a href={course.textbook.url} target="_blank" rel="noreferrer">{course.textbook.title}</a>
+               <span className="author">{course.textbook.author}</span>
+               <p>{course.textbook.description}</p>
             </div>
          )}
 
