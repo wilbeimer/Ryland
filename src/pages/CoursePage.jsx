@@ -55,7 +55,11 @@ export default function CoursePage() {
             <div className="course-textbook">
                <h2>Course Textbook</h2>
 
-               <a href={course.textbook.url} target="_blank" rel="noreferrer">{course.textbook.title}</a>
+               {course.textbook?.url ? (
+                  <a href={course.textbook.url} target="_blank" rel="noreferrer">{course.textbook.title}</a>
+               ) : (
+                     <span>{course.textbook.title}</span>
+               )}
                <span className="author">{course.textbook.author}</span>
                <p>{course.textbook.description}</p>
             </div>
