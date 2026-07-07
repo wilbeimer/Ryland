@@ -16,7 +16,7 @@ Return as JSON:
         {
             "week": 1,
             "title": "...",
-            "type": "quiz | written | checklist"
+            "type": "written | checklist"
         }
     ]
 }
