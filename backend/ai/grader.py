@@ -20,7 +20,7 @@ def grade_submission(submission_id: str, submission: SubmissionCreate):
         assignment = dict(row)
         assignment["requirements"] = json.loads(assignment.get("requirements") or "[]")
 
-        result_01 = run_stage("01_analyze", {
+        _ = run_stage("01_analyze", {
             "submission_content": submission.content,
             "assignment_title": assignment["title"],
             "assignment_description": assignment["description"],
