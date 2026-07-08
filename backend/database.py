@@ -3,7 +3,7 @@ import sqlite3
 
 def init_db():
     print("initializing db...")
-    conn = sqlite3.connect('curriculum.db')
+    conn = sqlite3.connect("curriculum.db")
     cur = conn.cursor()
 
     cur.execute("""
@@ -69,7 +69,7 @@ def init_db():
 
 
 def get_db():
-    conn = sqlite3.connect('curriculum.db', check_same_thread=False, timeout=30)
+    conn = sqlite3.connect("curriculum.db", check_same_thread=False, timeout=30)
     conn.row_factory = sqlite3.Row
     try:
         yield conn

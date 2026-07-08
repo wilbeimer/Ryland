@@ -4,10 +4,14 @@ import uuid
 import json
 from backend.database import init_db, get_db
 from backend.models import (
-    CourseCreate, Course,
-    Week, WeekCreate,
-    Assignment, AssignmentCreate,
-    Submission, SubmissionCreate
+    CourseCreate,
+    Course,
+    Week,
+    WeekCreate,
+    Assignment,
+    AssignmentCreate,
+    Submission,
+    SubmissionCreate,
 )
 from backend.ai.curriculum import generate_curriculum
 from backend.ai.grader import grade_submission
@@ -32,6 +36,7 @@ def root():
 
 # --- Courses ---
 
+
 @app.get("/courses", response_model=list[Course])
 def get_courses(conn=Depends(get_db)):
     cur = conn.cursor()
@@ -41,15 +46,20 @@ def get_courses(conn=Depends(get_db)):
 
 
 @app.post("/courses", response_model=dict)
-def post_course(course: CourseCreate, background_tasks: BackgroundTasks, conn=Depends(get_db)):
+def post_course(
+    course: CourseCreate, background_tasks: BackgroundTasks, conn=Depends(get_db)
+):
 
     cur = conn.cursor()
     course_id = str(uuid.uuid4())
 
-    cur.execute("""
+    cur.execute(
+        """
         INSERT INTO courses (id, name, color, status)
         VALUES (?, ?, ?, ?)
-    """, (course_id, course.name, course.color, "pending"))
+    """,
+        (course_id, course.name, course.color, "pending"),
+    )
 
     conn.commit()
 
@@ -60,7 +70,7 @@ def post_course(course: CourseCreate, background_tasks: BackgroundTasks, conn=De
         "id": course_id,
         "name": course.name,
         "color": course.color,
-        "status": "pending"
+        "status": "pending",
     }
 
 
@@ -86,6 +96,7 @@ def delete_course(id: str, conn=Depends(get_db)):
 
 # --- Weeks ---
 
+
 @app.get("/courses/{id}/weeks", response_model=list[Week])
 def get_weeks(id: str, conn=Depends(get_db)):
     cur = conn.cursor()
@@ -98,15 +109,19 @@ def get_weeks(id: str, conn=Depends(get_db)):
 def post_week(week: WeekCreate, conn=Depends(get_db)):
     cur = conn.cursor()
     week_id = str(uuid.uuid4())
-    cur.execute("""
+    cur.execute(
+        """
         INSERT INTO course_weeks (id, courseId, week, goal, topics)
         VALUES (?, ?, ?, ?, ?)
-    """, (week_id, week.courseId, week.week, week.goal, json.dumps(week.topics)))
+    """,
+        (week_id, week.courseId, week.week, week.goal, json.dumps(week.topics)),
+    )
     conn.commit()
     return {"id": week_id, **week.model_dump()}
 
 
 # --- Assignments ---
+
 
 @app.get("/courses/{id}/assignments", response_model=list[Assignment])
 def get_assignments(id: str, conn=Depends(get_db)):
@@ -120,15 +135,26 @@ def get_assignments(id: str, conn=Depends(get_db)):
 def post_assignment(assignment: AssignmentCreate, conn=Depends(get_db)):
     cur = conn.cursor()
     assignment_id = str(uuid.uuid4())
-    cur.execute("""
+    cur.execute(
+        """
         INSERT INTO assignments (id, courseId, weekId, week, title, type, description, requirements, dueDate, points, content, rubric)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, (
-        assignment_id, assignment.courseId, assignment.weekId, assignment.week,
-        assignment.title, assignment.type, assignment.description,
-        json.dumps(assignment.requirements),
-        assignment.dueDate, assignment.points, assignment.content, assignment.rubric
-    ))
+    """,
+        (
+            assignment_id,
+            assignment.courseId,
+            assignment.weekId,
+            assignment.week,
+            assignment.title,
+            assignment.type,
+            assignment.description,
+            json.dumps(assignment.requirements),
+            assignment.dueDate,
+            assignment.points,
+            assignment.content,
+            assignment.rubric,
+        ),
+    )
     conn.commit()
     return {"id": assignment_id, **assignment.model_dump()}
 
@@ -144,6 +170,7 @@ def get_assignment(id: str, conn=Depends(get_db)):
 
 
 # --- Submissions ---
+
 
 @app.get("/assignments/{id}/submissions", response_model=list[Submission])
 def get_submissions(id: str, conn=Depends(get_db)):
@@ -164,14 +191,21 @@ def get_submission(id: str, conn=Depends(get_db)):
 
 
 @app.post("/submissions", response_model=Submission)
-def post_submission(submission: SubmissionCreate, background_tasks: BackgroundTasks, conn=Depends(get_db)):
+def post_submission(
+    submission: SubmissionCreate,
+    background_tasks: BackgroundTasks,
+    conn=Depends(get_db),
+):
     cur = conn.cursor()
     submission_id = str(uuid.uuid4())
 
-    cur.execute("""
+    cur.execute(
+        """
         INSERT INTO submissions (id, assignmentId, content, status)
         VALUES (?, ?, ?, ?)
-    """, (submission_id, submission.assignmentId, submission.content, "pending"))
+    """,
+        (submission_id, submission.assignmentId, submission.content, "pending"),
+    )
 
     conn.commit()
 
@@ -181,11 +215,12 @@ def post_submission(submission: SubmissionCreate, background_tasks: BackgroundTa
         "id": submission_id,
         "assignmentId": submission.assignmentId,
         "content": submission.content,
-        "status": "pending"
+        "status": "pending",
     }
 
 
 # --- Deserializers ---
+
 
 def deserialize_course(row: dict) -> dict:
     row["subdomains"] = json.loads(row.get("subdomains") or "[]")

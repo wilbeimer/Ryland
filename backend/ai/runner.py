@@ -5,7 +5,6 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import time
 
-
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -17,14 +16,15 @@ DEFAULT_SYSTEM_PROMPT = "You are an expert AI assistant. Return only valid JSON,
 DEFAULT_MODEL = "meta-llama/llama-4-scout-17b-16e-instruct"
 FALLBACK_MODELS = [
     "meta-llama/llama-4-scout-17b-16e-instruct",  # 30K TPM, 500K TPD
-    "llama-3.3-70b-versatile",                     # 12K TPM, 100K TPD
-    "qwen/qwen3-32b",                               # 6K TPM, 500K TPD
-    "llama-3.1-8b-instant",                         # 6K TPM, 500K TPD
-    "allam-2-7b",                                   # 6K TPM, 500K TPD
+    "llama-3.3-70b-versatile",  # 12K TPM, 100K TPD
+    "qwen/qwen3-32b",  # 6K TPM, 500K TPD
+    "llama-3.1-8b-instant",  # 6K TPM, 500K TPD
+    "allam-2-7b",  # 6K TPM, 500K TPD
 ]
 
 
 # --- Model ---
+
 
 def call_model(prompt: str, system_prompt: str, model: str = DEFAULT_MODEL) -> str:
     models_to_try = [model] + [m for m in FALLBACK_MODELS if m != model]
@@ -36,9 +36,9 @@ def call_model(prompt: str, system_prompt: str, model: str = DEFAULT_MODEL) -> s
                 model=m,
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": prompt},
                 ],
-                max_tokens=4000
+                max_tokens=4000,
             )
             content = response.choices[0].message.content
             if content is None:
@@ -70,7 +70,8 @@ def parse_json_response(content: str) -> dict:
         return json.loads(content, strict=False)
     except json.JSONDecodeError:
         import re
-        content = re.sub(r'\\(?!["\\/bfnrtu])', r'\\\\', content)
+
+        content = re.sub(r'\\(?!["\\/bfnrtu])', r"\\\\", content)
         return json.loads(content, strict=False)
 
 
@@ -103,7 +104,9 @@ def load_references(stage_path: Path) -> str:
     return references
 
 
-def load_previous_outputs(stage_name: str, depends_on: list | None, stages_dir: Path) -> dict:
+def load_previous_outputs(
+    stage_name: str, depends_on: list | None, stages_dir: Path
+) -> dict:
     previous_outputs = {}
     if depends_on is None:
         for prev_stage in sorted(stages_dir.iterdir()):
@@ -122,7 +125,14 @@ def load_previous_outputs(stage_name: str, depends_on: list | None, stages_dir: 
 
 # --- Prompt building ---
 
-def build_prompt(identity_md: str, workspace_context: str, context: str, references: str, previous_outputs: dict) -> str:
+
+def build_prompt(
+    identity_md: str,
+    workspace_context: str,
+    context: str,
+    references: str,
+    previous_outputs: dict,
+) -> str:
     return f"""
 {identity_md}
 
@@ -148,7 +158,14 @@ def build_prompt(identity_md: str, workspace_context: str, context: str, referen
 
 
 # --- Stage execution ---
-def run_loop_stage(loop_over: str, full_prompt: str, previous_outputs: dict, merge_item: bool, system_prompt: str, model: str) -> dict:
+def run_loop_stage(
+    loop_over: str,
+    full_prompt: str,
+    previous_outputs: dict,
+    merge_item: bool,
+    system_prompt: str,
+    model: str,
+) -> dict:
     items = None
     for stage_output in previous_outputs.values():
         if loop_over in stage_output:
@@ -166,7 +183,7 @@ def run_loop_stage(loop_over: str, full_prompt: str, previous_outputs: dict, mer
         content = call_model(
             full_prompt + f"\n\n## Current Item\n{json.dumps(item, indent=2)}",
             system_prompt,
-            model
+            model,
         )
         result = parse_json_response(content)
         if merge_item:
@@ -188,7 +205,11 @@ def run_loop_stage(loop_over: str, full_prompt: str, previous_outputs: dict, mer
     return {loop_over: [results[i] for i in range(len(items))]}
 
 
-def run_stage(stage_name: str, user_inputs: dict = {}, stages_dir: Path = AI_DIR / "curriculum" / "stages") -> dict:
+def run_stage(
+    stage_name: str,
+    user_inputs: dict = {},
+    stages_dir: Path = AI_DIR / "curriculum" / "stages",
+) -> dict:
     print(f"Running stage {stage_name}")
 
     stage_path = stages_dir / stage_name
@@ -198,18 +219,29 @@ def run_stage(stage_name: str, user_inputs: dict = {}, stages_dir: Path = AI_DIR
     identity_md, workspace_context, system_prompt = load_pipeline_context(stages_dir)
     meta, context = load_stage_context(stage_path)
     references = load_references(stage_path)
-    previous_outputs = load_previous_outputs(stage_name, meta.get("depends_on"), stages_dir)
+    previous_outputs = load_previous_outputs(
+        stage_name, meta.get("depends_on"), stages_dir
+    )
 
     for key, value in user_inputs.items():
         context = context.replace(f"{{{key}}}", str(value))
 
-    full_prompt = build_prompt(identity_md, workspace_context, context, references, previous_outputs)
+    full_prompt = build_prompt(
+        identity_md, workspace_context, context, references, previous_outputs
+    )
 
     loop_over = meta.get("loop_over")
     model = meta.get("model", DEFAULT_MODEL)
 
     if loop_over:
-        result = run_loop_stage(loop_over, full_prompt, previous_outputs, meta.get("merge_item", False), system_prompt, model)
+        result = run_loop_stage(
+            loop_over,
+            full_prompt,
+            previous_outputs,
+            meta.get("merge_item", False),
+            system_prompt,
+            model,
+        )
     else:
         content = call_model(full_prompt, system_prompt, model)
         result = parse_json_response(content)

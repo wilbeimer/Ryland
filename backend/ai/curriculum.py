@@ -11,10 +11,13 @@ STAGES_DIR = os.path.join(os.path.dirname(__file__), "curriculum", "stages")
 
 def get_stages():
     """Return stage folder names in order."""
-    stages = sorted([
-        d for d in os.listdir(STAGES_DIR)
-        if os.path.isdir(os.path.join(STAGES_DIR, d))
-    ])
+    stages = sorted(
+        [
+            d
+            for d in os.listdir(STAGES_DIR)
+            if os.path.isdir(os.path.join(STAGES_DIR, d))
+        ]
+    )
     return stages
 
 
@@ -33,10 +36,13 @@ def generate_curriculum(course_id: str, course: CourseCreate):
             if stage in SKIP_STAGES:
                 continue
             if i == 0:
-                results[stage] = run_stage(stage, {
-                    "course_name": course.name,
-                    "course_description": course.description
-                })
+                results[stage] = run_stage(
+                    stage,
+                    {
+                        "course_name": course.name,
+                        "course_description": course.description,
+                    },
+                )
             else:
                 results[stage] = run_stage(stage)
 
@@ -55,7 +61,8 @@ def generate_curriculum(course_id: str, course: CourseCreate):
             resources_map[item["assignment_title"]] = item.get("resources", [])
 
         # Insert course
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE courses SET
                 description = ?,
                 domain = ?,
@@ -66,29 +73,42 @@ def generate_curriculum(course_id: str, course: CourseCreate):
                 status = 'completed',
                 textbook = ?
             WHERE id = ?
-        """, (
-            r01["description"],
-            r01["domain"],
-            json.dumps(r01["subdomains"]),
-            json.dumps(r01["prerequisites"]),
-            r03["weeks"],
-            r03["hours_per_week"],
-            json.dumps(r02.get("textbook", {})),
-            course_id
-        ))
+        """,
+            (
+                r01["description"],
+                r01["domain"],
+                json.dumps(r01["subdomains"]),
+                json.dumps(r01["prerequisites"]),
+                r03["weeks"],
+                r03["hours_per_week"],
+                json.dumps(r02.get("textbook", {})),
+                course_id,
+            ),
+        )
 
         if cur.rowcount == 0:
-            raise RuntimeError(f"Course update matched 0 rows for id={course_id} — check parameter order")
+            raise RuntimeError(
+                f"Course update matched 0 rows for id={course_id} — check parameter order"
+            )
 
         # Insert weeks
         week_id_map = {}
         for week in r04["weekly_goals"]:
             week_id = str(uuid.uuid4())
             week_id_map[week["week"]] = week_id
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO course_weeks (id, courseId, week, goal, topics)
                 VALUES (?, ?, ?, ?, ?)
-            """, (week_id, course_id, week["week"], week["goal"], json.dumps(week["topics"])))
+            """,
+                (
+                    week_id,
+                    course_id,
+                    week["week"],
+                    week["goal"],
+                    json.dumps(week["topics"]),
+                ),
+            )
 
         print(f"course rows affected: {cur.rowcount}")
 
@@ -106,19 +126,23 @@ def generate_curriculum(course_id: str, course: CourseCreate):
 
             print("YouTube fetch complete, saving to db...")
 
-            cur.execute("""
+            cur.execute(
+                """
                 INSERT INTO assignments (id, courseId, weekId, week, title, type, description, requirements, resources)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                str(uuid.uuid4()), course_id,
-                week_id_map.get(assignment["week"], ""),
-                assignment["week"],
-                assignment["title"],
-                assignment["type"],
-                assignment["description"],
-                json.dumps(assignment["requirements"]),
-                json.dumps(videos),
-            ))
+            """,
+                (
+                    str(uuid.uuid4()),
+                    course_id,
+                    week_id_map.get(assignment["week"], ""),
+                    assignment["week"],
+                    assignment["title"],
+                    assignment["type"],
+                    assignment["description"],
+                    json.dumps(assignment["requirements"]),
+                    json.dumps(videos),
+                ),
+            )
 
             print(f"assignment rows affected: {cur.rowcount}")
 
@@ -127,6 +151,7 @@ def generate_curriculum(course_id: str, course: CourseCreate):
         conn.commit()
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         conn.rollback()
         cur.execute("UPDATE courses SET status = 'failed' WHERE id = ?", (course_id,))
