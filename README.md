@@ -1,8 +1,8 @@
-# Personal Curriculum
+# Ryland
 
 > An AI-powered curriculum generation platform that builds personalized learning plans using a staged, multi-agent workflow.
 
-Personal Curriculum transforms high-level learning goals into structured curricula, assignments, quizzes, and educational resources. Specialized AI agents collaborate to plan the curriculum, retrieve supporting content from external APIs, and generate personalized feedback through a separate grading pipeline.
+Rylan transforms high-level learning goals into structured curricula, assignments, quizzes, and educational resources. Specialized AI agents collaborate to plan the curriculum, retrieve supporting content from external APIs, and generate personalized feedback through a separate grading pipeline.
 
 Built with **Python, FastAPI, React, SQLite, and Groq LLMs**.des an AI grading pipeline that analyzes student submissions, assigns scores, and generates personalized feedback using a staged reasoning process.
 
@@ -26,7 +26,7 @@ Built with **Python, FastAPI, React, SQLite, and Groq LLMs**.des an AI grading p
 
 One of the biggest challenges when learning a new subject isn't finding information—it's deciding **what to learn next**.
 
-I built Personal Curriculum to automate that planning process. Instead of manually organizing tutorials, articles, and projects into a coherent roadmap, users describe what they want to learn, and the system generates a structured curriculum complete with assignments and supporting resources.
+I built Rylan to automate that planning process. Instead of manually organizing tutorials, articles, and projects into a coherent roadmap, users describe what they want to learn, and the system generates a structured curriculum complete with assignments and supporting resources.
 
 This project also serves as a way to explore agentic AI systems that combine LLM reasoning with external tools.
 
