@@ -26,7 +26,7 @@ def generate_curriculum(course_id: str, course: CourseCreate):
         stages = get_stages()
         results = {}
 
-        SKIP_STAGES = {"07_assignment_resources"}
+        SKIP_STAGES = {"08_assignment_resources"}
 
         # Run all stages, first stage gets course inputs
         for i, stage in enumerate(stages):
@@ -47,11 +47,11 @@ def generate_curriculum(course_id: str, course: CourseCreate):
         r04 = results.get("04_weekly_goal", {})
         _ = results.get("05_assignments", {})
         r06 = results.get("06_assignment_description", {})
-        r07 = results.get("07_assignment_resources", {})
+        r08 = results.get("08_assignment_resources", {})
 
         # Build a lookup map for resources by assignment title
         resources_map = {}
-        for item in r07.get("assignment_resources", []):
+        for item in r08.get("assignment_resources", []):
             resources_map[item["assignment_title"]] = item.get("resources", [])
 
         # Insert course
@@ -93,7 +93,7 @@ def generate_curriculum(course_id: str, course: CourseCreate):
         print(f"course rows affected: {cur.rowcount}")
 
         # Insert assignments
-        print("Starting Youtube resource fetch..."),
+        print("Starting Youtube resource fetch...")
         for assignment in r06["assignments"]:
             print(f"Fetching YouTube for: {assignment['title']}")
 
