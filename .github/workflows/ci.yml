@@ -41,5 +41,8 @@ jobs:
       - name: Run Black
         run: black --check .
 
+      - name: Install Pytest
+        run: pip install pytest
+
       - name: Run Pytest
         run: pytest tests/
