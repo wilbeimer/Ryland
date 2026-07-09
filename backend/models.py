@@ -58,6 +58,7 @@ class AssignmentCreate(BaseModel):
     dueDate: str = ""
     points: float = 100
     rubric: str = ""
+    content: str = ""
 
     @field_validator("points", mode="before")
     @classmethod
