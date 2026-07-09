@@ -8,7 +8,7 @@ import time
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from backend.ai.client import client
+from backend.ai.client import get_client
 
 AI_DIR = Path(__file__).parent
 DEFAULT_SYSTEM_PROMPT = "You are an expert AI assistant. Return only valid JSON, no markdown, no explanation."
@@ -32,6 +32,7 @@ def call_model(prompt: str, system_prompt: str, model: str = DEFAULT_MODEL) -> s
 
     for m in models_to_try:
         try:
+            client = get_client()
             response = client.chat.completions.create(
                 model=m,
                 messages=[
