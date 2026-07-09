@@ -1,8 +1,39 @@
 from fastapi.testclient import TestClient
 from backend.main import app
 from unittest.mock import patch
+import sqlite3
+import pytest
+from backend.database import get_db, init_db
+import os
 
 client = TestClient(app)
+
+TEST_DB = "test.db"
+
+
+@pytest.fixture(autouse=True)
+def fresh_database():
+    if os.path.exists(TEST_DB):
+        os.remove(TEST_DB)
+
+    init_db(TEST_DB)
+
+    yield
+
+    if os.path.exists(TEST_DB):
+        os.remove(TEST_DB)
+
+
+def override_get_db():
+    conn = sqlite3.connect(TEST_DB)
+    conn.row_factory = sqlite3.Row
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
+app.dependency_overrides[get_db] = override_get_db
 
 
 def test_root():
