@@ -56,10 +56,7 @@ def test_get_courses(mock_generate):
 
     client.post(
         "/courses",
-        json={
-            "name": "Python",
-            "color": "#3572A5"
-        },
+        json={"name": "Python", "color": "#3572A5"},
     )
 
     response = client.get("/courses")
