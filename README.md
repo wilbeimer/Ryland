@@ -4,8 +4,9 @@
 
 Rylan transforms high-level learning goals into structured curricula, assignments, quizzes, and educational resources. Specialized AI agents collaborate to plan the curriculum, retrieve supporting content from external APIs, and generate personalized feedback through a separate grading pipeline.
 
-Built with **Python, FastAPI, React, SQLite, and Groq LLMs**.des an AI grading pipeline that analyzes student submissions, assigns scores, and generates personalized feedback using a staged reasoning process.
+Built with **Python, FastAPI, React, SQLite, and Groq LLMs**.
 
+In addition to curriculum generation, the platform includes an AI grading pipeline that analyzes student submissions, assigns scores, and generates personalized feedback using a staged reasoning process.
 
 ---
 
