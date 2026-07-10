@@ -172,6 +172,7 @@ def get_assignment(id: str, conn=Depends(get_db)):
 
 # --- Quizzes ---
 
+
 @app.get("/courses/{id}/quizzes")
 def get_quizzes(id: str, conn=Depends(get_db)):
     cur = conn.cursor()
@@ -191,6 +192,7 @@ def get_quiz(id: str, conn=Depends(get_db)):
 
 
 # --- Submissions ---
+
 
 @app.get("/assignments/{id}/submissions", response_model=list[Submission])
 def get_submissions(id: str, conn=Depends(get_db)):

@@ -160,7 +160,7 @@ def generate_curriculum(course_id: str, course: CourseCreate):
                     quiz["week"],
                     quiz["title"],
                     "quiz",
-                    json.dumps(quiz["questions"])
+                    json.dumps(quiz["questions"]),
                 ),
             )
 
