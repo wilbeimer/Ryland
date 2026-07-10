@@ -31,7 +31,6 @@ FALLBACK_MODELS = [
     "llama-3.3-70b-versatile",  # 12K TPM, 100K TPD
     "qwen/qwen3-32b",  # 6K TPM, 500K TPD
     "llama-3.1-8b-instant",  # 6K TPM, 500K TPD
-    "allam-2-7b",  # 6K TPM, 500K TPD
 ]
 
 

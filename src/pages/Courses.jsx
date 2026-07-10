@@ -90,7 +90,7 @@ export default function Courses() {
          <ul className="course-list">
             {courses.map(course => (
                <li key={course.id} className={`course-card ${course.status === 'pending' ? 'course-card--pending' : ''}`}
-                  onClick={() => course.status === 'completed' && navigate(`/courses/${course.id}`)}>
+                  onClick={() => course.status === 'complete' && navigate(`/courses/${course.id}`)}>
                   <div className="course-card-banner" style={{ background: course.color }} />
                   <div className="course-card-body">
                      <div className="course-card-info">

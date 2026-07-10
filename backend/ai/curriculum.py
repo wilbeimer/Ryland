@@ -1,20 +1,10 @@
 import os
-import sqlite3
 from backend.ai.runner import run_stage
 from backend.models import Course, CourseStatus, CurriculumRequest, RylandState
+from backend.database import save_course, save_course_status
+
 
 STAGES_DIR = os.path.join(os.path.dirname(__file__), "curriculum", "stages")
-
-
-def save_course_status(course: Course):
-    with sqlite3.connect("curriculum.db", check_same_thread=False, timeout=30) as conn:
-        conn.row_factory = sqlite3.Row
-        cur = conn.cursor()
-        cur.execute(
-            "UPDATE courses SET status = ? WHERE id = ?",
-            (course.status.value, course.id),
-        )
-        conn.commit()
 
 
 def get_stages():
@@ -65,6 +55,8 @@ def generate_curriculum(course_id: str, request: CurriculumRequest):
 
         print("AFTER")
         print(state.model_dump_json(indent=2))
+
+        save_course(state.course)
 
     except Exception:
         import traceback
