@@ -1,15 +1,34 @@
 ---
 name: course_length
-version: 0.1
+version: 0.2
 ---
 
-## Process
-Based on the course description and domain, estimate how many weeks this course should take for a student who has already taken the prerequisites and how many hours per week a student should expect to spend. Genereate no more than 10 weeks worth of content.
+## Current State
+
+The runner provides the current curriculum state as JSON.
+
+Use the current course information, including its description, domain, subdomains, and prerequisites, to estimate an appropriate course length.
+
+## Task
+
+Determine:
+
+- The total duration of the course in weeks.
+- The expected number of study hours per week.
+
+Assume the student has already completed the recommended prerequisites.
+
+Guidelines:
+
+- Most introductory courses should be between 6 and 10 weeks.
+- Do not generate more than 10 weeks.
+- Choose a workload that is realistic for an online learner.
 
 ## Output
-Return as JSON:
+
+Return only the following JSON:
+
 {
-    "weeks": 8,
-    "hours_per_week": 5,
-    "reasoning": "..."
+  "duration_weeks": 8,
+  "hours_per_week": 5
 }

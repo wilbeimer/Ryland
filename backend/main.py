@@ -4,12 +4,11 @@ import uuid
 import json
 from backend.database import init_db, get_db
 from backend.models import (
-    CourseCreate,
+    CurriculumRequest,
+    RylandState,
     Course,
     Week,
-    WeekCreate,
     Assignment,
-    AssignmentCreate,
     Quiz,
     Submission,
     SubmissionCreate,
@@ -48,7 +47,7 @@ def get_courses(conn=Depends(get_db)):
 
 @app.post("/courses", response_model=dict)
 def post_course(
-    course: CourseCreate, background_tasks: BackgroundTasks, conn=Depends(get_db)
+    course: CurriculumRequest, background_tasks: BackgroundTasks, conn=Depends(get_db)
 ):
 
     cur = conn.cursor()
@@ -75,7 +74,7 @@ def post_course(
     }
 
 
-@app.get("/courses/{id}", response_model=Course)
+@app.get("/courses/{id}")
 def get_course(id: str, conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("SELECT * FROM courses WHERE id=?", (id,))
@@ -106,21 +105,6 @@ def get_weeks(id: str, conn=Depends(get_db)):
     return [deserialize_week(dict(row)) for row in rows]
 
 
-@app.post("/weeks", response_model=Week)
-def post_week(week: WeekCreate, conn=Depends(get_db)):
-    cur = conn.cursor()
-    week_id = str(uuid.uuid4())
-    cur.execute(
-        """
-        INSERT INTO course_weeks (id, courseId, week, goal, topics)
-        VALUES (?, ?, ?, ?, ?)
-    """,
-        (week_id, week.courseId, week.week, week.goal, json.dumps(week.topics)),
-    )
-    conn.commit()
-    return {"id": week_id, **week.model_dump()}
-
-
 # --- Assignments ---
 
 
@@ -130,34 +114,6 @@ def get_assignments(id: str, conn=Depends(get_db)):
     cur.execute("SELECT * FROM assignments WHERE courseId=? ORDER BY week", (id,))
     rows = cur.fetchall()
     return [deserialize_assignment(dict(row)) for row in rows]
-
-
-@app.post("/assignments", response_model=Assignment)
-def post_assignment(assignment: AssignmentCreate, conn=Depends(get_db)):
-    cur = conn.cursor()
-    assignment_id = str(uuid.uuid4())
-    cur.execute(
-        """
-        INSERT INTO assignments (id, courseId, weekId, week, title, type, description, requirements, dueDate, points, content, rubric)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """,
-        (
-            assignment_id,
-            assignment.courseId,
-            assignment.weekId,
-            assignment.week,
-            assignment.title,
-            assignment.type,
-            assignment.description,
-            json.dumps(assignment.requirements),
-            assignment.dueDate,
-            assignment.points,
-            assignment.content,
-            assignment.rubric,
-        ),
-    )
-    conn.commit()
-    return {"id": assignment_id, **assignment.model_dump()}
 
 
 @app.get("/assignments/{id}", response_model=Assignment)

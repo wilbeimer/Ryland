@@ -5,6 +5,9 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import time
 
+from backend.models import RylandState
+from backend.ai.state_updates import *
+
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -105,34 +108,14 @@ def load_references(stage_path: Path) -> str:
     return references
 
 
-def load_previous_outputs(
-    stage_name: str, depends_on: list | None, stages_dir: Path
-) -> dict:
-    previous_outputs = {}
-    if depends_on is None:
-        for prev_stage in sorted(stages_dir.iterdir()):
-            if prev_stage.name >= stage_name:
-                break
-            prev_output = prev_stage / "output" / "result.json"
-            if prev_output.exists():
-                previous_outputs[prev_stage.name] = json.loads(prev_output.read_text())
-    else:
-        for dep in depends_on:
-            prev_output = stages_dir / dep / "output" / "result.json"
-            if prev_output.exists():
-                previous_outputs[dep] = json.loads(prev_output.read_text())
-    return previous_outputs
-
-
 # --- Prompt building ---
-
 
 def build_prompt(
     identity_md: str,
     workspace_context: str,
     context: str,
     references: str,
-    previous_outputs: dict,
+    state_context: dict,
 ) -> str:
     return f"""
 {identity_md}
@@ -153,28 +136,37 @@ def build_prompt(
 
 ---
 
-## Previous Stage Outputs
-{json.dumps(previous_outputs, indent=2)}
+## Current Course State
+{json.dumps(state_context, indent=2)}
 """
 
 
 # --- Stage execution ---
+
+def get_loop_items(loop_over: str, state: RylandState):
+    if loop_over == "weeks":
+        return [w.model_dump(mode="json") for w in state.course.weeks]
+
+    elif loop_over == "assignments":
+        return [
+            a.model_dump(mode="json")
+            for week in state.course.weeks
+            for a in week.assignments
+        ]
+
+    raise ValueError(f"Unknown loop target: {loop_over}")
+
+
 def run_loop_stage(
     loop_over: str,
     full_prompt: str,
-    previous_outputs: dict,
+    state: RylandState,
     merge_item: bool,
     system_prompt: str,
     model: str,
 ) -> dict:
-    items = None
-    for stage_output in previous_outputs.values():
-        if loop_over in stage_output:
-            items = stage_output[loop_over]
-            break
 
-    if items is None:
-        raise ValueError(f"loop_over key '{loop_over}' not found in previous outputs")
+    items = get_loop_items(loop_over, state)
 
     total = len(items)
     completed = 0
@@ -206,29 +198,50 @@ def run_loop_stage(
     return {loop_over: [results[i] for i in range(len(items))]}
 
 
+def build_state_context(state: RylandState) -> dict:
+    return state.model_dump(mode="json")
+
+
+_STAGE_HANDLERS = {
+    "01_course_description": apply_description,
+    "02_course_resources": apply_resources,
+    "03_course_length": apply_course_length,
+    "04_weekly_goal": apply_weeks,
+    "06_assignment_description": apply_assignments,
+    "07_generate_quizzes": apply_quizzes,
+}
+
+
+def apply_stage_result(
+    stage_name: str,
+    result: dict,
+    state: RylandState
+):
+    handler = _STAGE_HANDLERS.get(stage_name)
+
+    if handler:
+        handler(result, state)
+
+
 def run_stage(
     stage_name: str,
-    user_inputs: dict = {},
+    state: RylandState,
     stages_dir: Path = AI_DIR / "curriculum" / "stages",
-) -> dict:
+) -> None:
     print(f"Running stage {stage_name}")
 
     stage_path = stages_dir / stage_name
-    output_path = stage_path / "output"
-    output_path.mkdir(exist_ok=True)
 
     identity_md, workspace_context, system_prompt = load_pipeline_context(stages_dir)
     meta, context = load_stage_context(stage_path)
     references = load_references(stage_path)
-    previous_outputs = load_previous_outputs(
-        stage_name, meta.get("depends_on"), stages_dir
-    )
+    state_context = build_state_context(state)
 
-    for key, value in user_inputs.items():
+    for key, value in state.request.model_dump().items():
         context = context.replace(f"{{{key}}}", str(value))
 
     full_prompt = build_prompt(
-        identity_md, workspace_context, context, references, previous_outputs
+        identity_md, workspace_context, context, references, state_context
     )
 
     loop_over = meta.get("loop_over")
@@ -238,7 +251,7 @@ def run_stage(
         result = run_loop_stage(
             loop_over,
             full_prompt,
-            previous_outputs,
+            state,
             meta.get("merge_item", False),
             system_prompt,
             model,
@@ -247,5 +260,5 @@ def run_stage(
         content = call_model(full_prompt, system_prompt, model)
         result = parse_json_response(content)
 
-    (output_path / "result.json").write_text(json.dumps(result, indent=2))
-    return result
+        apply_stage_result(stage_name, result, state)
+        print(state.course.model_dump(mode="json"))
