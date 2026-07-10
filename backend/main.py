@@ -10,6 +10,7 @@ from backend.models import (
     WeekCreate,
     Assignment,
     AssignmentCreate,
+    Quiz,
     Submission,
     SubmissionCreate,
 )
@@ -178,8 +179,18 @@ def get_quizzes(id: str, conn=Depends(get_db)):
     rows = cur.fetchall()
     return [deserialize_quiz(dict(row)) for row in rows]
 
-# --- Submissions ---
 
+@app.get("/quizzes/{id}", response_model=Quiz)
+def get_quiz(id: str, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM quizzes WHERE id=?", (id,))
+    row = cur.fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    return deserialize_quiz(dict(row))
+
+
+# --- Submissions ---
 
 @app.get("/assignments/{id}/submissions", response_model=list[Submission])
 def get_submissions(id: str, conn=Depends(get_db)):

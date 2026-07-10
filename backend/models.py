@@ -70,6 +70,29 @@ class AssignmentCreate(BaseModel):
         return v if v is not None else ""
 
 
+class Quiz(BaseModel):
+    id: str
+    courseId: str
+    weekId: str = ""
+    week: int = 0
+    title: str
+    type: str
+    questions: list[dict] = []
+
+    dueDate: str = ""
+    points: float = 100
+
+    @field_validator("points", mode="before")
+    @classmethod
+    def default_points(cls, v):
+        return v if v is not None else 100
+
+    @field_validator("dueDate", mode="before")
+    @classmethod
+    def default_str(cls, v):
+        return v if v is not None else ""
+
+
 class Submission(BaseModel):
     id: str
     assignmentId: str
