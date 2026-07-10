@@ -20,12 +20,16 @@ def grade_submission(submission_id: str, submission: SubmissionCreate):
         assignment = dict(row)
         assignment["requirements"] = json.loads(assignment.get("requirements") or "[]")
 
-        result_01 = run_stage("01_analyze", {
-            "submission_content": submission.content,
-            "assignment_title": assignment["title"],
-            "assignment_description": assignment["description"],
-            "requirements": json.dumps(assignment["requirements"])
-        }, stages_dir=GRADING_STAGES_DIR)
+        _ = run_stage(
+            "01_analyze",
+            {
+                "submission_content": submission.content,
+                "assignment_title": assignment["title"],
+                "assignment_description": assignment["description"],
+                "requirements": json.dumps(assignment["requirements"]),
+            },
+            stages_dir=GRADING_STAGES_DIR,
+        )
 
         result_02 = run_stage("02_score", stages_dir=GRADING_STAGES_DIR)
         result_03 = run_stage("03_feedback", stages_dir=GRADING_STAGES_DIR)
@@ -34,14 +38,19 @@ def grade_submission(submission_id: str, submission: SubmissionCreate):
         feedback = result_03["feedback"]
 
         # Update submission
-        cur.execute("""
+        cur.execute(
+            """
             UPDATE submissions SET grade=?, feedback=?, status='completed'
             WHERE id=?
-        """, (grade, feedback, submission_id))
+        """,
+            (grade, feedback, submission_id),
+        )
         conn.commit()
 
     except Exception as e:
-        cur.execute("UPDATE submissions SET status='failed' WHERE id=?", (submission_id,))
+        cur.execute(
+            "UPDATE submissions SET status='failed' WHERE id=?", (submission_id,)
+        )
         conn.commit()
         print(f"Grading failed for submission {submission_id}: {e}")
     finally:
