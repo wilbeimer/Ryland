@@ -5,7 +5,6 @@ import json
 from backend.database import init_db, get_db
 from backend.models import (
     CurriculumRequest,
-    RylandState,
     Course,
     Week,
     Assignment,
@@ -199,11 +198,14 @@ def post_submission(
 
 # --- Deserializers ---
 
-
 def deserialize_course(row: dict) -> dict:
     row["subdomains"] = json.loads(row.get("subdomains") or "[]")
     row["prerequisites"] = json.loads(row.get("prerequisites") or "[]")
-    row["textbook"] = json.loads(row.get("textbook") or "{}")
+
+    textbook = json.loads(row.get("textbook") or "null")
+    row["textbook"] = textbook if textbook else None
+
+    row["weeks"] = json.loads(row.get("weeks") or "[]")  # if stored as JSON
     return row
 
 

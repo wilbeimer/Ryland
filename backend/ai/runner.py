@@ -1,12 +1,21 @@
 import json
 import sys
+from pydantic import ValidationError
 import yaml
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import time
 
 from backend.models import RylandState
-from backend.ai.state_updates import *
+from backend.ai.state_updates import (
+    apply_description,
+    apply_resources,
+    apply_course_length,
+    apply_weeks,
+    apply_assignment_list,
+    apply_assignment_details,
+    apply_quizzes
+)
 
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
@@ -110,6 +119,7 @@ def load_references(stage_path: Path) -> str:
 
 # --- Prompt building ---
 
+
 def build_prompt(
     identity_md: str,
     workspace_context: str,
@@ -143,28 +153,29 @@ def build_prompt(
 
 # --- Stage execution ---
 
+
 def get_loop_items(loop_over: str, state: RylandState):
     if loop_over == "weeks":
-        return [w.model_dump(mode="json") for w in state.course.weeks]
+        return state.course.weeks
 
-    elif loop_over == "assignments":
+    if loop_over == "assignments":
         return [
-            a.model_dump(mode="json")
+            assignment
             for week in state.course.weeks
-            for a in week.assignments
+            for assignment in week.assignments
         ]
 
     raise ValueError(f"Unknown loop target: {loop_over}")
 
 
 def run_loop_stage(
+    stage_name: str,
     loop_over: str,
     full_prompt: str,
     state: RylandState,
-    merge_item: bool,
     system_prompt: str,
     model: str,
-) -> dict:
+) -> None:
 
     items = get_loop_items(loop_over, state)
 
@@ -174,18 +185,21 @@ def run_loop_stage(
     def process_item(item, index):
         nonlocal completed
         content = call_model(
-            full_prompt + f"\n\n## Current Item\n{json.dumps(item, indent=2)}",
+            full_prompt + f"\n\n## Current Item\n{json.dumps(item.model_dump(mode='json'), indent=2)}",
             system_prompt,
             model,
         )
-        result = parse_json_response(content)
-        if merge_item:
-            result = {**item, **result}
+        try:
+            result = parse_json_response(content)
+
+        except (ValueError, json.JSONDecodeError) as e:
+            print(f"Failed to parse item {index}: {e}")
+            return None
+
         completed += 1
-        print(f"loop {completed}/{total} done: {item.get('title', index)}")
+        print(f"loop {completed}/{total} done: {getattr(item, 'title', index)}")
         return result
 
-    results = {}
     with ThreadPoolExecutor(max_workers=2) as executor:
         futures = {}
         for i, item in enumerate(items):
@@ -193,9 +207,20 @@ def run_loop_stage(
             time.sleep(1)
 
         for future, i in futures.items():
-            results[i] = future.result()
+            result = future.result()
 
-    return {loop_over: [results[i] for i in range(len(items))]}
+            if result is None:
+                continue
+            try:
+                apply_stage_result(
+                    stage_name,
+                    result,
+                    state,
+                    items[i],
+                )
+
+            except ValidationError as e:
+                print(f"Skipping invalid result for item {i}: {e}")
 
 
 def build_state_context(state: RylandState) -> dict:
@@ -207,19 +232,21 @@ _STAGE_HANDLERS = {
     "02_course_resources": apply_resources,
     "03_course_length": apply_course_length,
     "04_weekly_goal": apply_weeks,
-    "06_assignment_description": apply_assignments,
+    "05_assignments": apply_assignment_list,
+    "06_assignment_description": apply_assignment_details,
     "07_generate_quizzes": apply_quizzes,
 }
 
+_LOOP_ITEM_STAGES = {"05_assignments", "06_assignment_description"}
 
-def apply_stage_result(
-    stage_name: str,
-    result: dict,
-    state: RylandState
-):
+
+def apply_stage_result(stage_name: str, result: dict, state: RylandState, current_item=None):
     handler = _STAGE_HANDLERS.get(stage_name)
-
-    if handler:
+    if not handler:
+        return
+    if stage_name in _LOOP_ITEM_STAGES:
+        handler(result, current_item)
+    else:
         handler(result, state)
 
 
@@ -249,10 +276,10 @@ def run_stage(
 
     if loop_over:
         result = run_loop_stage(
+            stage_name,
             loop_over,
             full_prompt,
             state,
-            meta.get("merge_item", False),
             system_prompt,
             model,
         )

@@ -33,19 +33,20 @@ def apply_weeks(result: dict, state: RylandState) -> None:
     ]
 
 
-def apply_assignments(result: dict, state: RylandState) -> None:
-    weeks = {week.number: week for week in state.course.weeks}
-
+def apply_assignment_list(result: dict, week):
     for assignment in result["assignments"]:
-        weeks[assignment["week"]].assignments.append(
+        week.assignments.append(
             Assignment(
                 id=str(uuid4()),
                 title=assignment["title"],
                 type=assignment["type"],
-                description=assignment["description"],
-                requirements=assignment["requirements"],
             )
         )
+
+
+def apply_assignment_details(result, assignment):
+    assignment.description = result["description"]
+    assignment.requirements = result["requirements"]
 
 
 def apply_quizzes(result, state):
@@ -56,5 +57,5 @@ def apply_quizzes(result, state):
             id=str(uuid4()),
             title=quiz["title"],
             type=quiz["type"],
-            questions=quiz["questions"]
+            questions=quiz["questions"],
         )

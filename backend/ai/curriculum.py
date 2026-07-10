@@ -48,6 +48,7 @@ def generate_curriculum(course_id: str, request: CurriculumRequest):
         print(state.model_dump_json(indent=2))
 
         SKIP_STAGES = {
+            "06_assigment_description",
             "08_assignment_resources",
             # add any unfinished stages here
         }

@@ -1,6 +1,7 @@
 ---
 name: assignments
 version: 0.2
+loop_over: weeks
 ---
 
 ## Process
@@ -18,13 +19,10 @@ Requirements:
 
 Allowed assignment types:
 
-- reading
 - written
-- coding
 - project
-- discussion
+- presentation
 - checklist
-- practice
 
 ## Output
 

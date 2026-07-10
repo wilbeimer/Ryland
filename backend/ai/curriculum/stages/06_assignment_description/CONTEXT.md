@@ -1,6 +1,6 @@
 ---
 name: assignment_description
-version: 0.1
+version: 0.2
 loop_over: assignments
 merge_item: true
 depends_on:
