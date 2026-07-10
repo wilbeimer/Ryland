@@ -169,6 +169,15 @@ def get_assignment(id: str, conn=Depends(get_db)):
     return deserialize_assignment(dict(row))
 
 
+# --- Quizzes ---
+
+@app.get("/courses/{id}/quizzes")
+def get_quizzes(id: str, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM quizzes WHERE courseId=? ORDER BY week", (id,))
+    rows = cur.fetchall()
+    return [deserialize_quiz(dict(row)) for row in rows]
+
 # --- Submissions ---
 
 
@@ -237,4 +246,9 @@ def deserialize_week(row: dict) -> dict:
 def deserialize_assignment(row: dict) -> dict:
     row["requirements"] = json.loads(row.get("requirements") or "[]")
     row["resources"] = json.loads(row.get("resources") or "[]")
+    return row
+
+
+def deserialize_quiz(row: dict) -> dict:
+    row["questions"] = json.loads(row.get("questions") or "[]")
     return row
