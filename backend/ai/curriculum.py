@@ -53,6 +53,7 @@ def generate_curriculum(course_id: str, course: CourseCreate):
         r04 = results.get("04_weekly_goal", {})
         _ = results.get("05_assignments", {})
         r06 = results.get("06_assignment_description", {})
+        r07 = results.get("07_generate_quizzes", {})
         r08 = results.get("08_assignment_resources", {})
 
         # Build a lookup map for resources by assignment title
@@ -145,6 +146,23 @@ def generate_curriculum(course_id: str, course: CourseCreate):
             )
 
             print(f"assignment rows affected: {cur.rowcount}")
+
+        for quiz in r07["quizzes"]:
+            cur.execute(
+                """
+                INSERT INTO quizzes (id, courseId, weekId, week, title, type, questions)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    str(uuid.uuid4()),
+                    course_id,
+                    week_id_map.get(quiz["week"], ""),
+                    quiz["week"],
+                    quiz["title"],
+                    "quiz",
+                    json.dumps(quiz["questions"])
+                ),
+            )
 
         print("committing course")
 

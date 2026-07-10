@@ -64,6 +64,22 @@ def init_db():
         )
     """)
 
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS quizzes (
+            id TEXT PRIMARY KEY,
+            courseId TEXT NOT NULL,
+            weekId TEXT,
+            week INTEGER,
+            title TEXT NOT NULL,
+            type TEXT NOT NULL,
+            questions TEXT NOT NULL,
+            dueDate TEXT,
+            points REAL,
+            FOREIGN KEY (courseId) REFERENCES courses(id),
+            FOREIGN KEY (weekId) REFERENCES course_weeks(id)
+        )
+    """)
+
     conn.commit()
     conn.close()
 
