@@ -24,10 +24,12 @@ export default function QuizPage() {
    }
 
    function handleSubmit() {
-      if (Object.keys(answers).length < quiz.questions.length) return
       let correct = 0
       quiz.questions.forEach((q, i) => {
-         if (answers[i] === q.correct_index) correct++
+         if (q.type === 'multiple_choice' && q.options) {
+            const selectedOption = q.options[answers[i]]
+            if (selectedOption === q.answer) correct++
+         }
       })
       setScore(correct)
       setSubmitted(true)
@@ -35,6 +37,8 @@ export default function QuizPage() {
 
    if (loading) return <div className="page">Loading...</div>
    if (!quiz) return <div className="page">Quiz not found.</div>
+
+   const mcCount = quiz.questions.filter(q => q.type === 'multiple_choice').length
 
    return (
       <div className="page">
@@ -49,27 +53,41 @@ export default function QuizPage() {
          <div className="quiz-questions">
             {quiz.questions.map((q, qi) => {
                const selected = answers[qi]
-               const isCorrect = submitted && selected === q.correct_index
-               const isWrong = submitted && selected !== q.correct_index
+               const selectedOption = q.options?.[selected]
+               const isCorrect = submitted && selectedOption === q.answer
+               const isWrong = submitted && selected !== undefined && selectedOption !== q.answer
 
                return (
                   <div key={qi} className={`quiz-question ${submitted ? (isCorrect ? 'quiz-question--correct' : 'quiz-question--wrong') : ''}`}>
                      <p className="quiz-question-text">{qi + 1}. {q.question}</p>
-                     <ul className="quiz-choices">
-                        {q.choices.map((choice, ci) => (
-                           <li
-                              key={ci}
-                              className={`quiz-choice
-                                 ${selected === ci ? 'quiz-choice--selected' : ''}
-                                 ${submitted && ci === q.correct_index ? 'quiz-choice--correct' : ''}
-                                 ${submitted && selected === ci && ci !== q.correct_index ? 'quiz-choice--wrong' : ''}
-                              `}
-                              onClick={() => handleSelect(qi, ci)}
-                           >
-                              {choice}
-                           </li>
-                        ))}
-                     </ul>
+                     {q.type === 'multiple_choice'
+                        ? <ul className="quiz-choices">
+                           {q.options.map((option, ci) => (
+                              <li
+                                 key={ci}
+                                 className={`quiz-choice
+${selected === ci ? 'quiz-choice--selected' : ''}
+${submitted && option === q.answer ? 'quiz-choice--correct' : ''}
+${submitted && selected === ci && option !== q.answer ? 'quiz-choice--wrong' : ''}
+`}
+                                 onClick={() => handleSelect(qi, ci)}
+                              >
+                                 {option}
+                              </li>
+                           ))}
+                        </ul>
+                        : <div className="short-answer">
+                           {submitted
+                              ? <p className="short-answer-answer">Answer: {q.answer}</p>
+                              : <textarea
+                                 rows={3}
+                                 placeholder="Your answer..."
+                                 value={answers[qi] || ''}
+                                 onChange={e => setAnswers(prev => ({ ...prev, [qi]: e.target.value }))}
+                              />
+                           }
+                        </div>
+                     }
                   </div>
                )
             })}
@@ -78,7 +96,7 @@ export default function QuizPage() {
          {!submitted
             ? <button className="btn-primary" onClick={handleSubmit}>Submit Quiz</button>
             : <div className="quiz-result">
-               <span className="quiz-score">{score} / {quiz.questions.length} correct</span>
+               <span className="quiz-score">{score} / {mcCount} correct</span>
             </div>
          }
       </div>

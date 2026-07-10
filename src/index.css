@@ -213,6 +213,7 @@ body {
 .assignment-card:hover {
    background: var(--border);
 }
+.assignment-card--quiz { border-left: 3px solid var(--accent); }
 .assignment-name {
    font-size: 14px;
    font-weight: 500;
@@ -389,4 +390,79 @@ body {
    font-size: 13px;
    color: var(--text-secondary);
    line-height: 1.5;
+}
+
+/* Quiz page */
+.quiz-questions {
+   display: flex;
+   flex-direction: column;
+   gap: 24px;
+   margin-bottom: 32px;
+}
+
+.quiz-question {
+   background: var(--bg-secondary);
+   border-radius: 10px;
+   padding: 20px 24px;
+   border: 2px solid transparent;
+   transition: border-color 0.2s;
+}
+.quiz-question--correct { border-color: var(--success); }
+.quiz-question--wrong { border-color: var(--danger); }
+
+.quiz-question-text {
+   font-size: 15px;
+   font-weight: 500;
+   margin-bottom: 12px;
+   line-height: 1.5;
+}
+
+.quiz-choices {
+   list-style: none;
+   display: flex;
+   flex-direction: column;
+   gap: 8px;
+}
+
+.quiz-choice {
+   padding: 10px 14px;
+   border-radius: 6px;
+   font-size: 14px;
+   cursor: pointer;
+   border: 1px solid var(--border);
+   transition: all 0.15s;
+   color: var(--text-primary);
+}
+.quiz-choice:hover { border-color: var(--accent); }
+.quiz-choice--selected { border-color: var(--accent); background: rgba(108, 99, 255, 0.1); }
+.quiz-choice--correct { border-color: var(--success); background: rgba(46, 204, 113, 0.1); }
+.quiz-choice--wrong { border-color: var(--danger); background: rgba(231, 76, 60, 0.1); }
+
+.quiz-result {
+   background: var(--bg-secondary);
+   border-radius: 10px;
+   padding: 24px;
+   text-align: center;
+   margin-top: 16px;
+}
+.quiz-score { font-size: 24px; font-weight: 700; }
+
+/* Short answer */
+.short-answer textarea {
+   width: 100%;
+   padding: 10px 12px;
+   background: var(--bg-primary);
+   border: 1px solid var(--border);
+   border-radius: 6px;
+   color: var(--text-primary);
+   font-family: inherit;
+   font-size: 14px;
+   resize: vertical;
+   margin-top: 8px;
+}
+.short-answer textarea:focus { outline: none; border-color: var(--accent); }
+.short-answer-answer {
+   font-size: 14px;
+   color: var(--success);
+   margin-top: 8px;
 }
