@@ -14,7 +14,7 @@ from backend.ai.state_updates import (
     apply_weeks,
     apply_assignment_list,
     apply_assignment_details,
-    apply_quizzes
+    apply_quizzes,
 )
 
 if __name__ == "__main__":
@@ -159,9 +159,7 @@ def get_loop_items(loop_over: str, state: RylandState):
 
     if loop_over == "assignments":
         return [
-            assignment
-            for week in state.course.weeks
-            for assignment in week.assignments
+            assignment for week in state.course.weeks for assignment in week.assignments
         ]
 
     raise ValueError(f"Unknown loop target: {loop_over}")
@@ -184,7 +182,8 @@ def run_loop_stage(
     def process_item(item, index):
         nonlocal completed
         content = call_model(
-            full_prompt + f"\n\n## Current Item\n{json.dumps(item.model_dump(mode='json'), indent=2)}",
+            full_prompt
+            + f"\n\n## Current Item\n{json.dumps(item.model_dump(mode='json'), indent=2)}",
             system_prompt,
             model,
         )
@@ -239,7 +238,9 @@ _STAGE_HANDLERS = {
 _LOOP_ITEM_STAGES = {"05_assignments", "06_assignment_description"}
 
 
-def apply_stage_result(stage_name: str, result: dict, state: RylandState, current_item=None):
+def apply_stage_result(
+    stage_name: str, result: dict, state: RylandState, current_item=None
+):
     handler = _STAGE_HANDLERS.get(stage_name)
     if not handler:
         return

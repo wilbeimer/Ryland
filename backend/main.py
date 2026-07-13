@@ -198,6 +198,7 @@ def post_submission(
 
 # --- Deserializers ---
 
+
 def deserialize_course(row: dict) -> dict:
     row["subdomains"] = json.loads(row.get("subdomains") or "[]")
     row["prerequisites"] = json.loads(row.get("prerequisites") or "[]")

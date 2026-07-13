@@ -122,7 +122,11 @@ def _save_course_row(cur, course: Course):
             json.dumps(course.prerequisites),
             course.duration_weeks,
             course.hours_per_week,
-            json.dumps(course.textbook.model_dump(mode="json")) if course.textbook else None,
+            (
+                json.dumps(course.textbook.model_dump(mode="json"))
+                if course.textbook
+                else None
+            ),
             course.id,
         ),
     )
