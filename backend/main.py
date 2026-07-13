@@ -4,12 +4,11 @@ import uuid
 import json
 from backend.database import init_db, get_db
 from backend.models import (
-    CourseCreate,
+    CurriculumRequest,
     Course,
     Week,
-    WeekCreate,
     Assignment,
-    AssignmentCreate,
+    Quiz,
     Submission,
     SubmissionCreate,
 )
@@ -47,7 +46,7 @@ def get_courses(conn=Depends(get_db)):
 
 @app.post("/courses", response_model=dict)
 def post_course(
-    course: CourseCreate, background_tasks: BackgroundTasks, conn=Depends(get_db)
+    course: CurriculumRequest, background_tasks: BackgroundTasks, conn=Depends(get_db)
 ):
 
     cur = conn.cursor()
@@ -74,7 +73,7 @@ def post_course(
     }
 
 
-@app.get("/courses/{id}", response_model=Course)
+@app.get("/courses/{id}")
 def get_course(id: str, conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("SELECT * FROM courses WHERE id=?", (id,))
@@ -105,21 +104,6 @@ def get_weeks(id: str, conn=Depends(get_db)):
     return [deserialize_week(dict(row)) for row in rows]
 
 
-@app.post("/weeks", response_model=Week)
-def post_week(week: WeekCreate, conn=Depends(get_db)):
-    cur = conn.cursor()
-    week_id = str(uuid.uuid4())
-    cur.execute(
-        """
-        INSERT INTO course_weeks (id, courseId, week, goal, topics)
-        VALUES (?, ?, ?, ?, ?)
-    """,
-        (week_id, week.courseId, week.week, week.goal, json.dumps(week.topics)),
-    )
-    conn.commit()
-    return {"id": week_id, **week.model_dump()}
-
-
 # --- Assignments ---
 
 
@@ -131,34 +115,6 @@ def get_assignments(id: str, conn=Depends(get_db)):
     return [deserialize_assignment(dict(row)) for row in rows]
 
 
-@app.post("/assignments", response_model=Assignment)
-def post_assignment(assignment: AssignmentCreate, conn=Depends(get_db)):
-    cur = conn.cursor()
-    assignment_id = str(uuid.uuid4())
-    cur.execute(
-        """
-        INSERT INTO assignments (id, courseId, weekId, week, title, type, description, requirements, dueDate, points, content, rubric)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """,
-        (
-            assignment_id,
-            assignment.courseId,
-            assignment.weekId,
-            assignment.week,
-            assignment.title,
-            assignment.type,
-            assignment.description,
-            json.dumps(assignment.requirements),
-            assignment.dueDate,
-            assignment.points,
-            assignment.content,
-            assignment.rubric,
-        ),
-    )
-    conn.commit()
-    return {"id": assignment_id, **assignment.model_dump()}
-
-
 @app.get("/assignments/{id}", response_model=Assignment)
 def get_assignment(id: str, conn=Depends(get_db)):
     cur = conn.cursor()
@@ -167,6 +123,27 @@ def get_assignment(id: str, conn=Depends(get_db)):
     if row is None:
         raise HTTPException(status_code=404, detail="Assignment not found")
     return deserialize_assignment(dict(row))
+
+
+# --- Quizzes ---
+
+
+@app.get("/courses/{id}/quizzes")
+def get_quizzes(id: str, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM quizzes WHERE courseId=? ORDER BY week", (id,))
+    rows = cur.fetchall()
+    return [deserialize_quiz(dict(row)) for row in rows]
+
+
+@app.get("/quizzes/{id}", response_model=Quiz)
+def get_quiz(id: str, conn=Depends(get_db)):
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM quizzes WHERE id=?", (id,))
+    row = cur.fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Quiz not found")
+    return deserialize_quiz(dict(row))
 
 
 # --- Submissions ---
@@ -225,7 +202,9 @@ def post_submission(
 def deserialize_course(row: dict) -> dict:
     row["subdomains"] = json.loads(row.get("subdomains") or "[]")
     row["prerequisites"] = json.loads(row.get("prerequisites") or "[]")
-    row["textbook"] = json.loads(row.get("textbook") or "{}")
+    textbook = json.loads(row.get("textbook") or "null")
+    row["textbook"] = textbook if textbook else None
+    row["weeks"] = json.loads(row.get("weeks_data") or "[]")
     return row
 
 
@@ -237,4 +216,9 @@ def deserialize_week(row: dict) -> dict:
 def deserialize_assignment(row: dict) -> dict:
     row["requirements"] = json.loads(row.get("requirements") or "[]")
     row["resources"] = json.loads(row.get("resources") or "[]")
+    return row
+
+
+def deserialize_quiz(row: dict) -> dict:
+    row["questions"] = json.loads(row.get("questions") or "[]")
     return row

@@ -1,21 +1,40 @@
 ---
 name: weekly_goal
-version: 0.1
+version: 0.2
 ---
 
 ## Process
-For each week in the course, create a clear learning goal and a list of topics to cover that week.
-Ensure logical progression so students are never introduced to a concept before its prerequisites are covered.
-Account for the number of hours per week when scoping each week's content.
+
+Using the provided course information, generate a week-by-week learning plan.
+
+The number of weeks must exactly equal `duration_weeks`.
+
+Each week should contain:
+
+- a single learning goal
+- 3-6 topics to be covered
+
+Requirements:
+
+- Respect `hours_per_week` when determining scope.
+- Build concepts sequentially.
+- Never introduce material before its prerequisites.
+- End the final week with the course reaching the level described in the course description.
+- Do not repeat topics unnecessarily.
 
 ## Output
-Return as JSON:
+
+Return JSON:
+
 {
-    "weekly_goals": [
-        {
-            "week": 1,
-            "goal": "...",
-            "topics": ["...", "..."]
-        }
-    ]
+  "weekly_goals": [
+    {
+      "week": 1,
+      "goal": "...",
+      "topics": [
+        "...",
+        "..."
+      ]
+    }
+  ]
 }

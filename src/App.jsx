@@ -6,6 +6,7 @@ import Assignments from "./pages/Assignments"
 import Grades from "./pages/Grades"
 import CoursePage from "./pages/CoursePage"
 import AssignmentPage from "./pages/AssignmentPage"
+import QuizPage from "./pages/QuizPage"
 
 export default function App() {
    return (
@@ -16,6 +17,7 @@ export default function App() {
             <Route path="courses/:id" element={<CoursePage />} />
             <Route path="assignments" element={<Assignments />} />
             <Route path="assignments/:id" element={<AssignmentPage />} />
+            <Route path="quizzes/:id" element={<QuizPage />} />
             <Route path="grades" element={<Grades />} />
          </Route>
       </Routes>

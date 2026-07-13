@@ -5,6 +5,7 @@ export default function CoursePage() {
    const { id } = useParams()
    const [course, setCourse] = useState(null)
    const [assignments, setAssignments] = useState([])
+   const [quizzes, setQuizzes] = useState([])
    const [title, setTitle] = useState('')
    const [type, setType] = useState('')
    const [loading, setLoading] = useState(true)
@@ -21,6 +22,10 @@ export default function CoursePage() {
       fetch(`${import.meta.env.VITE_API_URL}/courses/${id}/assignments`)
          .then(res => res.json())
          .then(data => setAssignments(data))
+
+      fetch(`${import.meta.env.VITE_API_URL}/courses/${id}/quizzes`)
+         .then(res => res.json())
+         .then(data => setQuizzes(data))
    }, [])
 
    const navigate = useNavigate()
@@ -59,7 +64,7 @@ export default function CoursePage() {
                   <a href={course.textbook.url} target="_blank" rel="noreferrer">{course.textbook.title}</a>
                ) : (
                      <span>{course.textbook.title}</span>
-               )}
+                  )}
                <span className="author">{course.textbook.author}</span>
                <p>{course.textbook.description}</p>
             </div>
@@ -77,6 +82,18 @@ export default function CoursePage() {
                               <span className="assignment-name">{assignment.title}</span>
                            </div>
                            <span className="assignment-type">{assignment.type}</span>
+                        </li>
+                     ))
+                  }
+
+                  {quizzes
+                     .filter(q => q.week === week)
+                     .map(quiz => (
+                        <li key={quiz.id} className="assignment-card assignment-card--quiz" onClick={() => navigate(`/quizzes/${quiz.id}`)}>
+                           <div className="assignment-card-info">
+                              <span className="assignment-name">{quiz.title}</span>
+                           </div>
+                           <span className="assignment-type">Quiz</span>
                         </li>
                      ))
                   }

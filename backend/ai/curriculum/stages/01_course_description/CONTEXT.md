@@ -1,20 +1,32 @@
 ---
 name: course_description
-version: 0.1
+version: 0.2
 ---
 
-## Inputs
-- course_name = {course_name}
-- course_description = {course_description}
+## Current State
 
-## Process
-Generate a detailed description of the {course_name} course based on the following description provided by the user: {course_description}. Include the course's academic domain, subdomains, and prerequisites a student should have. Keep subject matter narrow, prefering to recommend prerequisites when needed to fully understand the course. Be very specific about course material, don't generalize description.
+The runner will provide the current state as JSON.
+
+Some fields are already populated. Others are `null` or empty.
+
+## Task
+
+Using the current course information:
+
+- Generate a detailed course description.
+- Determine the primary academic domain.
+- Identify specific subdomains.
+- Recommend prerequisites that are genuinely required to succeed in the course.
+- Keep the subject matter narrowly focused rather than broad.
+- Prefer recommending prerequisites instead of broadening the course scope.
 
 ## Output
-Return as JSON:
+
+Return only the following JSON:
+
 {
-    "description": "...",
-    "domain": "...",
-    "subdomains": ["..."],
-    "prerequisites": ["..."]
+  "description": "...",
+  "domain": "...",
+  "subdomains": ["..."],
+  "prerequisites": ["..."]
 }
