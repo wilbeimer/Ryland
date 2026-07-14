@@ -13,7 +13,7 @@ from backend.models import (
     SubmissionCreate,
 )
 from backend.ai.curriculum_agent.curriculum import generate_curriculum
-from backend.ai.grader import grade_submission
+# from backend.ai.grader import grade_submission
 import os
 
 app = FastAPI()
@@ -186,7 +186,7 @@ def post_submission(
 
     conn.commit()
 
-    background_tasks.add_task(grade_submission, submission_id, submission)
+    # background_tasks.add_task(grade_submission, submission_id, submission)
 
     return {
         "id": submission_id,
