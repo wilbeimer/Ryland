@@ -12,7 +12,7 @@ from backend.models import (
     Submission,
     SubmissionCreate,
 )
-from backend.ai.curriculum import generate_curriculum
+from backend.ai.curriculum_agent.curriculum import generate_curriculum
 from backend.ai.grader import grade_submission
 import os
 
