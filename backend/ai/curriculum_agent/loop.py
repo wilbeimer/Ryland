@@ -7,6 +7,7 @@ what to call and when, driven entirely by the tool descriptions in
 tool_schemas.py. Adding/removing/changing what gets generated per assignment
 is now a prompt/schema change, not a pipeline change.
 """
+
 import json
 
 from backend.models import RylandState
@@ -50,8 +51,8 @@ def generate_curriculum(
             "role": "user",
             "content": (
                 f"Generate a complete curriculum for:\n"
-                    f"Name: {state.request.name}\n"
-                    f"Description: {state.request.description}"
+                f"Name: {state.request.name}\n"
+                f"Description: {state.request.description}"
             ),
         },
     ]
@@ -71,13 +72,15 @@ def generate_curriculum(
             # Model stopped talking without calling finish_course. Nudge once
             # rather than silently accepting an incomplete course.
             if state.course.status != state.course.status.COMPLETE:
-                messages.append({
-                    "role": "user",
-                    "content": (
-                        "You stopped without calling finish_course. If the course "
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": (
+                            "You stopped without calling finish_course. If the course "
                             "is done, call finish_course now. Otherwise keep going."
-                    ),
-                })
+                        ),
+                    }
+                )
                 continue
             break
 
@@ -89,16 +92,25 @@ def generate_curriculum(
             else:
                 result = execute_tool(tool_call.function.name, args, state)
 
-            print(f"[{iteration}] {tool_call.function.name}({tool_call.function.arguments}) -> {result}")
+            print(
+                f"[{iteration}] {tool_call.function.name}({tool_call.function.arguments}) -> {result}"
+            )
 
-            messages.append({
-                "role": "tool",
-                "tool_call_id": tool_call.id,
-                "content": json.dumps(result),
-            })
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": json.dumps(result),
+                }
+            )
 
-            if tool_call.function.name == "finish_course" and result.get("status") == "complete":
+            if (
+                tool_call.function.name == "finish_course"
+                and result.get("status") == "complete"
+            ):
                 return state
 
-    state.errors.append(f"Hit max_iterations ({max_iterations}) without calling finish_course successfully.")
+    state.errors.append(
+        f"Hit max_iterations ({max_iterations}) without calling finish_course successfully."
+    )
     return state

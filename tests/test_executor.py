@@ -7,6 +7,7 @@ Covers:
 - State mutations and validation
 - Lookup behavior (_find_week)
 """
+
 import pytest
 import uuid
 from unittest.mock import patch
@@ -28,13 +29,16 @@ from backend.models import (
 def executor():
     """Lazy-load executor to allow test execution without the module present."""
     from backend.ai.curriculum_agent import executor as exec_module
+
     return exec_module
 
 
 @pytest.fixture
 def base_state():
     """Create a fresh RylandState for each test."""
-    request = CurriculumRequest(name="Test Course", color="blue", description="A test course")
+    request = CurriculumRequest(
+        name="Test Course", color="blue", description="A test course"
+    )
     course = Course(id=str(uuid.uuid4()), name="Test Course", color="blue")
     return RylandState(request=request, course=course)
 
@@ -99,7 +103,9 @@ class TestSetCourseDescription:
 
 class TestSetCourseLength:
     def test_set_course_length_success(self, base_state, executor):
-        result = executor.set_course_length(base_state, duration_weeks=12, hours_per_week=5)
+        result = executor.set_course_length(
+            base_state, duration_weeks=12, hours_per_week=5
+        )
         assert result == {"status": "ok"}
         assert base_state.course.duration_weeks == 12
         assert base_state.course.hours_per_week == 5
@@ -112,12 +118,16 @@ class TestSetCourseLength:
         assert base_state.course.hours_per_week == 10
 
     def test_set_course_length_zero_weeks(self, base_state, executor):
-        result = executor.set_course_length(base_state, duration_weeks=0, hours_per_week=5)
+        result = executor.set_course_length(
+            base_state, duration_weeks=0, hours_per_week=5
+        )
         assert result == {"status": "ok"}
         assert base_state.course.duration_weeks == 0
 
     def test_set_course_length_decimal_hours(self, base_state, executor):
-        result = executor.set_course_length(base_state, duration_weeks=10, hours_per_week=2.5)
+        result = executor.set_course_length(
+            base_state, duration_weeks=10, hours_per_week=2.5
+        )
         assert result == {"status": "ok"}
         assert base_state.course.hours_per_week == 2.5
 
@@ -187,7 +197,9 @@ class TestCreateWeek:
 
     def test_create_week_duplicate_fails(self, base_state, executor):
         executor.create_week(base_state, week_number=1, goal="Week 1", topics=["a"])
-        result = executor.create_week(base_state, week_number=1, goal="Week 1 again", topics=["b"])
+        result = executor.create_week(
+            base_state, week_number=1, goal="Week 1 again", topics=["b"]
+        )
         assert "error" in result
         assert "already exists" in result["error"]
         assert len(base_state.course.weeks) == 1
@@ -275,8 +287,16 @@ class TestCreateAssignment:
             type="written",
             description="Read and summarize",
             resources=[
-                {"title": "Article 1", "url": "https://example.com/1", "source": "article"},
-                {"title": "Video 1", "url": "https://youtube.com/watch?v=xyz", "source": "youtube"},
+                {
+                    "title": "Article 1",
+                    "url": "https://example.com/1",
+                    "source": "article",
+                },
+                {
+                    "title": "Video 1",
+                    "url": "https://youtube.com/watch?v=xyz",
+                    "source": "youtube",
+                },
             ],
         )
         assert result["status"] == "ok"
@@ -296,9 +316,14 @@ class TestCreateAssignment:
             resources=[{"title": "Res", "url": "https://example.com"}],
         )
         assert result["status"] == "ok"
-        assert base_state.course.weeks[0].assignments[0].resources[0].source == ResourceSource.ARTICLE
+        assert (
+            base_state.course.weeks[0].assignments[0].resources[0].source
+            == ResourceSource.ARTICLE
+        )
 
-    def test_create_assignment_missing_required_resource_fields(self, base_state, executor):
+    def test_create_assignment_missing_required_resource_fields(
+        self, base_state, executor
+    ):
         executor.create_week(base_state, week_number=1, goal="Goal", topics=["a"])
         result = executor.create_assignment(
             base_state,
@@ -394,7 +419,12 @@ class TestCreateQuiz:
             title="Quiz 1",
             type="weekly",
             questions=[
-                {"type": "multiple_choice", "prompt": "Q1", "choices": ["A", "B"], "answer": "A"}
+                {
+                    "type": "multiple_choice",
+                    "prompt": "Q1",
+                    "choices": ["A", "B"],
+                    "answer": "A",
+                }
             ],
         )
         result = executor.create_quiz(
@@ -403,7 +433,12 @@ class TestCreateQuiz:
             title="Quiz 2",
             type="weekly",
             questions=[
-                {"type": "multiple_choice", "prompt": "Q2", "choices": ["A", "B"], "answer": "B"}
+                {
+                    "type": "multiple_choice",
+                    "prompt": "Q2",
+                    "choices": ["A", "B"],
+                    "answer": "B",
+                }
             ],
         )
         assert "error" in result
@@ -417,7 +452,12 @@ class TestCreateQuiz:
             title="Quiz 1",
             type="weekly",
             questions=[
-                {"type": "multiple_choice", "prompt": "Q1", "choices": ["A", "B"], "answer": "A"}
+                {
+                    "type": "multiple_choice",
+                    "prompt": "Q1",
+                    "choices": ["A", "B"],
+                    "answer": "A",
+                }
             ],
         )
         result = executor.create_quiz(
@@ -426,7 +466,12 @@ class TestCreateQuiz:
             title="Quiz 2",
             type="review",
             questions=[
-                {"type": "multiple_choice", "prompt": "Q2", "choices": ["A", "B"], "answer": "B"}
+                {
+                    "type": "multiple_choice",
+                    "prompt": "Q2",
+                    "choices": ["A", "B"],
+                    "answer": "B",
+                }
             ],
             replace=True,
         )
@@ -437,14 +482,21 @@ class TestCreateQuiz:
     def test_create_quiz_all_types(self, base_state, executor):
         quiz_types = ["weekly", "midterm", "final", "review"]
         for i, qtype in enumerate(quiz_types):
-            executor.create_week(base_state, week_number=i + 1, goal="Goal", topics=["a"])
+            executor.create_week(
+                base_state, week_number=i + 1, goal="Goal", topics=["a"]
+            )
             result = executor.create_quiz(
                 base_state,
                 week_number=i + 1,
                 title=f"Quiz {qtype}",
                 type=qtype,
                 questions=[
-                    {"type": "multiple_choice", "prompt": "Q", "choices": ["A"], "answer": "A"}
+                    {
+                        "type": "multiple_choice",
+                        "prompt": "Q",
+                        "choices": ["A"],
+                        "answer": "A",
+                    }
                 ],
             )
             assert result["status"] == "ok"
@@ -452,9 +504,19 @@ class TestCreateQuiz:
     def test_create_quiz_multiple_questions(self, base_state, executor):
         executor.create_week(base_state, week_number=1, goal="Goal", topics=["a"])
         questions = [
-            {"type": "multiple_choice", "prompt": "Q1", "choices": ["A", "B"], "answer": "A"},
+            {
+                "type": "multiple_choice",
+                "prompt": "Q1",
+                "choices": ["A", "B"],
+                "answer": "A",
+            },
             {"type": "short_answer", "prompt": "Q2", "answer": "Answer"},
-            {"type": "multiple_choice", "prompt": "Q3", "choices": ["X", "Y", "Z"], "answer": "Y"},
+            {
+                "type": "multiple_choice",
+                "prompt": "Q3",
+                "choices": ["X", "Y", "Z"],
+                "answer": "Y",
+            },
         ]
         result = executor.create_quiz(
             base_state,
@@ -484,9 +546,7 @@ class TestCreateQuiz:
             week_number=1,
             title="Quiz",
             type="weekly",
-            questions=[
-                {"type": "bad_type", "prompt": "Q", "answer": "A"}
-            ],
+            questions=[{"type": "bad_type", "prompt": "Q", "answer": "A"}],
         )
         assert "error" in result
 
@@ -497,9 +557,7 @@ class TestCreateQuiz:
             week_number=1,
             title="Quiz",
             type="weekly",
-            questions=[
-                {"type": "multiple_choice", "choices": ["A", "B"]}
-            ],
+            questions=[{"type": "multiple_choice", "choices": ["A", "B"]}],
         )
         assert "error" in result
 
@@ -508,10 +566,20 @@ class TestSearchYoutube:
     @patch("backend.ai.curriculum_agent.executor._search_youtube_api")
     def test_search_youtube_success(self, mock_yt, base_state, executor):
         mock_yt.return_value = [
-            {"title": "Video 1", "url": "https://youtube.com/v1", "channel": "Channel A"},
-            {"title": "Video 2", "url": "https://youtube.com/v2", "channel": "Channel B"},
+            {
+                "title": "Video 1",
+                "url": "https://youtube.com/v1",
+                "channel": "Channel A",
+            },
+            {
+                "title": "Video 2",
+                "url": "https://youtube.com/v2",
+                "channel": "Channel B",
+            },
         ]
-        result = executor.search_youtube(base_state, query="Python tutorial", max_results=2)
+        result = executor.search_youtube(
+            base_state, query="Python tutorial", max_results=2
+        )
         assert "results" in result
         assert len(result["results"]) == 2
         mock_yt.assert_called_once_with("Python tutorial", max_results=2)
@@ -550,9 +618,15 @@ class TestFinishCourse:
 
     def test_finish_course_multiple_weeks(self, base_state, executor):
         for i in range(1, 4):
-            executor.create_week(base_state, week_number=i, goal=f"Goal {i}", topics=["a"])
+            executor.create_week(
+                base_state, week_number=i, goal=f"Goal {i}", topics=["a"]
+            )
             executor.create_assignment(
-                base_state, week_number=i, title=f"A{i}", type="written", description="D"
+                base_state,
+                week_number=i,
+                title=f"A{i}",
+                type="written",
+                description="D",
             )
         result = executor.finish_course(base_state)
         assert result["status"] == "complete"
@@ -705,8 +779,16 @@ class TestIntegration:
                 "Follow PEP 8",
             ],
             resources=[
-                {"title": "Python Docs", "url": "https://docs.python.org", "source": "web"},
-                {"title": "Testing Guide", "url": "https://example.com/testing", "source": "article"},
+                {
+                    "title": "Python Docs",
+                    "url": "https://docs.python.org",
+                    "source": "web",
+                },
+                {
+                    "title": "Testing Guide",
+                    "url": "https://example.com/testing",
+                    "source": "article",
+                },
             ],
             dueDate="2024-12-15",
             points=250,

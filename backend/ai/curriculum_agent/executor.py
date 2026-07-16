@@ -17,8 +17,8 @@ from backend.models import (
 )
 from backend.ai.youtube import search_youtube as _search_youtube_api
 
-
 # --- Lookups ---
+
 
 def _find_week(state: RylandState, week_number: int) -> Week | None:
     for week in state.course.weeks:
@@ -28,6 +28,7 @@ def _find_week(state: RylandState, week_number: int) -> Week | None:
 
 
 # --- Tool implementations ---
+
 
 def set_course_description(
     state: RylandState,
@@ -46,7 +47,9 @@ def set_course_description(
     return {"status": "ok"}
 
 
-def set_course_length(state: RylandState, duration_weeks: int, hours_per_week: int) -> dict:
+def set_course_length(
+    state: RylandState, duration_weeks: int, hours_per_week: int
+) -> dict:
     state.course.duration_weeks = duration_weeks
     state.course.hours_per_week = hours_per_week
     return {"status": "ok"}
@@ -75,9 +78,13 @@ def set_textbook(
     return {"status": "ok"}
 
 
-def create_week(state: RylandState, week_number: int, goal: str, topics: list[str]) -> dict:
+def create_week(
+    state: RylandState, week_number: int, goal: str, topics: list[str]
+) -> dict:
     if _find_week(state, week_number) is not None:
-        return {"error": f"Week {week_number} already exists. Reuse it, don't recreate it."}
+        return {
+            "error": f"Week {week_number} already exists. Reuse it, don't recreate it."
+        }
     try:
         week = Week(id=str(uuid.uuid4()), number=week_number, goal=goal, topics=topics)
     except ValidationError as e:
@@ -143,7 +150,8 @@ def create_quiz(
         return {"error": f"No week {week_number} yet. Call create_week first."}
     if week.quiz is not None and not replace:
         return {
-            "error": f"Week {week_number} already has a quiz ('{week.quiz.title}'). " f"Pass replace=true if you intend to overwrite it."
+            "error": f"Week {week_number} already has a quiz ('{week.quiz.title}'). "
+            f"Pass replace=true if you intend to overwrite it."
         }
     try:
         question_objs = [

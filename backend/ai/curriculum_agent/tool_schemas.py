@@ -8,7 +8,10 @@ TOOLS = [
                 "type": "object",
                 "properties": {
                     "description": {"type": "string"},
-                    "domain": {"type": "string", "description": "Broad subject area, e.g. 'Computer Science'"},
+                    "domain": {
+                        "type": "string",
+                        "description": "Broad subject area, e.g. 'Computer Science'",
+                    },
                     "subdomains": {"type": "array", "items": {"type": "string"}},
                     "prerequisites": {"type": "array", "items": {"type": "string"}},
                 },
@@ -59,7 +62,10 @@ TOOLS = [
                 "type": "object",
                 "properties": {
                     "week_number": {"type": "integer"},
-                    "goal": {"type": "string", "description": "What the learner can do by end of week"},
+                    "goal": {
+                        "type": "string",
+                        "description": "What the learner can do by end of week",
+                    },
                     "topics": {"type": "array", "items": {"type": "string"}},
                 },
                 "required": ["week_number", "goal", "topics"],
@@ -76,7 +82,10 @@ TOOLS = [
                 "properties": {
                     "week_number": {"type": "integer"},
                     "title": {"type": "string"},
-                    "type": {"type": "string", "enum": ["written", "checklist", "project", "presentation"]},
+                    "type": {
+                        "type": "string",
+                        "enum": ["written", "checklist", "project", "presentation"],
+                    },
                     "description": {"type": "string"},
                     "requirements": {"type": "array", "items": {"type": "string"}},
                     "resources": {
@@ -86,12 +95,18 @@ TOOLS = [
                             "properties": {
                                 "title": {"type": "string"},
                                 "url": {"type": "string"},
-                                "source": {"type": "string", "enum": ["textbook", "youtube", "web", "article"]},
+                                "source": {
+                                    "type": "string",
+                                    "enum": ["textbook", "youtube", "web", "article"],
+                                },
                             },
                             "required": ["title", "url"],
                         },
                     },
-                    "dueDate": {"type": "string", "description": "ISO date or relative phrase like 'end of week 3'"},
+                    "dueDate": {
+                        "type": "string",
+                        "description": "ISO date or relative phrase like 'end of week 3'",
+                    },
                     "points": {"type": "number"},
                     "rubric": {"type": "string"},
                 },
@@ -109,15 +124,25 @@ TOOLS = [
                 "properties": {
                     "week_number": {"type": "integer"},
                     "title": {"type": "string"},
-                    "type": {"type": "string", "enum": ["weekly", "midterm", "final", "review"]},
+                    "type": {
+                        "type": "string",
+                        "enum": ["weekly", "midterm", "final", "review"],
+                    },
                     "questions": {
                         "type": "array",
                         "items": {
                             "type": "object",
                             "properties": {
-                                "type": {"type": "string", "enum": ["multiple_choice", "short_answer"]},
+                                "type": {
+                                    "type": "string",
+                                    "enum": ["multiple_choice", "short_answer"],
+                                },
                                 "prompt": {"type": "string"},
-                                "choices": {"type": "array", "items": {"type": "string"}, "description": "Required for multiple_choice, omit for short_answer"},
+                                "choices": {
+                                    "type": "array",
+                                    "items": {"type": "string"},
+                                    "description": "Required for multiple_choice, omit for short_answer",
+                                },
                                 "answer": {"type": "string"},
                             },
                             "required": ["type", "prompt", "answer"],
@@ -125,7 +150,10 @@ TOOLS = [
                     },
                     "dueDate": {"type": "string"},
                     "points": {"type": "number"},
-                    "replace": {"type": "boolean", "description": "Set true to overwrite an existing quiz for this week"},
+                    "replace": {
+                        "type": "boolean",
+                        "description": "Set true to overwrite an existing quiz for this week",
+                    },
                 },
                 "required": ["week_number", "title", "type", "questions"],
             },
@@ -155,4 +183,3 @@ TOOLS = [
         },
     },
 ]
-
