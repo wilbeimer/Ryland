@@ -1,6 +1,5 @@
 """
 Agentic curriculum generation loop.
-
 Replaces the fixed 01-07 stage pipeline in run.py: instead of a hardcoded
 sequence of AI calls each mapped to one apply_* function, the model decides
 what to call and when, driven entirely by the tool descriptions in
@@ -9,7 +8,6 @@ is now a prompt/schema change, not a pipeline change.
 """
 
 import json
-
 from backend.models import RylandState
 from backend.ai.client import get_client
 from backend.ai.curriculum_agent.tool_schemas import TOOLS
@@ -17,7 +15,6 @@ from backend.ai.curriculum_agent.executor import execute_tool
 
 SYSTEM_PROMPT = """You are Ryland, an expert curriculum designer. Build a complete, \
 well-sequenced course by calling the provided tools. Rules:
-
 1. Call set_course_description and set_course_length before creating any weeks.
 2. Create weeks in order, starting at week 1, using create_week.
 3. For each week, create at least one assignment with create_assignment. Assignments \
@@ -33,7 +30,6 @@ the course is actually complete.
 7. If any tool call returns an error, read it, fix your arguments, and try again. \
 Don't repeat the same failing call unchanged.
 """
-
 MODEL = "llama-3.3-70b-versatile"
 MAX_ITERATIONS = 60
 
@@ -44,7 +40,6 @@ def generate_curriculum(
     max_iterations: int = MAX_ITERATIONS,
 ) -> RylandState:
     client = get_client()
-
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {
@@ -56,7 +51,6 @@ def generate_curriculum(
             ),
         },
     ]
-
     for iteration in range(max_iterations):
         response = client.chat.completions.create(
             model=model,
@@ -67,7 +61,6 @@ def generate_curriculum(
         )
         message = response.choices[0].message
         messages.append(message.model_dump(exclude_none=True))
-
         if not message.tool_calls:
             # Model stopped talking without calling finish_course. Nudge once
             # rather than silently accepting an incomplete course.
@@ -82,8 +75,7 @@ def generate_curriculum(
                     }
                 )
                 continue
-            break
-
+            return state
         for tool_call in message.tool_calls:
             try:
                 args = json.loads(tool_call.function.arguments)
@@ -91,11 +83,9 @@ def generate_curriculum(
                 result = {"error": f"Could not parse arguments as JSON: {e}"}
             else:
                 result = execute_tool(tool_call.function.name, args, state)
-
             print(
                 f"[{iteration}] {tool_call.function.name}({tool_call.function.arguments}) -> {result}"
             )
-
             messages.append(
                 {
                     "role": "tool",
@@ -103,13 +93,11 @@ def generate_curriculum(
                     "content": json.dumps(result),
                 }
             )
-
             if (
                 tool_call.function.name == "finish_course"
                 and result.get("status") == "complete"
             ):
                 return state
-
     state.errors.append(
         f"Hit max_iterations ({max_iterations}) without calling finish_course successfully."
     )
