@@ -15,9 +15,15 @@ from backend.models import (
 from backend.ai.curriculum import generate_curriculum
 from backend.ai.grader import grade_submission
 import os
+from contextlib import asynccontextmanager
 
-app = FastAPI()
-init_db()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    init_db()
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:8080").split(",")
 app.add_middleware(
