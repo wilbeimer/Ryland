@@ -1,5 +1,5 @@
 from uuid import uuid4
-from backend.models import Assignment, Quiz, RylandState, Textbook, Week
+from models import Assignment, Quiz, RylandState, Textbook, Week
 
 
 def apply_description(result: dict, state: RylandState) -> None:

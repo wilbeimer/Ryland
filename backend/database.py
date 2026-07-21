@@ -2,9 +2,9 @@ import json
 import sqlite3
 import os
 
-from backend.models import Assignment, Course, Quiz, Week
+from models import Assignment, Course, Quiz, Week
 
-DATABASE_URL = os.getenv("DATABASE_URL", "curriculum.db")
+DATABASE_URL = os.getenv("DATABASE_URL", "backend/data/curriculum.db")
 
 
 def init_db(database: str = DATABASE_URL):
