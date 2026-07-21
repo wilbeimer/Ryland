@@ -23,6 +23,7 @@ async def lifespan(app: FastAPI):
     init_db()
     yield
 
+
 app = FastAPI(lifespan=lifespan)
 
 origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:8080").split(",")
