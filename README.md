@@ -1,3 +1,8 @@
+![Python](https://img.shields.io/badge/Python-3.11+-blue)
+![FastAPI](https://img.shields.io/badge/FastAPI-Framework-009688)
+![React](https://img.shields.io/badge/React-Frontend-61DAFB)
+![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED)
+![CI](https://github.com/wilbeimer/Ryland/actions/workflows/ci.yml/badge.svg)
 # Ryland
 
 > An AI-powered curriculum generation platform that builds personalized learning plans using an agent-driven planning workflow.
