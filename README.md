@@ -1,11 +1,12 @@
 # Ryland
 
-> An AI-powered curriculum generation platform that builds personalized learning plans using a staged, multi-agent workflow.
+> An AI-powered curriculum generation platform that builds personalized learning plans using an agent-driven planning workflow.
 
-Rylan transforms high-level learning goals into structured curricula, assignments, quizzes, and educational resources. Specialized AI agents collaborate to plan the curriculum, retrieve supporting content from external APIs, and generate personalized feedback through a separate grading pipeline.
+Ryland transforms high-level learning goals into structured curricula, assignments, quizzes, and educational resources. A collection of specialized AI agents collaborates to plan learning objectives, generate assessments, retrieve supporting resources, and evaluate completed work through a separate grading pipeline.
 
-Built with **Python, FastAPI, React, SQLite, and Groq LLMs**.des an AI grading pipeline that analyzes student submissions, assigns scores, and generates personalized feedback using a staged reasoning process.
+The system is built around a shared application state, allowing each planning component to focus on a single responsibility while contributing to a complete curriculum.
 
+Built with **Python, FastAPI, React, SQLite, Docker, and Groq LLMs**.
 
 ---
 
@@ -14,11 +15,12 @@ Built with **Python, FastAPI, React, SQLite, and Groq LLMs**.des an AI grading p
 - [Why I Built It](#why-i-built-it)
 - [Features](#features)
 - [Screenshots](#screenshots)
-- [Agent Workflow](#agent-workflow)
+- [Architecture](#architecture)
 - [Engineering Decisions](#engineering-decisions)
 - [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
 - [Project Status](#project-status)
+- [Roadmap](#roadmap)
 
 ---
 
@@ -26,22 +28,25 @@ Built with **Python, FastAPI, React, SQLite, and Groq LLMs**.des an AI grading p
 
 One of the biggest challenges when learning a new subject isn't finding information—it's deciding **what to learn next**.
 
-I built Rylan to automate that planning process. Instead of manually organizing tutorials, articles, and projects into a coherent roadmap, users describe what they want to learn, and the system generates a structured curriculum complete with assignments and supporting resources.
+I built **Ryland** to automate that planning process. Instead of manually organizing tutorials, articles, documentation, and projects into a coherent learning roadmap, users simply describe what they want to learn. Ryland then generates a personalized curriculum complete with weekly goals, assignments, quizzes, and curated learning resources.
 
-This project also serves as a way to explore agentic AI systems that combine LLM reasoning with external tools.
+Beyond solving that problem, Ryland serves as a platform for exploring agentic AI systems. It experiments with decomposing complex planning tasks into smaller reasoning steps while integrating external tools and structured application state.
 
 ---
 
 ## Features
 
-- Multi-stage agent pipeline
-- Curriculum and learning objective generation
+- AI-generated personalized curricula
 - Assignment and quiz generation
 - AI-powered grading and feedback
+- Shared state-based workflow orchestration
+- Modular planning pipeline
 - YouTube resource retrieval
-- REST API built with FastAPI
+- FastAPI REST API
 - React frontend
-- Persistent curriculum storage with SQLite
+- SQLite persistence
+- Dockerized development environment
+- GitHub Actions continuous integration
 
 ---
 
@@ -63,14 +68,36 @@ This project also serves as a way to explore agentic AI systems that combine LLM
 
 ## Getting Started
 
-### Prerequisites
+### Docker (Recommended)
+
+```bash
+docker compose up --build
+```
+
+Frontend:
+
+```
+http://localhost:8080
+```
+
+Backend API:
+
+```
+http://localhost:8000
+```
+
+---
+
+### Local Development
+
+#### Prerequisites
 
 - Python 3.11+
 - Node.js
 - Groq API Key
 - YouTube Data API Key
 
-### Backend
+#### Backend
 
 ```bash
 cd backend
@@ -83,7 +110,7 @@ pip install -r requirements.txt
 uvicorn main:app --reload
 ```
 
-### Frontend
+#### Frontend
 
 ```bash
 cd frontend
@@ -93,7 +120,7 @@ npm install
 npm run dev
 ```
 
-The application will be available at:
+Frontend:
 
 ```
 http://localhost:5173
@@ -101,45 +128,34 @@ http://localhost:5173
 
 ---
 
-## Agent Workflow
+## Architecture
 
 ### Curriculum Generation
 
 ```text
-User Goal
-    │
-    ▼
-Curriculum Runner
-    │
-    ▼
-Course Description
-    │
-    ▼
-Course Resources
-    │
-    ▼
-Course Length
-    │
-    ▼
-Weekly Goals
-    │
-    ▼
-Assignments
-    │
-    ▼
-Assignment Details
-    │
-    ▼
-Quiz Generation
-    │
-    ▼
-Resource Generation
-    │
-    ▼
-Final Curriculum
-    │
-    ▼
-React Frontend
+            User Goal
+                 │
+                 ▼
+        Curriculum Planner
+                 │
+                 ▼
+        Shared RylandState
+                 │
+      ┌──────────┼──────────┐
+      │          │          │
+      ▼          ▼          ▼
+ Generate   Retrieve   Generate
+ Objectives Resources Assignments
+      │          │          │
+      └──────────┼──────────┘
+                 ▼
+        Generate Assessments
+                 │
+                 ▼
+        Completed Curriculum
+                 │
+                 ▼
+          React Frontend
 ```
 
 ### Assignment Grading
@@ -148,63 +164,96 @@ React Frontend
 Student Submission
         │
         ▼
- Analyze
+   Analyze Work
         │
         ▼
- Score
+ Generate Score
         │
         ▼
- Feedback
+ Generate Feedback
 ```
 
-Each stage is responsible for a single planning task and receives the output of the previous stage as context.
+Ryland is built around a shared `RylandState` object that acts as the central source of truth throughout the planning process. Rather than passing intermediate JSON files between components, each planning step reads from and updates the shared state.
 
-This staged architecture produces more consistent results than attempting to generate an entire curriculum in a single prompt while making individual components easier to test, modify, and extend.
+This architecture reduces unnecessary file I/O, simplifies data flow, and makes it easier to introduce new planning capabilities without redesigning the overall workflow.
 
 ---
 
 ## Engineering Decisions
 
-Rather than relying on a single LLM prompt, the curriculum generator uses a staged pipeline in which each agent performs a narrowly defined task. This approach improves consistency, simplifies debugging, and allows individual stages to evolve independently.
+Rather than relying on a single prompt to generate an entire curriculum, Ryland decomposes the problem into a collection of focused planning tasks. Each planning component has a narrow responsibility, improving consistency while making failures easier to debug and individual behaviors easier to refine.
 
-The backend is organized around modular services so additional planning stages or retrieval tools can be added without changing the overall pipeline.
+The planning workflow is orchestrated through a shared `RylandState` object, eliminating intermediate files and providing a single source of truth for the application. This state-centric design also makes the system easier to extend as new planning capabilities are introduced.
+
+The backend is organized around modular services and external tool integrations. As the project evolves, planning components are being refactored into reusable AI tools that can be orchestrated more dynamically, allowing the system to move beyond a strictly sequential pipeline.
 
 ---
 
 ## Tech Stack
 
 ### Frontend
+
 - React
 
 ### Backend
+
 - Python
 - FastAPI
 - Pydantic
 
 ### Database
+
 - SQLite
 
 ### AI
+
 - Groq API
-- Prompt Engineering
 - Multi-agent orchestration
+- Structured prompting
+
+### Infrastructure
+
+- Docker
+- Docker Compose
+- Nginx
+
+### DevOps
+
+- GitHub Actions
+- Ruff
+- Black
+- Pytest
 
 ### External APIs
-- YouTube Data API
 
-### Development
-- Git
-- Make
+- YouTube Data API
 
 ---
 
 ## Project Status
 
-🚧 Active Development
+🚧 **Active Development**
 
 Current focus:
 
-- Improved grading pipeline
+- Tool-based agent architecture
 - Cloud deployment
-- GitHub Actions CI
+- User authentication
+- Vector search (RAG)
+- Enhanced grading pipeline
 
+---
+
+## Roadmap
+
+- [x] AI curriculum generation
+- [x] Assignment generation
+- [x] Quiz generation
+- [x] AI grading pipeline
+- [x] Shared application state
+- [x] Docker deployment
+- [x] GitHub Actions CI
+- [ ] Tool-calling planning agents
+- [ ] Vector database integration
+- [ ] User authentication
+- [ ] Cloud deployment
