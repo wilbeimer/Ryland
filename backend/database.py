@@ -2,7 +2,7 @@ import json
 import sqlite3
 import os
 
-from models import Assignment, Course, Quiz, Week
+from backend.models import Assignment, Course, Quiz, Week
 
 DATABASE_URL = os.getenv("DATABASE_URL", "backend/data/curriculum.db")
 

@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 import sqlite3
-from ai.runner import run_stage
-from models import SubmissionCreate
+from backend.ai.runner import run_stage
+from backend.models import SubmissionCreate
 
 GRADING_STAGES_DIR = Path(__file__).parent / "grading" / "stages"
 

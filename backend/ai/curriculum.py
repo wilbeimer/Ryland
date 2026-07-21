@@ -1,7 +1,7 @@
 import os
-from ai.runner import run_stage
-from models import Course, CourseStatus, CurriculumRequest, RylandState
-from database import save_course, save_course_status
+from backend.ai.runner import run_stage
+from backend.models import Course, CourseStatus, CurriculumRequest, RylandState
+from backend.database import save_course, save_course_status
 
 STAGES_DIR = os.path.join(os.path.dirname(__file__), "curriculum", "stages")
 

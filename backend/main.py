@@ -2,8 +2,8 @@ from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 import uuid
 import json
-from database import init_db, get_db
-from models import (
+from backend.database import init_db, get_db
+from backend.models import (
     CurriculumRequest,
     Course,
     Week,
@@ -12,8 +12,8 @@ from models import (
     Submission,
     SubmissionCreate,
 )
-from ai.curriculum import generate_curriculum
-from ai.grader import grade_submission
+from backend.ai.curriculum import generate_curriculum
+from backend.ai.grader import grade_submission
 import os
 
 app = FastAPI()

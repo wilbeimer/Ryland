@@ -6,8 +6,8 @@ from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
 import time
 
-from models import RylandState
-from ai.state_updates import (
+from backend.models import RylandState
+from backend.ai.state_updates import (
     apply_description,
     apply_resources,
     apply_course_length,
@@ -20,7 +20,7 @@ from ai.state_updates import (
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from ai.client import get_client
+from backend.ai.client import get_client
 
 AI_DIR = Path(__file__).parent
 DEFAULT_SYSTEM_PROMPT = "You are an expert AI assistant. Return only valid JSON, no markdown, no explanation."
