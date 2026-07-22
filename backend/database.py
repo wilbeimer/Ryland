@@ -3,6 +3,7 @@ import sqlite3
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from contextlib import contextmanager
 
 from backend.models import Assignment, Course, Quiz, Week
 
@@ -13,13 +14,33 @@ print("EARLY DATABASE_URL:", repr(os.getenv("DATABASE_URL")))
 DATABASE_URL = os.getenv("DATABASE_URL", "backend/data/curriculum.db")
 
 
+def _get_connection(database_url: str = DATABASE_URL) -> sqlite3.Connection:
+    """Get a SQLite connection with proper configuration."""
+    conn = sqlite3.connect(database_url, check_same_thread=False, timeout=30)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")  # Enable foreign key constraints
+    # Use a journaling mode that works better with Docker volume mounts
+    conn.execute("PRAGMA journal_mode = MEMORY")  # Store journal in memory instead of files
+    return conn
+
+
+@contextmanager
+def get_connection():
+    """Context manager for database connections."""
+    conn = _get_connection()
+    try:
+        yield conn
+    finally:
+        conn.close()
+
+
 def init_db(database: str = DATABASE_URL):
     print("initializing db...")
     print("DEBUG database param:", repr(database))
     print("DEBUG DATABASE_URL global:", repr(DATABASE_URL))
     Path(database).parent.mkdir(parents=True, exist_ok=True)
 
-    conn = sqlite3.connect(database)
+    conn = _get_connection(database)
     cur = conn.cursor()
 
     cur.execute("""
@@ -46,7 +67,7 @@ def init_db(database: str = DATABASE_URL):
             week INTEGER NOT NULL,
             goal TEXT,
             topics TEXT,
-            FOREIGN KEY (courseId) REFERENCES courses(id)
+            FOREIGN KEY (courseId) REFERENCES courses(id) ON DELETE CASCADE
         )
     """)
 
@@ -64,8 +85,8 @@ def init_db(database: str = DATABASE_URL):
             points REAL,
             rubric TEXT,
             resources TEXT DEFAULT '[]',
-            FOREIGN KEY (courseId) REFERENCES courses(id),
-            FOREIGN KEY (weekId) REFERENCES course_weeks(id)
+            FOREIGN KEY (courseId) REFERENCES courses(id) ON DELETE CASCADE,
+            FOREIGN KEY (weekId) REFERENCES course_weeks(id) ON DELETE CASCADE
         )
     """)
 
@@ -77,7 +98,7 @@ def init_db(database: str = DATABASE_URL):
             feedback TEXT,
             content TEXT NOT NULL,
             status TEXT DEFAULT 'pending',
-            FOREIGN KEY (assignmentId) REFERENCES assignments(id)
+            FOREIGN KEY (assignmentId) REFERENCES assignments(id) ON DELETE CASCADE
         )
     """)
 
@@ -92,8 +113,8 @@ def init_db(database: str = DATABASE_URL):
             questions TEXT NOT NULL,
             dueDate TEXT,
             points REAL,
-            FOREIGN KEY (courseId) REFERENCES courses(id),
-            FOREIGN KEY (weekId) REFERENCES course_weeks(id)
+            FOREIGN KEY (courseId) REFERENCES courses(id) ON DELETE CASCADE,
+            FOREIGN KEY (weekId) REFERENCES course_weeks(id) ON DELETE CASCADE
         )
     """)
 
@@ -102,8 +123,8 @@ def init_db(database: str = DATABASE_URL):
 
 
 def get_db():
-    conn = sqlite3.connect(DATABASE_URL, check_same_thread=False, timeout=30)
-    conn.row_factory = sqlite3.Row
+    """FastAPI dependency for database connections."""
+    conn = _get_connection()
     try:
         yield conn
     finally:
@@ -211,8 +232,7 @@ def _save_quiz(cur, course_id: str, week: Week, quiz: Quiz):
 
 
 def save_course(course: Course):
-    with sqlite3.connect(DATABASE_URL, check_same_thread=False, timeout=30) as conn:
-        conn.row_factory = sqlite3.Row
+    with get_connection() as conn:
         cur = conn.cursor()
 
         _save_course_row(cur, course)
@@ -229,8 +249,7 @@ def save_course(course: Course):
 
 
 def save_course_status(course: Course):
-    with sqlite3.connect(DATABASE_URL, check_same_thread=False, timeout=30) as conn:
-        conn.row_factory = sqlite3.Row
+    with get_connection() as conn:
         cur = conn.cursor()
         cur.execute(
             "UPDATE courses SET status = ? WHERE id = ?",

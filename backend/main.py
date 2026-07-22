@@ -1,5 +1,8 @@
-from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks
+from fastapi import FastAPI, Depends, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import uuid
 import json
 from backend.database import init_db, get_db
@@ -26,6 +29,11 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Initialize rate limiter
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 origins = os.getenv("ALLOWED_ORIGINS", "http://localhost:8080").split(",")
 app.add_middleware(
     CORSMiddleware,
@@ -36,7 +44,8 @@ app.add_middleware(
 
 
 @app.get("/")
-def root():
+@limiter.limit("100/minute")
+def root(request: Request):
     return {"message": "Hello World"}
 
 
@@ -44,7 +53,8 @@ def root():
 
 
 @app.get("/courses", response_model=list[Course])
-def get_courses(conn=Depends(get_db)):
+@limiter.limit("100/minute")
+def get_courses(request: Request, conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("SELECT * FROM courses")
     rows = cur.fetchall()
@@ -52,8 +62,12 @@ def get_courses(conn=Depends(get_db)):
 
 
 @app.post("/courses", response_model=dict)
+@limiter.limit("10/minute")  # Lower limit for creating courses
 def post_course(
-    course: CurriculumRequest, background_tasks: BackgroundTasks, conn=Depends(get_db)
+    request: Request,
+    course: CurriculumRequest,
+    background_tasks: BackgroundTasks,
+    conn=Depends(get_db)
 ):
 
     cur = conn.cursor()
@@ -81,7 +95,8 @@ def post_course(
 
 
 @app.get("/courses/{id}")
-def get_course(id: str, conn=Depends(get_db)):
+@limiter.limit("100/minute")
+def get_course(request: Request, id: str, conn=Depends(get_db)):
     cur = conn.cursor()
     cur.execute("SELECT * FROM courses WHERE id=?", (id,))
     row = cur.fetchone()
@@ -94,9 +109,22 @@ def get_course(id: str, conn=Depends(get_db)):
 
 
 @app.delete("/courses/{id}", status_code=204)
-def delete_course(id: str, conn=Depends(get_db)):
+@limiter.limit("20/minute")  # Lower limit for delete operations
+def delete_course(request: Request, id: str, conn=Depends(get_db)):
     cur = conn.cursor()
+
+    # First check if the course exists
+    cur.execute("SELECT id FROM courses WHERE id=?", (id,))
+    if cur.fetchone() is None:
+        raise HTTPException(status_code=404, detail="Course not found")
+
+    # Delete the course - cascade will handle related records
     cur.execute("DELETE FROM courses WHERE id=?", (id,))
+
+    # Check if any rows were deleted
+    if cur.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Course not found")
+
     conn.commit()
 
 

@@ -5,8 +5,10 @@ WORKDIR /app
 COPY backend ./backend
 COPY ./backend/requirements.txt .
 RUN pip install --no-cache-dir --upgrade pip --break-system-packages && \
-   pip install --no-cache-dir -r requirements.txt && \
-   useradd --create-home appuser
+   pip install --no-cache-dir -r requirements.txt
+
+# Create appuser with the same UID as the host user (503)
+RUN useradd -u 503 -m -s /bin/bash appuser
 
 USER appuser
 
