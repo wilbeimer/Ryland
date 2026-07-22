@@ -25,7 +25,7 @@ from backend.ai.client import get_client
 AI_DIR = Path(__file__).parent
 DEFAULT_SYSTEM_PROMPT = "You are an expert AI assistant. Return only valid JSON, no markdown, no explanation."
 
-DEFAULT_MODEL = "llama-3.1-8b-instant"
+DEFAULT_MODEL = "groq/compound"
 FALLBACK_MODELS = [
     "groq/compound",
     "groq/compound-mini",
