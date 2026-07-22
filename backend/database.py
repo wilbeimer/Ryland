@@ -2,14 +2,21 @@ import json
 import sqlite3
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 from backend.models import Assignment, Course, Quiz, Week
+
+load_dotenv()
+
+print("EARLY DATABASE_URL:", repr(os.getenv("DATABASE_URL")))
 
 DATABASE_URL = os.getenv("DATABASE_URL", "backend/data/curriculum.db")
 
 
 def init_db(database: str = DATABASE_URL):
     print("initializing db...")
+    print("DEBUG database param:", repr(database))
+    print("DEBUG DATABASE_URL global:", repr(DATABASE_URL))
     Path(database).parent.mkdir(parents=True, exist_ok=True)
 
     conn = sqlite3.connect(database)

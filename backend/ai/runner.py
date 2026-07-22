@@ -25,11 +25,15 @@ from backend.ai.client import get_client
 AI_DIR = Path(__file__).parent
 DEFAULT_SYSTEM_PROMPT = "You are an expert AI assistant. Return only valid JSON, no markdown, no explanation."
 
-DEFAULT_MODEL = "llama-3.3-70b-versatile"
+DEFAULT_MODEL = "llama-3.1-8b-instant"
 FALLBACK_MODELS = [
-    "llama-3.3-70b-versatile",  # 12K TPM, 100K TPD
-    "qwen/qwen3-32b",  # 6K TPM, 500K TPD
-    "llama-3.1-8b-instant",  # 6K TPM, 500K TPD
+    "groq/compound",
+    "groq/compound-mini",
+    "llama-3.3-70b-versatile",
+    "openai/gpt-oss-120b",
+    "qwen/qwen3.6-27b",
+    "llama-3.1-8b-instant",
+    "allam-2-7b",
 ]
 
 
