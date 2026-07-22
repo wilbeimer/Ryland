@@ -20,7 +20,9 @@ def _get_connection(database_url: str = DATABASE_URL) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")  # Enable foreign key constraints
     # Use a journaling mode that works better with Docker volume mounts
-    conn.execute("PRAGMA journal_mode = MEMORY")  # Store journal in memory instead of files
+    conn.execute(
+        "PRAGMA journal_mode = MEMORY"
+    )  # Store journal in memory instead of files
     return conn
 
 

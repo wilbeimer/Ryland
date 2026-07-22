@@ -67,7 +67,7 @@ def post_course(
     request: Request,
     course: CurriculumRequest,
     background_tasks: BackgroundTasks,
-    conn=Depends(get_db)
+    conn=Depends(get_db),
 ):
 
     cur = conn.cursor()
