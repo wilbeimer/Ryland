@@ -4,30 +4,9 @@ from anthropic import Anthropic
 
 from backend.db import create_course
 from backend.models import Course
+from agent.tools import TOOLS
 
 load_dotenv()
-
-
-TOOLS = [
-    {
-        "name": "create_course",
-        "description": "Creates a new course and adds it to the database",
-        "input_schema": {
-            "type": "object",
-            "properties": {
-                "course_name": {
-                    "type": "string",
-                    "description": "The name of the course"
-                },
-                "course_description": {
-                    "type": "string",
-                    "description": "A detailed description of the course"
-                }
-            },
-            "required": ["course_name", "course_description"]
-        }
-    }
-]
 
 
 class Agent():
@@ -52,6 +31,10 @@ class Agent():
             return create_course(
                 course=course
             )
+
+        elif tool_name == "ask_user":
+            answer = input(f"\n{tool_input['question']}\n> ")
+            return answer
         else:
             return {"error": f"Unknown tool: {tool_name}"}
 
@@ -73,7 +56,7 @@ class Agent():
 
 def run_agent(task: str, **kwargs):
     messages: list[dict] = [{"role": "user", "content": task}]
-    context_file = "CONTEXT.md"
+    context_file = "agent/CONTEXT.md"
     agent = Agent(kwargs["client"], kwargs["model"], tools=TOOLS, context_file=context_file)
 
     for iteration in range(5):

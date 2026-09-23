@@ -1,4 +1,4 @@
-import FastAPI
+import fastapi
 from backend.models import Course
 
 

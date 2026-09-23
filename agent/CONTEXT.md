@@ -10,8 +10,10 @@ You are running through an API with access to database operations and external t
 - **Project**: Ryland - AI-powered curriculum generation platform
 - **Model**: Claude Haiku 4.5 (via Anthropic API)
 - **Tools Available**: 
-  - `create_course`: Creates a new course and adds it to the database
-    - Inputs: `course_name` (string), `course_description` (string)
+    - `create_course`: Creates a new course and adds it to the database
+        - Inputs: `course_name` (string), `course_description` (string)
+    - `ask_user`: If the request is under specified, call ask_user before generating the course.
+        - Inputs: `question` (string)
 - **Data Model**: Courses have `name` and `desc` fields
 
 ## System Context
