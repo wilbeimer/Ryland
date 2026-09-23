@@ -7,6 +7,7 @@ from backend.models import Course
 
 load_dotenv()
 
+
 TOOLS = [
     {
         "name": "create_course",
@@ -30,10 +31,15 @@ TOOLS = [
 
 
 class Agent():
-    def __init__(self, client, model, tools=None):
+    def __init__(self, client, model, tools=None, context_file=None):
         self.client = client
         self.model = model
         self.tools = tools if tools is not None else []
+
+        self.system_prompt = ''
+        if context_file:
+            with open(context_file, 'r') as context:
+                self.system_prompt = context.read()
 
         self.responses = []
 
@@ -55,7 +61,8 @@ class Agent():
                 max_tokens=1024,
                 messages=messages,
                 tools=self.tools,
-                model=self.model
+                model=self.model,
+                system=self.system_prompt
             )
         else:
             raise ValueError("Model couldn't be matched to client")
@@ -66,7 +73,8 @@ class Agent():
 
 def run_agent(task: str, **kwargs):
     messages: list[dict] = [{"role": "user", "content": task}]
-    agent = Agent(kwargs["client"], kwargs["model"], tools=TOOLS)
+    context_file = "CONTEXT.md"
+    agent = Agent(kwargs["client"], kwargs["model"], tools=TOOLS, context_file=context_file)
 
     for iteration in range(5):
         print(f"\n--- Turn {iteration + 1} ---")

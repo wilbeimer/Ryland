@@ -1,4 +1,6 @@
+import FastAPI
 from backend.models import Course
+
 
 
 def create_course(course: Course):
