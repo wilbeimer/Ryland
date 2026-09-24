@@ -19,7 +19,7 @@ TOOLS = [
     },
     {
         "name": "ask_user",
-        "description": "Ask the user a clarifying question when the request is missing information you need. Use this instead of guessing.",
+        "description": "Ask the user a clarifying question when the request is missing information you need. Use this tool any time you need clarification or missing information from the user before proceeding. Do not ask the user questions in plain text — always use this tool.",
         "input_schema": {
             "type": "object",
             "properties": {"question": {"type": "string"}},

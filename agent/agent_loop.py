@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
-from backend.db import create_course
+from backend.db import InvalidCourseError, create_course, init_db
 from backend.models import Course
 from agent.tools import TOOLS
 
@@ -24,19 +24,22 @@ class Agent():
 
     def process_tool_call(self, tool_name: str, tool_input: dict):
         if tool_name == "create_course":
-            course = Course(
-                name=tool_input["course_name"],
-                desc=tool_input["course_description"]
-            )
-            return create_course(
-                course=course
-            )
-
+            try:
+                course = Course(
+                    name=tool_input["course_name"],
+                    desc=tool_input["course_description"]
+                )
+                course_id = create_course(course=course)
+                return {"course_id": course_id}, False
+            except InvalidCourseError as e:
+                return {"content": str(e)}, True
+            except KeyError as e:
+                return {"content": f"Missing required fields {e}"}, True
         elif tool_name == "ask_user":
             answer = input(f"\n{tool_input['question']}\n> ")
-            return answer
+            return answer, False
         else:
-            return {"error": f"Unknown tool: {tool_name}"}
+            return f"Unknown tool: {tool_name}", True
 
     def make_call(self, messages):
         if type(self.client) is Anthropic:
@@ -45,7 +48,7 @@ class Agent():
                 messages=messages,
                 tools=self.tools,
                 model=self.model,
-                system=self.system_prompt
+                system=self.system_prompt,
             )
         else:
             raise ValueError("Model couldn't be matched to client")
@@ -75,13 +78,14 @@ def run_agent(task: str, **kwargs):
                 print(f"Input: {block.input}")
 
                 # Execute the tool
-                result = agent.process_tool_call(block.name, block.input)
+                result, is_error = agent.process_tool_call(block.name, block.input)
                 print(f"Result: {result}")
 
                 tool_results.append({
                     "type": "tool_result",
                     "tool_use_id": block.id,
-                    "content": str(result)
+                    "content": str(result),
+                    "is_error": is_error
                 })
 
         messages.append({"role": "assistant", "content": response.content})
@@ -105,4 +109,5 @@ def main():
 
 
 if __name__ == "__main__":
+    init_db()
     main()
