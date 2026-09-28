@@ -6,27 +6,29 @@ from uuid import UUID
 from fastapi import HTTPException
 from pydantic import SecretStr
 
-from backend.models import Course, User, Week
+from backend.models import Assignment, Course, User, Week
 
 DB_PATH = Path(__file__).parent / "courses.db"
 
 
 class InvalidCourseError(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
+    pass
 
 
 class InvalidWeekError(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
+    pass
+
+
+class DuplicateWeekError(InvalidWeekError):
+    pass
+
+
+class InvalidAssignmentError(Exception):
+    pass
 
 
 class InvalidUserError(Exception):
-    def __init__(self, message):
-        self.message = message
-        super().__init__(self.message)
+    pass
 
 
 @contextmanager
@@ -46,23 +48,39 @@ def init_db():
             """
             CREATE TABLE IF NOT EXISTS User (
                 id TEXT PRIMARY KEY,
-                email TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE COLLATE NOCASE,
                 password TEXT NOT NULL
             );
+
             CREATE TABLE IF NOT EXISTS Course (
                 id TEXT PRIMARY KEY,
                 user_id TEXT NOT NULL,
-                name TEXT NOT NULL,
-                description TEXT,
-                FOREIGN KEY (user_id) REFERENCES User(id)
+                name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+                description TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
             );
+            CREATE INDEX IF NOT EXISTS idx_course_user ON Course(user_id);
+
             CREATE TABLE IF NOT EXISTS Week (
                 id TEXT PRIMARY KEY,
                 course_id TEXT NOT NULL,
-                week_number INTEGER NOT NULL,
-                description TEXT,
-                FOREIGN KEY (course_id) REFERENCES Course(id)
+                week_number INTEGER NOT NULL CHECK (week_number >= 1),
+                description TEXT NOT NULL,
+                UNIQUE (course_id, week_number),
+                FOREIGN KEY (course_id) REFERENCES Course(id) ON DELETE CASCADE
             );
+
+            CREATE TABLE IF NOT EXISTS Assignment (
+                id TEXT PRIMARY KEY,
+                week_id TEXT NOT NULL,
+                type TEXT NOT NULL CHECK (type IN ('text', 'quiz')),
+                name TEXT NOT NULL CHECK (length(trim(name)) > 0),
+                description TEXT NOT NULL,
+                rubric TEXT NOT NULL CHECK (json_valid(rubric)),
+                due_date TEXT NOT NULL CHECK (julianday(due_date) IS NOT NULL),
+                FOREIGN KEY (week_id) REFERENCES Week(id) ON DELETE CASCADE
+            );
+            CREATE INDEX IF NOT EXISTS idx_assignment_week ON Assignment(week_id);
             """
         )
 
@@ -99,7 +117,7 @@ def add_user_to_db(user: User):
             )
         return str(user.id)
     except sqlite3.IntegrityError as e:
-        raise InvalidUserError(message="Invalid user details provided") from e
+        raise InvalidUserError("Invalid user details provided") from e
 
 
 # COURSES
@@ -112,10 +130,10 @@ def add_course_to_db(course: Course):
             )
         return str(course.id)
     except sqlite3.IntegrityError as e:
-        raise InvalidCourseError(message="Invalid course details provided") from e
+        raise InvalidCourseError("Invalid course details provided") from e
 
 
-def get_courses(user_id: str) -> list[dict]:
+def get_courses(user_id: UUID) -> list[dict]:
     with get_conn() as conn:
         rows = conn.execute(
             """
@@ -123,7 +141,7 @@ def get_courses(user_id: str) -> list[dict]:
             FROM Course
             WHERE user_id=?
             """,
-            (user_id,)
+            (str(user_id),)
         ).fetchall()
     return [dict(row) for row in rows]
 
@@ -133,15 +151,28 @@ def add_week_to_db(week: Week):
     try:
         with get_conn() as conn:
             conn.execute(
-                "INSERT INTO Week (id, course_id, week_number, description) VALUES (?, ?, ?, ?)",
-                (str(week.id), str(week.course_id), week.week_number, week.desc)
+                """
+                INSERT
+                INTO Week (id,
+                           course_id,
+                           week_number,
+                           description)
+                VALUES (?, ?, ?, ?)
+                """,
+                (
+                    str(week.id),
+                    str(week.course_id),
+                    week.week_number,
+                    week.desc)
             )
         return str(week.id)
     except sqlite3.IntegrityError as e:
-        raise InvalidWeekError(message="Invalid week details provided") from e
+        if e.sqlite_errorname == "SQLITE_CONSTRAINT_UNIQUE":
+            raise DuplicateWeekError("A week with this number already exists in the course") from e
+        raise InvalidWeekError("Invalid week data provided") from e
 
 
-def get_weeks(course_id) -> list[dict]:
+def get_weeks(course_id: UUID) -> list[dict]:
     with get_conn() as conn:
         rows = conn.execute(
             """
@@ -151,6 +182,51 @@ def get_weeks(course_id) -> list[dict]:
             ORDER BY week_number
             """,
             (str(course_id),)
+        ).fetchall()
+    return [dict(row) for row in rows]
+
+
+# ASSIGNMENTS
+def add_assignment_to_db(assignment: Assignment):
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                """
+                INSERT
+                INTO Assignment (id,
+                                week_id,
+                                type,
+                                name,
+                                description,
+                                rubric,
+                                due_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    str(assignment.id),
+                    str(assignment.week_id),
+                    assignment.type,
+                    assignment.name,
+                    assignment.desc,
+                    assignment.rubric,
+                    assignment.due_date
+                )
+            )
+    except sqlite3.IntegrityError as e:
+        raise InvalidAssignmentError("Invalid data for assignment") from e
+
+
+def get_assignments(course_id: UUID, week_id: UUID) -> list[dict]:
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT a.id, a.type, a.name, a.desc, a.rubric, a.due_date
+            FROM Assignment a JOIN Week w
+            ON a.week_id = w.week_id
+            WHERE w.course_id=?
+            AND a.week_id=?
+            """,
+            (str(course_id), str(week_id))
         ).fetchall()
     return [dict(row) for row in rows]
 

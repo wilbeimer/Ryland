@@ -55,6 +55,14 @@ class Assignment(BaseModel):
     due_date: datetime
 
 
+class RequestAddAssignment(BaseModel):
+    type: AssignmentType
+    name: str
+    desc: str
+    rubric: dict
+    due_date: datetime
+
+
 class Submission(BaseModel):
     id: UUID
     assignment_id: UUID
