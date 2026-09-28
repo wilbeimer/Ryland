@@ -1,16 +1,17 @@
 import os
+from uuid import UUID
 from dotenv import load_dotenv
 from anthropic import Anthropic
 
-from backend.db import InvalidCourseError, create_course, init_db
-from backend.models import Course
-from agent.tools import TOOLS
+from backend.db import init_db
+from agent.tools import TOOLS, ask_user, create_assignment, create_course, create_quiz, create_week
 
 load_dotenv()
 
 
 class Agent():
-    def __init__(self, client, model, tools=None, context_file=None):
+    def __init__(self, user_id, client, model, tools=None, context_file=None):
+        self.user_id = user_id
         self.client = client
         self.model = model
         self.tools = tools if tools is not None else []
@@ -23,23 +24,19 @@ class Agent():
         self.responses = []
 
     def process_tool_call(self, tool_name: str, tool_input: dict):
-        if tool_name == "create_course":
-            try:
-                course = Course(
-                    name=tool_input["course_name"],
-                    desc=tool_input["course_description"]
-                )
-                course_id = create_course(course=course)
-                return {"course_id": course_id}, False
-            except InvalidCourseError as e:
-                return {"content": str(e)}, True
-            except KeyError as e:
-                return {"content": f"Missing required fields {e}"}, True
-        elif tool_name == "ask_user":
-            answer = input(f"\n{tool_input['question']}\n> ")
-            return answer, False
-        else:
-            return f"Unknown tool: {tool_name}", True
+        match tool_name:
+            case "create_course":
+                return create_course(tool_input, self.user_id)
+            case "create_week":
+                return create_week(tool_input)
+            case "create_assignment":
+                return create_assignment(tool_input)
+            case "create_quiz":
+                return create_quiz(tool_input)
+            case "ask_user":
+                return ask_user(tool_input)
+            case _:
+                return f"Unknown tool: {tool_name}", True
 
     def make_call(self, messages):
         if type(self.client) is Anthropic:
@@ -57,10 +54,10 @@ class Agent():
         return self.responses[-1]
 
 
-def run_agent(task: str, **kwargs):
+def run_agent(user_id: UUID, task: str, **kwargs):
     messages: list[dict] = [{"role": "user", "content": task}]
     context_file = "agent/CONTEXT.md"
-    agent = Agent(kwargs["client"], kwargs["model"], tools=TOOLS, context_file=context_file)
+    agent = Agent(user_id=user_id, client=kwargs["client"], model=kwargs["model"], tools=TOOLS, context_file=context_file)
 
     for iteration in range(5):
         print(f"\n--- Turn {iteration + 1} ---")
@@ -98,14 +95,18 @@ def run_agent(task: str, **kwargs):
             messages.append({"role": "user", "content": tool_results})
 
 
-def main():
+def main(user_id: UUID | None = None):
     MODEL = "claude-haiku-4-5"
+
+    if not user_id:
+        user_id = UUID("00000000-0000-0000-0000-000000000001")
+
     client = Anthropic(
         api_key=os.getenv("ANTHROPIC_API_KEY"),
     )
 
-    task = input(": ")
-    run_agent(task, model=MODEL, client=client)
+    task = input("> ")
+    run_agent(user_id=user_id, task=task, model=MODEL, client=client)
 
 
 if __name__ == "__main__":

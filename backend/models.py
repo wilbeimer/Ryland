@@ -28,10 +28,20 @@ class Course(BaseModel):
     desc: str
 
 
+class RequestAddCourse(BaseModel):
+    name: str
+    desc: str
+
+
 class Week(BaseModel):
     id: UUID
     course_id: UUID
-    order: int
+    week_number: int
+    desc: str
+
+
+class RequestAddWeek(BaseModel):
+    week_number: int
     desc: str
 
 
