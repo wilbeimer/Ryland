@@ -2,9 +2,9 @@ from contextlib import contextmanager
 import sqlite3
 from pathlib import Path
 from uuid import UUID
+import json
 
 from fastapi import HTTPException
-from pydantic import SecretStr
 
 from backend.models import Assignment, Course, User, Week
 
@@ -200,16 +200,16 @@ def add_assignment_to_db(assignment: Assignment):
                                 description,
                                 rubric,
                                 due_date)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     str(assignment.id),
                     str(assignment.week_id),
-                    assignment.type,
+                    assignment.type.value,
                     assignment.name,
                     assignment.desc,
-                    assignment.rubric,
-                    assignment.due_date
+                    json.dumps(assignment.rubric),
+                    assignment.due_date.isoformat()
                 )
             )
     except sqlite3.IntegrityError as e:
@@ -220,18 +220,21 @@ def get_assignments(course_id: UUID, week_id: UUID) -> list[dict]:
     with get_conn() as conn:
         rows = conn.execute(
             """
-            SELECT a.id, a.type, a.name, a.desc, a.rubric, a.due_date
+            SELECT a.id, a.type, a.name, a.description, a.rubric, a.due_date
             FROM Assignment a JOIN Week w
-            ON a.week_id = w.week_id
+            ON a.week_id = w.id
             WHERE w.course_id=?
             AND a.week_id=?
             """,
             (str(course_id), str(week_id))
         ).fetchall()
-    return [dict(row) for row in rows]
+        result = []
+        for row in rows:
+            item = dict(row)
+            item["rubric"] = json.loads(item["rubric"])
+            result.append(item)
+    return result
 
 
 if __name__ == "__main__":
     init_db()
-    dev_user = User(id=UUID("00000000-0000-0000-0000-000000000001"), email="test@gmail.com", password=SecretStr("password"))
-    add_user_to_db(dev_user)
