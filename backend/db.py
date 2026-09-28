@@ -147,7 +147,7 @@ def get_courses(user_id: UUID) -> list[dict]:
 
 
 # WEEKS
-def add_week_to_db(week: Week):
+def add_week_to_db(week: Week) -> str:
     try:
         with get_conn() as conn:
             conn.execute(
@@ -187,7 +187,7 @@ def get_weeks(course_id: UUID) -> list[dict]:
 
 
 # ASSIGNMENTS
-def add_assignment_to_db(assignment: Assignment):
+def add_assignment_to_db(assignment: Assignment) -> str:
     try:
         with get_conn() as conn:
             conn.execute(
@@ -212,6 +212,7 @@ def add_assignment_to_db(assignment: Assignment):
                     assignment.due_date.isoformat()
                 )
             )
+            return str(assignment.id)
     except sqlite3.IntegrityError as e:
         raise InvalidAssignmentError("Invalid data for assignment") from e
 

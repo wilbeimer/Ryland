@@ -1,6 +1,6 @@
 from uuid import UUID, uuid4
-from backend.db import InvalidCourseError, add_course_to_db, add_week_to_db
-from backend.models import Course, Week
+from backend.db import InvalidAssignmentError, InvalidCourseError, InvalidWeekError, add_assignment_to_db, add_course_to_db, add_week_to_db
+from backend.models import Assignment, Course, Week
 
 
 TOOLS = [
@@ -225,15 +225,31 @@ def create_week(tool_input) -> tuple[dict[str, str], bool]:
             desc=tool_input["week_description"]
         )
         week_id = add_week_to_db(week=week)
-        return {"course_id": week_id}, False
-    except InvalidCourseError as e:
+        return {"week_id": week_id}, False
+    except InvalidWeekError as e:
         return {"content": str(e)}, True
     except KeyError as e:
         return {"content": f"Missing required fields {e}"}, True
 
 
 def create_assignment(tool_input) -> tuple[dict[str, str], bool]:
-    return {"tool ran": "still in development"}, False
+    assignment_id = uuid4()
+    try:
+        assignment = Assignment(
+            id=assignment_id,
+            week_id=tool_input["week_id"],
+            type=tool_input["assignment_type"],
+            name=tool_input["assignment_name"],
+            desc=tool_input["assignment_description"],
+            rubric=tool_input["rubric"],
+            due_date=tool_input["due_date"]
+        )
+        assignment_id = add_assignment_to_db(assignment=assignment)
+        return {"assignment_id": assignment_id}, False
+    except InvalidAssignmentError as e:
+        return {"content": str(e)}, True
+    except KeyError as e:
+        return {"content": f"Missing required fields {e}"}, True
 
 
 def create_quiz(tool_input) -> tuple[dict[str, str], bool]:
