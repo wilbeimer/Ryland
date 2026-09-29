@@ -8,6 +8,9 @@ from agent.tools import TOOLS, ask_user, create_assignment, create_course, creat
 
 load_dotenv()
 
+MAX_ITERATIONS = 10
+MODEL = "claude-haiku-4-5"
+
 
 class Agent():
     def __init__(self, user_id, client, model, tools=None, context_file=None):
@@ -59,7 +62,7 @@ def run_agent(user_id: UUID, task: str, **kwargs):
     context_file = "agent/CONTEXT.md"
     agent = Agent(user_id=user_id, client=kwargs["client"], model=kwargs["model"], tools=TOOLS, context_file=context_file)
 
-    for iteration in range(5):
+    for iteration in range(MAX_ITERATIONS):
         print(f"\n--- Turn {iteration + 1} ---")
 
         response = agent.make_call(messages)
@@ -96,8 +99,6 @@ def run_agent(user_id: UUID, task: str, **kwargs):
 
 
 def main(user_id: UUID | None = None):
-    MODEL = "claude-haiku-4-5"
-
     if not user_id:
         user_id = UUID("00000000-0000-0000-0000-000000000001")
 

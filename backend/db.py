@@ -258,6 +258,8 @@ def get_quiz(assignment_id: UUID) -> dict:
             """,
             (str(assignment_id),)
         ).fetchone()
+        if row is None:
+            raise HTTPException(404, "No quiz found for this assignment")
         item = dict(row)
         item['questions'] = json.loads(item['questions'])
         item['time_limit'] = timedelta(seconds=item["time_limit"])

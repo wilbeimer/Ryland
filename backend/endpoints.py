@@ -106,7 +106,7 @@ def list_quiz(user: Annotated[User, Depends(get_current_user)], assignment_id: U
     return get_quiz(assignment_id=assignment_id)
 
 
-@app.post("/assignments/{assignment_id}/quiz")
+@app.post("/assignments/{assignment_id}/quiz", status_code=201)
 def add_quiz(user: Annotated[User, Depends(get_current_user)], assignment_id: UUID, quiz: RequestAddQuiz):
     if not get_owned_assignment(assignment_id=assignment_id, user_id=user.id):
         raise HTTPException(401, "Access denied to assignment")
