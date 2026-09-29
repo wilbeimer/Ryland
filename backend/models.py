@@ -71,14 +71,23 @@ class Submission(BaseModel):
     grade: float
 
 
+class QuizQuestion(BaseModel):
+    question_type: QuestionType
+    prompt: str
+    options: list[str] | None = None
+    correct_answer: str
+
+
 class Quiz(BaseModel):
     id: UUID
     assignment_id: UUID
     time_limit: timedelta
+    questions: list[QuizQuestion]
 
 
 class RequestAddQuiz(BaseModel):
     time_limit: timedelta
+    questions: list[QuizQuestion]
 
 
 class Question(BaseModel):

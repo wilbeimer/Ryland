@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from datetime import timedelta
 import sqlite3
 from pathlib import Path
 from uuid import UUID
@@ -69,6 +70,7 @@ def init_db():
                 id TEXT PRIMARY KEY,
                 assignment_id TEXT NOT NULL UNIQUE,
                 time_limit INTEGER NOT NULL CHECK (time_limit > 0),
+                questions TEXT NOT NULL CHECK (json_valid(questions)),
                 FOREIGN KEY (assignment_id) REFERENCES Assignment(id) ON DELETE CASCADE
             );
             """
@@ -230,13 +232,14 @@ def add_quiz_to_db(quiz: Quiz) -> str:
             conn.execute(
                 """
                 INSERT
-                INTO Quiz (id, assignment_id, time_limit)
-                VALUES (?, ?, ?)
+                INTO Quiz (id, assignment_id, time_limit, questions)
+                VALUES (?, ?, ?, ?)
                 """,
                 (
-                    quiz.id,
-                    quiz.assignment_id,
-                    quiz.time_limit
+                    str(quiz.id),
+                    str(quiz.assignment_id),
+                    int(quiz.time_limit.total_seconds()),
+                    json.dumps([q.model_dump(mode="json") for q in quiz.questions])
                 )
             )
 
@@ -245,17 +248,20 @@ def add_quiz_to_db(quiz: Quiz) -> str:
         raise InvalidQuizError("Invalid data for quiz") from e
 
 
-def get_quiz(assignment_id: UUID) -> list[dict]:
+def get_quiz(assignment_id: UUID) -> dict:
     with get_conn() as conn:
         row = conn.execute(
             """
-            SELECT id, time_limit
+            SELECT id, time_limit, questions
             FROM Quiz
             WHERE assignment_id=?
             """,
-            (assignment_id,)
+            (str(assignment_id),)
         ).fetchone()
-        return row
+        item = dict(row)
+        item['questions'] = json.loads(item['questions'])
+        item['time_limit'] = timedelta(seconds=item["time_limit"])
+        return item
 
 
 # OWNERSHIP

@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 # COURSES
-@app.get("/courses")
+@app.get("/courses", response_model=Course)
 def list_courses(user: Annotated[User, Depends(get_current_user)]):
     return get_courses(user.id)
 
@@ -44,7 +44,7 @@ def add_course(user: Annotated[User, Depends(get_current_user)], course: Request
 
 
 # WEEKS
-@app.get("/courses/{course_id}/weeks")
+@app.get("/courses/{course_id}/weeks", response_model=Week)
 def list_weeks(user: Annotated[User, Depends(get_current_user)], course_id: UUID):
     if not get_owned_course(course_id, user.id):
         raise HTTPException(401, "Access denied to course")
@@ -73,7 +73,7 @@ def add_week(user: Annotated[User, Depends(get_current_user)], course_id: UUID, 
 
 
 # ASSIGNMENTS
-@app.get("/weeks/{week_id}/assignments")
+@app.get("/weeks/{week_id}/assignments", response_model=Assignment)
 def list_assignments(user: Annotated[User, Depends(get_current_user)], week_id: UUID):
     if not get_owned_week(week_id=week_id, user_id=user.id):
         raise HTTPException(401, "Access denied to week")
@@ -99,7 +99,7 @@ def add_assignment(user: Annotated[User, Depends(get_current_user)], week_id: UU
 
 
 # QUIZZES
-@app.get("/assignments/{assignment_id}/quiz")
+@app.get("/assignments/{assignment_id}/quiz", response_model=Quiz)
 def list_quiz(user: Annotated[User, Depends(get_current_user)], assignment_id: UUID):
     if not get_owned_assignment(assignment_id=assignment_id, user_id=user.id):
         raise HTTPException(401, "Access denied to assignment")
