@@ -5,30 +5,12 @@ from uuid import UUID
 import json
 
 from fastapi import HTTPException
+from pydantic import SecretStr
 
-from backend.models import Assignment, Course, User, Week
+from backend.models import Assignment, Course, Quiz, User, Week
+from backend.exceptions import DuplicateWeekError, InvalidAssignmentError, InvalidCourseError, InvalidQuizError, InvalidUserError, InvalidWeekError
 
-DB_PATH = Path(__file__).parent / "courses.db"
-
-
-class InvalidCourseError(Exception):
-    pass
-
-
-class InvalidWeekError(Exception):
-    pass
-
-
-class DuplicateWeekError(InvalidWeekError):
-    pass
-
-
-class InvalidAssignmentError(Exception):
-    pass
-
-
-class InvalidUserError(Exception):
-    pass
+DB_PATH = Path(__file__).parent / "curriculum.db"
 
 
 @contextmanager
@@ -39,6 +21,7 @@ def get_conn(path=DB_PATH):
         with conn:
             yield conn
     finally:
+        conn.commit()
         conn.close()
 
 
@@ -81,6 +64,13 @@ def init_db():
                 FOREIGN KEY (week_id) REFERENCES Week(id) ON DELETE CASCADE
             );
             CREATE INDEX IF NOT EXISTS idx_assignment_week ON Assignment(week_id);
+
+            CREATE TABLE IF NOT EXISTS Quiz (
+                id TEXT PRIMARY KEY,
+                assignment_id TEXT NOT NULL UNIQUE,
+                time_limit INTEGER NOT NULL CHECK (time_limit > 0),
+                FOREIGN KEY (assignment_id) REFERENCES Assignment(id) ON DELETE CASCADE
+            );
             """
         )
 
@@ -96,10 +86,8 @@ def get_user_by_id(id: str):
             """,
             (id,)
         ).fetchone()
-
         if not row:
             raise HTTPException(401, "Couldn't identify the user")
-
         user = User.model_validate(dict(row))
     return user
 
@@ -217,25 +205,124 @@ def add_assignment_to_db(assignment: Assignment) -> str:
         raise InvalidAssignmentError("Invalid data for assignment") from e
 
 
-def get_assignments(course_id: UUID, week_id: UUID) -> list[dict]:
+def get_assignments(week_id: UUID) -> list[dict]:
     with get_conn() as conn:
         rows = conn.execute(
             """
-            SELECT a.id, a.type, a.name, a.description, a.rubric, a.due_date
-            FROM Assignment a JOIN Week w
-            ON a.week_id = w.id
-            WHERE w.course_id=?
-            AND a.week_id=?
+            SELECT id, type, name, description, rubric, due_date
+            FROM Assignment
+            WHERE week_id=?
             """,
-            (str(course_id), str(week_id))
+            (str(week_id),)
         ).fetchall()
         result = []
         for row in rows:
             item = dict(row)
             item["rubric"] = json.loads(item["rubric"])
             result.append(item)
-    return result
+        return result
+
+
+# QUIZZES
+def add_quiz_to_db(quiz: Quiz) -> str:
+    try:
+        with get_conn() as conn:
+            conn.execute(
+                """
+                INSERT
+                INTO Quiz (id, assignment_id, time_limit)
+                VALUES (?, ?, ?)
+                """,
+                (
+                    quiz.id,
+                    quiz.assignment_id,
+                    quiz.time_limit
+                )
+            )
+
+            return str(quiz.id)
+    except sqlite3.IntegrityError as e:
+        raise InvalidQuizError("Invalid data for quiz") from e
+
+
+def get_quiz(assignment_id: UUID) -> list[dict]:
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT id, time_limit
+            FROM Quiz
+            WHERE assignment_id=?
+            """,
+            (assignment_id,)
+        ).fetchone()
+        return row
+
+
+# OWNERSHIP
+def get_owned_course(course_id: UUID, user_id: UUID):
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT c.id
+            FROM Course c
+            WHERE c.id=?
+            AND c.user_id=?
+            """,
+            (
+                str(course_id),
+                str(user_id),
+            )
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "Course not found")
+        return row
+
+
+def get_owned_week(week_id: UUID, user_id: UUID):
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT w.id
+            FROM Week w, Course c
+            WHERE w.course_id=c.id
+            AND w.id=?
+            AND c.user_id=?
+            """,
+            (
+                str(week_id),
+                str(user_id),
+            )
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "Week not found")
+        return row
+
+
+def get_owned_assignment(assignment_id: UUID, user_id: UUID):
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT a.id
+            FROM Assignment a, Week w, Course c
+            WHERE a.week_id=w.id
+            AND w.course_id=c.id
+            AND a.id=?
+            AND c.user_id=?
+            """,
+            (
+                str(assignment_id),
+                str(user_id),
+            )
+        ).fetchone()
+        if not row:
+            raise HTTPException(404, "Assigment not found")
+        return row
 
 
 if __name__ == "__main__":
     init_db()
+    add_user_to_db(User(
+        id=UUID('00000000-0000-0000-0000-000000000001'),
+        email='test@mail.com',
+        password=SecretStr('password')
+    ))

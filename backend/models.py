@@ -77,6 +77,10 @@ class Quiz(BaseModel):
     time_limit: timedelta
 
 
+class RequestAddQuiz(BaseModel):
+    time_limit: timedelta
+
+
 class Question(BaseModel):
     id: UUID
     quiz_id: UUID
