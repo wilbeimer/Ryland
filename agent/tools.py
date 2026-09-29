@@ -1,6 +1,10 @@
+from datetime import timedelta
 from uuid import UUID, uuid4
-from backend.db import InvalidAssignmentError, InvalidCourseError, InvalidWeekError, add_assignment_to_db, add_course_to_db, add_week_to_db
-from backend.models import Assignment, Course, Week
+
+from pydantic import ValidationError
+from backend.db import InvalidAssignmentError, InvalidCourseError, InvalidWeekError, add_assignment_to_db, add_course_to_db, add_quiz_to_db, add_week_to_db
+from backend.exceptions import InvalidQuizError
+from backend.models import Assignment, Course, Quiz, Week
 
 
 TOOLS = [
@@ -205,7 +209,7 @@ def create_course(tool_input, user_id: UUID) -> tuple[dict[str, str], bool]:
             id=course_id,
             user_id=user_id,
             name=tool_input["course_name"],
-            desc=tool_input["course_description"]
+            description=tool_input["course_description"]
         )
         course_id = add_course_to_db(course=course)
         return {"course_id": course_id}, False
@@ -222,7 +226,7 @@ def create_week(tool_input) -> tuple[dict[str, str], bool]:
             id=week_id,
             course_id=tool_input["course_id"],
             week_number=tool_input["week_number"],
-            desc=tool_input["week_description"]
+            description=tool_input["week_description"]
         )
         week_id = add_week_to_db(week=week)
         return {"week_id": week_id}, False
@@ -240,7 +244,7 @@ def create_assignment(tool_input) -> tuple[dict[str, str], bool]:
             week_id=tool_input["week_id"],
             type=tool_input["assignment_type"],
             name=tool_input["assignment_name"],
-            desc=tool_input["assignment_description"],
+            description=tool_input["assignment_description"],
             rubric=tool_input["rubric"],
             due_date=tool_input["due_date"]
         )
@@ -253,7 +257,22 @@ def create_assignment(tool_input) -> tuple[dict[str, str], bool]:
 
 
 def create_quiz(tool_input) -> tuple[dict[str, str], bool]:
-    return {"tool ran": "still in development"}, False
+    quiz_id = uuid4()
+    try:
+        quiz = Quiz(
+            id=quiz_id,
+            assignment_id=tool_input["assignment_id"],
+            time_limit=timedelta(minutes=tool_input["time_limit_minutes"]),
+            questions=tool_input["questions"],
+        )
+        quiz_id = add_quiz_to_db(quiz=quiz)
+        return {"quiz_id": quiz_id}, False
+    except InvalidQuizError as e:
+        return {"content": str(e)}, True
+    except ValidationError as e:
+        return {"content": str(e)}, True
+    except KeyError as e:
+        return {"content": f"Missing required fields {e}"}, True
 
 
 def ask_user(tool_input) -> tuple[str, bool]:

@@ -6,7 +6,7 @@ from fastapi import Depends, FastAPI, HTTPException
 
 from backend.auth import get_current_user
 from backend.db import add_assignment_to_db, add_course_to_db, add_quiz_to_db, add_week_to_db, get_assignments, get_courses, get_owned_assignment, get_owned_course, get_owned_week, get_quiz, get_weeks, init_db
-from backend.models import Assignment, Quiz, RequestAddAssignment, RequestAddQuiz, RequestAddWeek, Course, RequestAddCourse, User, Week
+from backend.models import Assignment, AssignmentOut, CourseOut, PublicQuizOut, Quiz, RequestAddAssignment, RequestAddQuiz, RequestAddWeek, Course, RequestAddCourse, User, Week, WeekOut
 from backend.exceptions import DuplicateWeekError, InvalidAssignmentError, InvalidCourseError, InvalidQuizError, InvalidWeekError
 
 
@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 
 # COURSES
-@app.get("/courses", response_model=Course)
+@app.get("/courses", response_model=list[CourseOut])
 def list_courses(user: Annotated[User, Depends(get_current_user)]):
     return get_courses(user.id)
 
@@ -44,7 +44,7 @@ def add_course(user: Annotated[User, Depends(get_current_user)], course: Request
 
 
 # WEEKS
-@app.get("/courses/{course_id}/weeks", response_model=Week)
+@app.get("/courses/{course_id}/weeks", response_model=list[WeekOut])
 def list_weeks(user: Annotated[User, Depends(get_current_user)], course_id: UUID):
     if not get_owned_course(course_id, user.id):
         raise HTTPException(401, "Access denied to course")
@@ -73,7 +73,7 @@ def add_week(user: Annotated[User, Depends(get_current_user)], course_id: UUID, 
 
 
 # ASSIGNMENTS
-@app.get("/weeks/{week_id}/assignments", response_model=Assignment)
+@app.get("/weeks/{week_id}/assignments", response_model=list[AssignmentOut])
 def list_assignments(user: Annotated[User, Depends(get_current_user)], week_id: UUID):
     if not get_owned_week(week_id=week_id, user_id=user.id):
         raise HTTPException(401, "Access denied to week")
@@ -99,7 +99,7 @@ def add_assignment(user: Annotated[User, Depends(get_current_user)], week_id: UU
 
 
 # QUIZZES
-@app.get("/assignments/{assignment_id}/quiz", response_model=Quiz)
+@app.get("/assignments/{assignment_id}/quiz", response_model=PublicQuizOut)
 def list_quiz(user: Annotated[User, Depends(get_current_user)], assignment_id: UUID):
     if not get_owned_assignment(assignment_id=assignment_id, user_id=user.id):
         raise HTTPException(401, "Access denied to assignment")

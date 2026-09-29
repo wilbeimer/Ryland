@@ -116,7 +116,7 @@ def add_course_to_db(course: Course):
         with get_conn() as conn:
             conn.execute(
                 "INSERT INTO Course (id, user_id, name, description) VALUES (?, ?, ?, ?)",
-                (str(course.id), str(course.user_id), course.name, course.desc)
+                (str(course.id), str(course.user_id), course.name, course.description)
             )
         return str(course.id)
     except sqlite3.IntegrityError as e:
@@ -127,7 +127,7 @@ def get_courses(user_id: UUID) -> list[dict]:
     with get_conn() as conn:
         rows = conn.execute(
             """
-            SELECT id, name
+            SELECT id, name, description
             FROM Course
             WHERE user_id=?
             """,
@@ -153,7 +153,7 @@ def add_week_to_db(week: Week) -> str:
                     str(week.id),
                     str(week.course_id),
                     week.week_number,
-                    week.desc)
+                    week.description)
             )
         return str(week.id)
     except sqlite3.IntegrityError as e:
@@ -197,7 +197,7 @@ def add_assignment_to_db(assignment: Assignment) -> str:
                     str(assignment.week_id),
                     assignment.type.value,
                     assignment.name,
-                    assignment.desc,
+                    assignment.description,
                     json.dumps(assignment.rubric),
                     assignment.due_date.isoformat()
                 )

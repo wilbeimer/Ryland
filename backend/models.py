@@ -25,24 +25,36 @@ class Course(BaseModel):
     id: UUID
     user_id: UUID
     name: str
-    desc: str
+    description: str
 
 
 class RequestAddCourse(BaseModel):
     name: str
-    desc: str
+    description: str
+
+
+class CourseOut(BaseModel):
+    id: UUID
+    name: str
+    description: str
 
 
 class Week(BaseModel):
     id: UUID
     course_id: UUID
     week_number: int
-    desc: str
+    description: str
 
 
 class RequestAddWeek(BaseModel):
     week_number: int
-    desc: str
+    description: str
+
+
+class WeekOut(BaseModel):
+    id: UUID
+    week_number: int
+    description: str
 
 
 class Assignment(BaseModel):
@@ -50,7 +62,7 @@ class Assignment(BaseModel):
     week_id: UUID
     type: AssignmentType
     name: str
-    desc: str
+    description: str
     rubric: dict
     due_date: datetime
 
@@ -58,7 +70,16 @@ class Assignment(BaseModel):
 class RequestAddAssignment(BaseModel):
     type: AssignmentType
     name: str
-    desc: str
+    description: str
+    rubric: dict
+    due_date: datetime
+
+
+class AssignmentOut(BaseModel):
+    id: UUID
+    type: AssignmentType
+    name: str
+    description: str
     rubric: dict
     due_date: datetime
 
@@ -68,7 +89,7 @@ class Submission(BaseModel):
     assignment_id: UUID
     submission_time: datetime
     content: Optional[dict] = None
-    grade: float
+    grade: Optional[float] = None
 
 
 class QuizQuestion(BaseModel):
@@ -76,6 +97,12 @@ class QuizQuestion(BaseModel):
     prompt: str
     options: list[str] | None = None
     correct_answer: str
+
+
+class QuizQuestionOut(BaseModel):
+    question_type: QuestionType
+    prompt: str
+    options: list[str] | None = None
 
 
 class Quiz(BaseModel):
@@ -90,9 +117,13 @@ class RequestAddQuiz(BaseModel):
     questions: list[QuizQuestion]
 
 
-class Question(BaseModel):
+class PrivateQuizOut(BaseModel):
     id: UUID
-    quiz_id: UUID
-    type: QuestionType
-    desc: str
-    correct: dict
+    time_limit: timedelta
+    questions: list[QuizQuestion]
+
+
+class PublicQuizOut(BaseModel):
+    id: UUID
+    time_limit: timedelta
+    questions: list[QuizQuestionOut]
