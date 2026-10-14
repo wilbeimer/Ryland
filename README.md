@@ -1,17 +1,13 @@
-![Python](https://img.shields.io/badge/Python-3.11+-blue)
+![Python](https://img.shields.io/badge/Python-3.12-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-Framework-009688)
-![React](https://img.shields.io/badge/React-Frontend-61DAFB)
-![Docker](https://img.shields.io/badge/Docker-Containerized-2496ED)
 ![CI](https://github.com/wilbeimer/Ryland/actions/workflows/ci.yml/badge.svg)
 # Ryland
 
-> An AI-powered curriculum generation platform that builds personalized learning plans using an agent-driven planning workflow.
+> An AI-powered course builder that turns a learner's goals into a structured curriculum and stores it in SQLite.
 
-Ryland transforms high-level learning goals into structured curricula, assignments, quizzes, and educational resources. A collection of specialized AI agents collaborates to plan learning objectives, generate assessments, retrieve supporting resources, and evaluate completed work through a separate grading pipeline.
+Ryland takes a learning goal and builds a course around it: weeks, text assignments, and quizzes, each with a rubric a later grader can use. A tool-calling agent plans the course and writes it through the same database the API reads.
 
-The system is built around a shared application state, allowing each planning component to focus on a single responsibility while contributing to a complete curriculum.
-
-Built with **Python, FastAPI, React, SQLite, Docker, and Groq LLMs**.
+Built with **Python, FastAPI, SQLite, and the Anthropic API**.
 
 ---
 
@@ -19,11 +15,11 @@ Built with **Python, FastAPI, React, SQLite, Docker, and Groq LLMs**.
 
 - [Why I Built It](#why-i-built-it)
 - [Features](#features)
-- [Screenshots](#screenshots)
 - [Architecture](#architecture)
-- [Engineering Decisions](#engineering-decisions)
-- [Tech Stack](#tech-stack)
 - [Getting Started](#getting-started)
+- [API](#api)
+- [Agent](#agent)
+- [Tech Stack](#tech-stack)
 - [Project Status](#project-status)
 - [Roadmap](#roadmap)
 
@@ -33,232 +29,220 @@ Built with **Python, FastAPI, React, SQLite, Docker, and Groq LLMs**.
 
 One of the biggest challenges when learning a new subject isn't finding information—it's deciding **what to learn next**.
 
-I built **Ryland** to automate that planning process. Instead of manually organizing tutorials, articles, documentation, and projects into a coherent learning roadmap, users simply describe what they want to learn. Ryland then generates a personalized curriculum complete with weekly goals, assignments, quizzes, and curated learning resources.
+I built **Ryland** to automate that planning process. Instead of manually organizing topics, practice, and checks for understanding into a roadmap, you describe what you want to learn. Ryland generates a course with weeks, assignments, and quizzes fitted to your goal, level, and time.
 
-Beyond solving that problem, Ryland serves as a platform for exploring agentic AI systems. It experiments with decomposing complex planning tasks into smaller reasoning steps while integrating external tools and structured application state.
+It is also a place to try agentic planning: one model, a narrow set of tools, and a database that is the source of truth. The agent does not invent IDs or write files. It creates a course, then weeks, then assignments, then quizzes, using the IDs each tool returns.
 
 ---
 
 ## Features
 
-- AI-generated personalized curricula
-- Assignment and quiz generation
-- AI-powered grading and feedback
-- Shared state-based workflow orchestration
-- Modular planning pipeline
-- YouTube resource retrieval
+- Tool-calling course builder (Claude)
+- Courses, weeks, text assignments, and quizzes
+- Rubrics stored with each assignment
+- Quizzes with short-answer and multiple-choice questions
+- Public quiz responses that omit correct answers
+- Ownership checks so each user only sees their own courses
 - FastAPI REST API
-- React frontend
 - SQLite persistence
-- Dockerized development environment
-- GitHub Actions continuous integration
-
----
-
-## Screenshots
-
-### Dashboard
-
-<img width="795" height="913" alt="Dashboard Image" src="https://github.com/user-attachments/assets/cbbad31e-cb48-47a6-8ef7-51f35ad574dc" />
-
-### Generated Curriculum
-
-<img width="746" height="998" alt="Generated Curriculum Image" src="https://github.com/user-attachments/assets/b8eb3d56-1878-41fa-a6db-98b373be8fb2" />
-
-### Assignment View
-
-<img width="750" height="972" alt="Assignment View Image" src="https://github.com/user-attachments/assets/1f7f457b-f05e-4023-9cc2-ac34c922b08f" />
-
----
-
-## Getting Started
-
-### Docker (Recommended)
-
-```bash
-docker compose up --build
-```
-
-Frontend:
-
-```
-http://localhost:8080
-```
-
-Backend API:
-
-```
-http://localhost:8000
-```
-
----
-
-### Local Development
-
-#### Prerequisites
-
-- Python 3.11+
-- Node.js
-- Groq API Key
-- YouTube Data API Key
-
-#### Backend
-
-```bash
-cd backend
-
-python -m venv .venv
-source .venv/bin/activate
-
-pip install -r requirements.txt
-
-uvicorn main:app --reload
-```
-
-#### Frontend
-
-```bash
-cd frontend
-
-npm install
-
-npm run dev
-```
-
-Frontend:
-
-```
-http://localhost:5173
-```
+- GitHub Actions CI (Ruff, Black, Pytest)
 
 ---
 
 ## Architecture
 
-### Curriculum Generation
-
 ```text
-            User Goal
-                 │
-                 ▼
-        Curriculum Planner
-                 │
-                 ▼
-        Shared RylandState
-                 │
-      ┌──────────┼──────────┐
-      │          │          │
-      ▼          ▼          ▼
- Generate   Retrieve   Generate
- Objectives Resources Assignments
-      │          │          │
-      └──────────┼──────────┘
-                 ▼
-        Generate Assessments
-                 │
-                 ▼
-        Completed Curriculum
-                 │
-                 ▼
-          React Frontend
+        Learner goal
+              │
+              ▼
+     agent/agent_loop.py
+     (Claude + CONTEXT.md)
+              │
+              ▼
+        agent/tools.py
+   create_course / create_week
+   create_assignment / create_quiz
+   ask_user
+              │
+              ▼
+         backend/db.py
+         curriculum.db
+              │
+              ▼
+      backend/endpoints.py
+         FastAPI routes
 ```
 
-### Assignment Grading
+The agent and the API share one schema. The agent writes rows. The API lists and creates the same records for the current user.
 
-```text
-Student Submission
-        │
-        ▼
-   Analyze Work
-        │
-        ▼
- Generate Score
-        │
-        ▼
- Generate Feedback
-```
+A course belongs to a user. A week belongs to a course, and week numbers are unique within that course. An assignment is either `text` or `quiz` and belongs to a week. A quiz belongs to one assignment and stores a time limit plus questions. Correct answers stay in the database. The quiz read endpoint returns the public shape, which leaves them out.
 
-Ryland is built around a shared `RylandState` object that acts as the central source of truth throughout the planning process. Rather than passing intermediate JSON files between components, each planning step reads from and updates the shared state.
-
-This architecture reduces unnecessary file I/O, simplifies data flow, and makes it easier to introduce new planning capabilities without redesigning the overall workflow.
+Authentication is a stand-in. Every request resolves to a single seeded user. There is no login flow yet.
 
 ---
 
-## Engineering Decisions
+## Getting Started
 
-Rather than relying on a single prompt to generate an entire curriculum, Ryland decomposes the problem into a collection of focused planning tasks. Each planning component has a narrow responsibility, improving consistency while making failures easier to debug and individual behaviors easier to refine.
+### Prerequisites
 
-The planning workflow is orchestrated through a shared `RylandState` object, eliminating intermediate files and providing a single source of truth for the application. This state-centric design also makes the system easier to extend as new planning capabilities are introduced.
+- Python 3.12 (the version CI runs)
+- An Anthropic API key, only if you want to run the course-building agent
 
-The backend is organized around modular services and external tool integrations. As the project evolves, planning components are being refactored into reusable AI tools that can be orchestrated more dynamically, allowing the system to move beyond a strictly sequential pipeline.
+### Install
+
+From the repository root:
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+```
+
+### Seed the database
+
+The API and the agent both act as one fixed user. Create the database and that user before anything else:
+
+```bash
+python -m backend.db
+```
+
+This writes `backend/curriculum.db` and inserts:
+
+| Field | Value |
+| --- | --- |
+| id | `00000000-0000-0000-0000-000000000001` |
+| email | `test@mail.com` |
+| password | `password` |
+
+The password is stored as plain text. This seed exists so local runs have a user to attach courses to. It is not an authentication system.
+
+### Run the API
+
+```bash
+uvicorn backend.endpoints:app --reload
+```
+
+The API listens on `http://localhost:8000`. Interactive docs are at `http://localhost:8000/docs`.
+
+### Run the agent
+
+Put your key in a `.env` file in the repository root:
+
+```bash
+ANTHROPIC_API_KEY=sk-ant-...
+```
+
+Then:
+
+```bash
+python -m agent.agent_loop
+```
+
+Type a learning goal at the prompt. The agent asks follow-up questions in the terminal when it needs your level, available time, the current date, or your timezone. It then creates the course in `backend/curriculum.db`. The model is `claude-haiku-4-5`, and a run stops after 10 turns.
+
+---
+
+## API
+
+Every route depends on `get_current_user`, which always loads the seeded user above. Requests do not send an `Authorization` header.
+
+| Method | Path | Body | Success |
+| --- | --- | --- | --- |
+| `GET` | `/courses` | | `200` list of courses |
+| `POST` | `/courses` | `name`, `description` | `201` `{"id"}` |
+| `GET` | `/courses/{course_id}/weeks` | | `200` weeks, ordered by `week_number` |
+| `POST` | `/courses/{course_id}/weeks` | `week_number`, `description` | `201` `{"id"}` |
+| `GET` | `/weeks/{week_id}/assignments` | | `200` list of assignments |
+| `POST` | `/weeks/{week_id}/assignments` | `type`, `name`, `description`, `rubric`, `due_date` | `201` `{"id"}` |
+| `GET` | `/assignments/{assignment_id}/quiz` | | `200` quiz without correct answers |
+| `POST` | `/assignments/{assignment_id}/quiz` | `time_limit`, `questions` | `201` `{"id"}` |
+
+`week_number` starts at 1. Two weeks in the same course cannot share a number.
+
+`type` is `text` or `quiz`. `due_date` is an ISO 8601 datetime. `rubric` is a JSON object. The agent writes rubrics as `{ "criteria": [{ "name", "description", "points" }] }`. The API stores whatever object it receives, as long as it is valid JSON.
+
+`time_limit` is a duration. The database stores it as a positive number of seconds. Each question has `question_type` (`short answer` or `multiple choice`), `prompt`, and `correct_answer`. Multiple-choice questions also include `options`. `GET` quiz responses drop `correct_answer`.
+
+### Errors
+
+| Status | When |
+| --- | --- |
+| `404` | The course, week, assignment, or quiz is missing, or it belongs to another user |
+| `409` | A week with that number already exists on the course |
+| `422` | The row violates a database constraint (empty name, invalid type, bad date, non-positive quiz time limit, invalid JSON) |
+
+---
+
+## Agent
+
+`agent/CONTEXT.md` is the system prompt. It tells the model to plan the outline first, then build in order: course, weeks, assignments, and a quiz only for assignments of type `quiz`. Clarifying questions go through the `ask_user` tool, which reads an answer from the terminal.
+
+| Tool | Writes | Returns |
+| --- | --- | --- |
+| `create_course` | Course name and description for the current user | `course_id` |
+| `create_week` | Week number and description on a course | `week_id` |
+| `create_assignment` | Type, name, student-facing instructions, rubric, and due date | `assignment_id` |
+| `create_quiz` | Time limit and questions on a quiz assignment | `quiz_id` |
+| `ask_user` | Nothing | The answer typed at the prompt |
+
+Tool errors come back to the model so it can correct the input and retry. The agent does not search the web. `CONTEXT.md` tells it not to invent URLs or titles.
 
 ---
 
 ## Tech Stack
 
-### Frontend
-
-- React
-
 ### Backend
 
-- Python
+- Python 3.12
 - FastAPI
 - Pydantic
+- Uvicorn
 
 ### Database
 
-- SQLite
+- SQLite (`backend/curriculum.db`)
 
 ### AI
 
-- Groq API
-- Multi-agent orchestration
-- Structured prompting
-
-### Infrastructure
-
-- Docker
-- Docker Compose
-- Nginx
+- Anthropic API (`claude-haiku-4-5`)
+- Tool use defined in `agent/tools.py`
+- System prompt in `agent/CONTEXT.md`
 
 ### DevOps
 
-- GitHub Actions
+- GitHub Actions on `main` and `develop` (`.github/workflows/ci.yml`)
 - Ruff
 - Black
-- Pytest
-
-### External APIs
-
-- YouTube Data API
+- Pytest with coverage on `backend`
 
 ---
 
 ## Project Status
 
-🚧 **Active Development**
+Active development. What works today:
 
-Current focus:
+- Course, week, assignment, and quiz persistence
+- A tool-calling agent that fills those tables from a learning goal
+- A read/write HTTP API scoped to one seeded user
+- CI for lint, format, and tests
 
-- Tool-based agent architecture
-- Cloud deployment
-- User authentication
-- Vector search (RAG)
-- Enhanced grading pipeline
+Not built yet:
+
+- Real authentication (the current user is hard-coded)
+- A grading pipeline (`Submission` is modeled in `backend/models.py` and has no table or routes)
+- A frontend
+- Retrieval over external learning resources
 
 ---
 
 ## Roadmap
 
-- [x] AI curriculum generation
-- [x] Assignment generation
-- [x] Quiz generation
-- [x] AI grading pipeline
-- [x] Shared application state
-- [x] Docker deployment
+- [x] Course, week, assignment, and quiz schema
+- [x] FastAPI CRUD for that schema
+- [x] Tool-calling course builder
+- [x] SQLite persistence
 - [x] GitHub Actions CI
-- [ ] Tool-calling planning agents
-- [ ] Vector database integration
 - [ ] User authentication
-- [ ] Cloud deployment
+- [ ] Submission storage and grading
+- [ ] Frontend
+- [ ] Resource retrieval
