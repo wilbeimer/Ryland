@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from agent.agent_loop import run_generation
+from agent.agent_loop import MAX_ITERATIONS, run_generation
 from backend.auth import get_current_user
 from backend.db import (
     add_assignment_to_db,
@@ -91,13 +91,16 @@ class GenerationJob:
     detail: str | None = None
     course_id: UUID | None = None
     error: str | None = None
+    started_at: float = 0.0
     finished_at: float | None = None
 
 
 # One uvicorn process. A local page polls these; a restart drops them.
 # Finished jobs expire after the TTL, and only the newest cap is kept.
+# An active job older than the timeout is failed so it cannot block new builds.
 _FINISHED_JOB_TTL_SECONDS = 30 * 60
 _MAX_FINISHED_JOBS = 20
+_ACTIVE_JOB_TIMEOUT_SECONDS = 15 * 60
 _ACTIVE_STATUSES = {"pending", "running"}
 _TERMINAL_STATUSES = {"succeeded", "failed", "incomplete"}
 _DETAIL_LIMIT = 2000
@@ -135,10 +138,30 @@ def _evict_finished_jobs() -> None:
         del _jobs[job_id]
 
 
+def _fail_stale_jobs() -> None:
+    """Fail active jobs past the timeout. Caller holds _jobs_lock."""
+    now = time.monotonic()
+    minutes = _ACTIVE_JOB_TIMEOUT_SECONDS // 60
+    unit = "minute" if minutes == 1 else "minutes"
+    message = (
+        f"Course generation timed out after {minutes} {unit} before it finished. "
+        "Start a new build to try again."
+    )
+    for job in _jobs.values():
+        if job.status not in _ACTIVE_STATUSES:
+            continue
+        if now - job.started_at < _ACTIVE_JOB_TIMEOUT_SECONDS:
+            continue
+        job.status = "failed"
+        job.error = _clip(message, _ERROR_LIMIT)
+        job.detail = job.error
+        job.finished_at = now
+
+
 def _update_job(job_id: UUID, **fields) -> None:
     with _jobs_lock:
         job = _jobs.get(job_id)
-        if job is None:
+        if job is None or job.finished_at is not None:
             return
         for key, value in fields.items():
             setattr(job, key, value)
@@ -148,6 +171,7 @@ def _update_job(job_id: UUID, **fields) -> None:
 
 def _snapshot_job(job_id: UUID) -> GenerationJob | None:
     with _jobs_lock:
+        _fail_stale_jobs()
         _evict_finished_jobs()
         job = _jobs.get(job_id)
         if job is None:
@@ -190,7 +214,7 @@ def _run_generation_job(
         )
         if result.course_id and not result.completed:
             message = (
-                "Generation hit the 10-turn cap before the agent finished. "
+                f"Generation hit the {MAX_ITERATIONS}-turn cap before the agent finished. "
                 "The course was saved but may be missing weeks, assignments, or quizzes."
             )
             detail = f"{message}\n{result.summary}" if result.summary else message
@@ -199,7 +223,7 @@ def _run_generation_job(
                 status="incomplete",
                 course_id=UUID(str(result.course_id)),
                 detail=_clip(detail, _DETAIL_LIMIT),
-                error=_clip(message, _ERROR_LIMIT),
+                error=None,
             )
             return
 
@@ -216,7 +240,9 @@ def _run_generation_job(
         if result.completed:
             error = "The agent finished without creating a course"
         else:
-            error = "Generation hit the turn limit before creating a course"
+            error = (
+                f"Generation hit the {MAX_ITERATIONS}-turn cap before creating a course"
+            )
         _update_job(
             job_id,
             status="failed",
@@ -264,9 +290,14 @@ def start_course_generation(
     response: Response,
 ):
     job = GenerationJob(
-        job_id=uuid4(), user_id=user.id, status="pending", detail="Queued"
+        job_id=uuid4(),
+        user_id=user.id,
+        status="pending",
+        detail="Queued",
+        started_at=time.monotonic(),
     )
     with _jobs_lock:
+        _fail_stale_jobs()
         _evict_finished_jobs()
         active = next(
             (

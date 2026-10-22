@@ -143,7 +143,7 @@ Put `CORS_ORIGINS` and `ANTHROPIC_API_KEY` in a `.env` file in the repository ro
 
 ### Generate a course over HTTP
 
-`POST /courses/generate` takes the details the terminal agent asks for, starts a build, and returns immediately with a job id. Poll `GET /courses/generate/{job_id}` until `status` is `succeeded`, `incomplete`, or `failed`. On `succeeded` or `incomplete` the body includes `course_id` and the course `name` and `description`. Weeks, assignments, and quizzes are the existing read routes. A second POST while a build is `pending` or `running` returns `409`.
+`POST /courses/generate` takes the details the terminal agent asks for, starts a build, and returns immediately with a job id. Poll `GET /courses/generate/{job_id}` until `status` is `succeeded`, `incomplete`, or `failed`. On `succeeded` or `incomplete` the body includes `course_id` and the course `name` and `description`. Weeks, assignments, and quizzes are the existing read routes. A second POST while a build is `pending` or `running` returns `409`. A build still in one of those states after 15 minutes is marked `failed` so it no longer blocks a new one.
 
 ```bash
 curl -s -X POST http://localhost:8000/courses/generate \
@@ -166,7 +166,7 @@ While the job runs, `detail` moves through the turns (`Turn 2`, `Using create_we
 
 `timezone` must be an IANA name such as `America/New_York`. Anything else is `422` and does not start a build. The server uses that zone, together with the current time, so the agent can set due dates. The seeded user from `python -m backend.db` has to exist first. The course is saved for that user. This path does not read from the terminal. If the model still calls `ask_user`, the tool answers from the request instead of waiting for input.
 
-`succeeded` means the agent finished and created a course. `incomplete` means it hit the 10-turn cap after creating the course: `course_id` is set, and `detail` says the course may be missing weeks, assignments, or quizzes. If it never creates a course, `status` is `failed` and `error` says why.
+`succeeded` means the agent finished and created a course. `incomplete` means it hit the turn cap after creating the course: `course_id` is set, and `detail` says the course may be missing weeks, assignments, or quizzes. `error` is set only when `status` is `failed`. If it never creates a course, `status` is `failed` and `error` says why.
 
 ### Run the agent in the terminal
 

@@ -10,6 +10,7 @@ from pydantic import SecretStr
 
 from agent.agent_loop import (
     CONTEXT_FILE,
+    MAX_ITERATIONS,
     Agent,
     AgentRunResult,
     learner_brief,
@@ -17,7 +18,7 @@ from agent.agent_loop import (
 )
 from agent.tools import ask_user
 from backend.db import add_course_to_db, add_user_to_db, init_db
-from backend.endpoints import allowed_origins, app
+from backend.endpoints import _ACTIVE_JOB_TIMEOUT_SECONDS, allowed_origins, app
 from backend.models import Course, User
 
 SEEDED_USER = UUID("00000000-0000-0000-0000-000000000001")
@@ -180,10 +181,50 @@ def test_turn_cap_after_create_course_is_incomplete(client, monkeypatch):
     assert finished["status"] == "incomplete"
     assert finished["course_id"] == str(course_id)
     assert finished["course"]["name"] == "Partial SQL"
-    assert "10-turn cap" in finished["detail"]
+    assert f"{MAX_ITERATIONS}-turn cap" in finished["detail"]
     assert "may be missing" in finished["detail"]
     assert "Stopped mid-outline" in finished["detail"]
-    assert "10-turn cap" in finished["error"]
+    assert finished["error"] is None
+
+
+def test_stale_running_job_is_failed_and_stops_blocking(client, monkeypatch):
+    clock = {"now": 1_000.0}
+    monkeypatch.setattr("backend.endpoints.time.monotonic", lambda: clock["now"])
+    started = threading.Event()
+    release = threading.Event()
+
+    def fake_run_generation(**kwargs):
+        on_progress = kwargs.get("on_progress")
+        if on_progress:
+            on_progress("Using create_course")
+        started.set()
+        assert release.wait(timeout=5)
+        return AgentRunResult(course_id=None, summary="", completed=True)
+
+    monkeypatch.setattr("backend.endpoints.run_generation", fake_run_generation)
+    try:
+        first = client.post("/courses/generate", json=GENERATE_BODY)
+        assert first.status_code == 202
+        job_id = first.json()["job_id"]
+        assert started.wait(timeout=2)
+
+        clock["now"] += 60
+        blocked = client.post("/courses/generate", json=GENERATE_BODY)
+        assert blocked.status_code == 409
+        assert job_id in blocked.json()["detail"]
+
+        clock["now"] += _ACTIVE_JOB_TIMEOUT_SECONDS
+        stale = client.get(f"/courses/generate/{job_id}")
+        assert stale.status_code == 200
+        assert stale.json()["status"] == "failed"
+        assert "timed out" in stale.json()["error"]
+        assert "15 minutes" in stale.json()["error"]
+
+        again = client.post("/courses/generate", json=GENERATE_BODY)
+        assert again.status_code == 202
+        assert again.json()["job_id"] != job_id
+    finally:
+        release.set()
 
 
 def test_second_build_is_rejected_while_one_is_running(client, monkeypatch):
