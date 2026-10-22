@@ -2,88 +2,96 @@ from datetime import timedelta
 from uuid import UUID, uuid4
 
 from pydantic import ValidationError
-from backend.db import InvalidAssignmentError, InvalidCourseError, InvalidWeekError, add_assignment_to_db, add_course_to_db, add_quiz_to_db, add_week_to_db
+
+from backend.db import (
+    InvalidAssignmentError,
+    InvalidCourseError,
+    InvalidWeekError,
+    add_assignment_to_db,
+    add_course_to_db,
+    add_quiz_to_db,
+    add_week_to_db,
+)
 from backend.exceptions import InvalidQuizError
 from backend.models import Assignment, Course, Quiz, Week
-
 
 TOOLS = [
     {
         "name": "create_course",
         "description": (
             "Creates a new course and adds it to the database. "
-                "Returns the new course_id, which is required by create_week."
+            "Returns the new course_id, which is required by create_week."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
                 "course_name": {
                     "type": "string",
-                    "description": "The name of the course"
+                    "description": "The name of the course",
                 },
                 "course_description": {
                     "type": "string",
-                    "description": "A detailed description of the course"
-                }
+                    "description": "A detailed description of the course",
+                },
             },
-            "required": ["course_name", "course_description"]
-        }
+            "required": ["course_name", "course_description"],
+        },
     },
     {
         "name": "create_week",
         "description": (
             "Creates a new week within a course and adds it to the database. "
-                "Returns the new week_id, which is required by create_assignment."
+            "Returns the new week_id, which is required by create_assignment."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
                 "course_id": {
                     "type": "string",
-                    "description": "The course_id returned by create_course"
+                    "description": "The course_id returned by create_course",
                 },
                 "week_number": {
                     "type": "integer",
                     "minimum": 1,
-                    "description": "Position of this week in the course, starting at 1"
+                    "description": "Position of this week in the course, starting at 1",
                 },
                 "week_description": {
                     "type": "string",
-                    "description": "What this week covers: topics, goals, and any key concepts"
-                }
+                    "description": "What this week covers: topics, goals, and any key concepts",
+                },
             },
-            "required": ["course_id", "week_number", "week_description"]
-        }
+            "required": ["course_id", "week_number", "week_description"],
+        },
     },
     {
         "name": "create_assignment",
         "description": (
             "Creates a new assignment within a week and adds it to the database. "
-                "Returns the new assignment_id. If assignment_type is 'quiz', "
-                "follow up with create_quiz using that assignment_id."
+            "Returns the new assignment_id. If assignment_type is 'quiz', "
+            "follow up with create_quiz using that assignment_id."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
                 "week_id": {
                     "type": "string",
-                    "description": "The week_id returned by create_week"
+                    "description": "The week_id returned by create_week",
                 },
                 "assignment_type": {
                     "type": "string",
                     "enum": ["text", "quiz"],
                     "description": (
                         "'text' for a written response the student writes freely, "
-                            "'quiz' for a set of questions"
-                    )
+                        "'quiz' for a set of questions"
+                    ),
                 },
                 "assignment_name": {
                     "type": "string",
-                    "description": "A short title for the assignment"
+                    "description": "A short title for the assignment",
                 },
                 "assignment_description": {
                     "type": "string",
-                    "description": "Instructions shown to the student"
+                    "description": "Instructions shown to the student",
                 },
                 "rubric": {
                     "type": "object",
@@ -97,30 +105,30 @@ TOOLS = [
                                 "properties": {
                                     "name": {
                                         "type": "string",
-                                        "description": "Short name of the criterion"
+                                        "description": "Short name of the criterion",
                                     },
                                     "description": {
                                         "type": "string",
-                                        "description": "What full credit looks like for this criterion"
+                                        "description": "What full credit looks like for this criterion",
                                     },
                                     "points": {
                                         "type": "number",
-                                        "description": "Maximum points for this criterion"
-                                    }
+                                        "description": "Maximum points for this criterion",
+                                    },
                                 },
-                                "required": ["name", "description", "points"]
-                            }
+                                "required": ["name", "description", "points"],
+                            },
                         }
                     },
-                    "required": ["criteria"]
+                    "required": ["criteria"],
                 },
                 "due_date": {
                     "type": "string",
                     "description": (
                         "Due date and time in ISO 8601 with a timezone offset, "
-                            "e.g. 2026-10-15T23:59:00-04:00"
-                    )
-                }
+                        "e.g. 2026-10-15T23:59:00-04:00"
+                    ),
+                },
             },
             "required": [
                 "week_id",
@@ -128,27 +136,27 @@ TOOLS = [
                 "assignment_name",
                 "assignment_description",
                 "rubric",
-                "due_date"
-            ]
-        }
+                "due_date",
+            ],
+        },
     },
     {
         "name": "create_quiz",
         "description": (
             "Creates a quiz and its questions for an existing assignment whose "
-                "assignment_type is 'quiz'. Do not use this for text assignments."
+            "assignment_type is 'quiz'. Do not use this for text assignments."
         ),
         "input_schema": {
             "type": "object",
             "properties": {
                 "assignment_id": {
                     "type": "string",
-                    "description": "The assignment_id returned by create_assignment"
+                    "description": "The assignment_id returned by create_assignment",
                 },
                 "time_limit_minutes": {
                     "type": "integer",
                     "minimum": 1,
-                    "description": "How long the student has to complete the quiz, in minutes"
+                    "description": "How long the student has to complete the quiz, in minutes",
                 },
                 "questions": {
                     "type": "array",
@@ -160,35 +168,35 @@ TOOLS = [
                             "question_type": {
                                 "type": "string",
                                 "enum": ["short answer", "multiple choice"],
-                                "description": "The format of the question"
+                                "description": "The format of the question",
                             },
                             "prompt": {
                                 "type": "string",
-                                "description": "The question text shown to the student"
+                                "description": "The question text shown to the student",
                             },
                             "options": {
                                 "type": "array",
                                 "items": {"type": "string"},
                                 "description": (
                                     "The answer choices. Only for multiple choice questions; "
-                                        "omit for short answer"
-                                )
+                                    "omit for short answer"
+                                ),
                             },
                             "correct_answer": {
                                 "type": "string",
                                 "description": (
                                     "The correct answer. For multiple choice, it must exactly "
-                                        "match one of the options. For short answer, the expected "
-                                        "answer or key points the grader should look for"
-                                )
-                            }
+                                    "match one of the options. For short answer, the expected "
+                                    "answer or key points the grader should look for"
+                                ),
+                            },
                         },
-                        "required": ["question_type", "prompt", "correct_answer"]
-                    }
-                }
+                        "required": ["question_type", "prompt", "correct_answer"],
+                    },
+                },
             },
-            "required": ["assignment_id", "time_limit_minutes", "questions"]
-        }
+            "required": ["assignment_id", "time_limit_minutes", "questions"],
+        },
     },
     {
         "name": "ask_user",
@@ -209,7 +217,7 @@ def create_course(tool_input, user_id: UUID) -> tuple[dict[str, str], bool]:
             id=course_id,
             user_id=user_id,
             name=tool_input["course_name"],
-            description=tool_input["course_description"]
+            description=tool_input["course_description"],
         )
         course_id = add_course_to_db(course=course)
         return {"course_id": course_id}, False
@@ -226,7 +234,7 @@ def create_week(tool_input) -> tuple[dict[str, str], bool]:
             id=week_id,
             course_id=tool_input["course_id"],
             week_number=tool_input["week_number"],
-            description=tool_input["week_description"]
+            description=tool_input["week_description"],
         )
         week_id = add_week_to_db(week=week)
         return {"week_id": week_id}, False
@@ -246,7 +254,7 @@ def create_assignment(tool_input) -> tuple[dict[str, str], bool]:
             name=tool_input["assignment_name"],
             description=tool_input["assignment_description"],
             rubric=tool_input["rubric"],
-            due_date=tool_input["due_date"]
+            due_date=tool_input["due_date"],
         )
         assignment_id = add_assignment_to_db(assignment=assignment)
         return {"assignment_id": assignment_id}, False

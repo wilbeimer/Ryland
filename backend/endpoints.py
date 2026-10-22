@@ -1,13 +1,56 @@
-from contextlib import asynccontextmanager
 import logging
+import os
+import threading
+import time
+from contextlib import asynccontextmanager
+from dataclasses import dataclass, field, replace
 from typing import Annotated
 from uuid import UUID, uuid4
-from fastapi import Depends, FastAPI, HTTPException
 
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI, HTTPException, Response
+from fastapi.middleware.cors import CORSMiddleware
+
+from agent.agent_loop import MAX_ITERATIONS, run_generation
 from backend.auth import get_current_user
-from backend.db import add_assignment_to_db, add_course_to_db, add_quiz_to_db, add_week_to_db, get_assignments, get_courses, get_owned_assignment, get_owned_course, get_owned_week, get_quiz, get_weeks, init_db
-from backend.models import Assignment, AssignmentOut, CourseOut, PublicQuizOut, Quiz, RequestAddAssignment, RequestAddQuiz, RequestAddWeek, Course, RequestAddCourse, User, Week, WeekOut
-from backend.exceptions import DuplicateWeekError, InvalidAssignmentError, InvalidCourseError, InvalidQuizError, InvalidWeekError
+from backend.db import (
+    add_assignment_to_db,
+    add_course_to_db,
+    add_quiz_to_db,
+    add_week_to_db,
+    get_assignments,
+    get_courses,
+    get_owned_assignment,
+    get_owned_course,
+    get_owned_week,
+    get_quiz,
+    get_weeks,
+    init_db,
+)
+from backend.exceptions import (
+    DuplicateWeekError,
+    InvalidAssignmentError,
+    InvalidCourseError,
+    InvalidQuizError,
+    InvalidWeekError,
+)
+from backend.models import (
+    Assignment,
+    AssignmentOut,
+    Course,
+    CourseOut,
+    GenerateCourseRequest,
+    GenerateJobOut,
+    PublicQuizOut,
+    Quiz,
+    RequestAddAssignment,
+    RequestAddCourse,
+    RequestAddQuiz,
+    RequestAddWeek,
+    User,
+    Week,
+    WeekOut,
+)
 
 
 @asynccontextmanager
@@ -16,8 +59,260 @@ async def lifespan(app: FastAPI):
     yield
 
 
+load_dotenv()
+
 app = FastAPI(lifespan=lifespan)
 logger = logging.getLogger(__name__)
+
+_DEFAULT_CORS_ORIGINS = "http://localhost:5173,http://127.0.0.1:5173"
+
+
+def allowed_origins() -> list[str]:
+    raw = os.getenv("CORS_ORIGINS")
+    if raw is None or not raw.strip():
+        raw = _DEFAULT_CORS_ORIGINS
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins(),
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+
+@dataclass
+class GenerationJob:
+    job_id: UUID
+    user_id: UUID
+    status: str
+    detail: str | None = None
+    course_id: UUID | None = None
+    error: str | None = None
+    started_at: float = field(default_factory=time.monotonic)
+    finished_at: float | None = None
+    cancel: threading.Event = field(default_factory=threading.Event)
+    worker_done: threading.Event = field(default_factory=threading.Event)
+
+
+# One uvicorn process. A local page polls these; a restart drops them.
+# Finished jobs expire after the TTL, and only the newest cap is kept.
+# A timed-out build is asked to stop. It keeps the 409 until that worker exits.
+_FINISHED_JOB_TTL_SECONDS = 30 * 60
+_MAX_FINISHED_JOBS = 20
+_ACTIVE_JOB_TIMEOUT_SECONDS = 15 * 60
+_ACTIVE_STATUSES = {"pending", "running"}
+_TERMINAL_STATUSES = {"succeeded", "failed", "incomplete"}
+_DETAIL_LIMIT = 2000
+_ERROR_LIMIT = 500
+_jobs: dict[UUID, GenerationJob] = {}
+_jobs_lock = threading.Lock()
+
+
+def _clip(text: str | None, limit: int) -> str | None:
+    if not text:
+        return None
+    return text[:limit]
+
+
+def _evict_finished_jobs() -> None:
+    """Drop expired or overflow finished jobs. Caller holds _jobs_lock."""
+    now = time.monotonic()
+    expired = [
+        job_id
+        for job_id, job in _jobs.items()
+        if job.finished_at is not None
+        and now - job.finished_at >= _FINISHED_JOB_TTL_SECONDS
+    ]
+    for job_id in expired:
+        del _jobs[job_id]
+
+    finished = [
+        job_id for job_id, job in _jobs.items() if job.status in _TERMINAL_STATUSES
+    ]
+    overflow = len(finished) - _MAX_FINISHED_JOBS
+    if overflow <= 0:
+        return
+    finished.sort(key=lambda job_id: _jobs[job_id].finished_at or 0)
+    for job_id in finished[:overflow]:
+        del _jobs[job_id]
+
+
+def _timeout_message() -> str:
+    minutes = _ACTIVE_JOB_TIMEOUT_SECONDS // 60
+    unit = "minute" if minutes == 1 else "minutes"
+    return (
+        f"Course generation timed out after {minutes} {unit} before it finished. "
+        "Start a new build to try again."
+    )
+
+
+def _cancel_stale_jobs() -> None:
+    """Ask timed-out workers to stop. Caller holds _jobs_lock.
+
+    The job stays active until the worker notices and exits, so a new build
+    cannot overlap it.
+    """
+    now = time.monotonic()
+    for job in _jobs.values():
+        if job.status not in _ACTIVE_STATUSES or job.cancel.is_set():
+            continue
+        if now - job.started_at < _ACTIVE_JOB_TIMEOUT_SECONDS:
+            continue
+        job.cancel.set()
+        job.detail = "Stopping the build after the timeout."
+
+
+def _blocks_new_build(job: GenerationJob, user_id: UUID) -> bool:
+    return job.user_id == user_id and not job.worker_done.is_set()
+
+
+def _update_job(job_id: UUID, *, mark_done: bool = False, **fields) -> None:
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+        if job is None:
+            return
+        terminal = fields.get("status") in _TERMINAL_STATUSES
+        # A cancel is in progress. Ignore progress writes, but keep the final status.
+        if job.finished_at is None and (terminal or not job.cancel.is_set()):
+            for key, value in fields.items():
+                setattr(job, key, value)
+            if job.status in _TERMINAL_STATUSES:
+                job.finished_at = time.monotonic()
+        if mark_done:
+            job.worker_done.set()
+
+
+def _job_should_stop(job_id: UUID) -> bool:
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+        return job is None or job.cancel.is_set()
+
+
+def _fail_timed_out_job(
+    job_id: UUID, course_id: str | None, summary: str | None
+) -> None:
+    detail = "Stopping the build after the timeout."
+    if summary and summary.strip():
+        detail = summary.strip()
+    _update_job(
+        job_id,
+        status="failed",
+        course_id=UUID(str(course_id)) if course_id else None,
+        error=_clip(_timeout_message(), _ERROR_LIMIT),
+        detail=_clip(detail, _DETAIL_LIMIT),
+        mark_done=True,
+    )
+
+
+def _snapshot_job(job_id: UUID) -> GenerationJob | None:
+    with _jobs_lock:
+        _cancel_stale_jobs()
+        _evict_finished_jobs()
+        job = _jobs.get(job_id)
+        if job is None:
+            return None
+        return replace(job)
+
+
+def _job_response(job: GenerationJob) -> GenerateJobOut:
+    course = None
+    if job.course_id is not None:
+        for row in get_courses(job.user_id):
+            if str(row["id"]) == str(job.course_id):
+                course = CourseOut.model_validate(row)
+                break
+    return GenerateJobOut(
+        job_id=job.job_id,
+        status=job.status,
+        detail=job.detail,
+        course_id=job.course_id,
+        course=course,
+        error=job.error,
+    )
+
+
+def _run_generation_job(
+    job_id: UUID, user_id: UUID, body: GenerateCourseRequest
+) -> None:
+    def on_progress(message: str) -> None:
+        if _job_should_stop(job_id):
+            return
+        _update_job(job_id, status="running", detail=message)
+
+    try:
+        if _job_should_stop(job_id):
+            _fail_timed_out_job(job_id, None, None)
+            return
+        _update_job(job_id, status="running", detail="Starting course generation")
+        result = run_generation(
+            user_id=user_id,
+            goal=body.goal,
+            level=body.level,
+            time_available=body.time_available,
+            timezone_name=body.timezone,
+            on_progress=on_progress,
+            should_stop=lambda: _job_should_stop(job_id),
+        )
+        if result.cancelled or _job_should_stop(job_id):
+            _fail_timed_out_job(job_id, result.course_id, result.summary)
+            return
+
+        if result.course_id and not result.completed:
+            message = (
+                f"Generation hit the {MAX_ITERATIONS}-turn cap before the agent finished. "
+                "The course was saved but may be missing weeks, assignments, or quizzes."
+            )
+            detail = f"{message}\n{result.summary}" if result.summary else message
+            _update_job(
+                job_id,
+                status="incomplete",
+                course_id=UUID(str(result.course_id)),
+                detail=_clip(detail, _DETAIL_LIMIT),
+                error=None,
+                mark_done=True,
+            )
+            return
+
+        if result.course_id:
+            _update_job(
+                job_id,
+                status="succeeded",
+                course_id=UUID(str(result.course_id)),
+                detail=_clip(result.summary or "Course created", _DETAIL_LIMIT),
+                error=None,
+                mark_done=True,
+            )
+            return
+
+        if result.completed:
+            error = "The agent finished without creating a course"
+        else:
+            error = (
+                f"Generation hit the {MAX_ITERATIONS}-turn cap before creating a course"
+            )
+        _update_job(
+            job_id,
+            status="failed",
+            error=_clip(error, _ERROR_LIMIT),
+            detail=_clip(result.summary, _DETAIL_LIMIT),
+            mark_done=True,
+        )
+    except Exception as exc:
+        logger.exception("Course generation failed for job %s", job_id)
+        if _job_should_stop(job_id):
+            _fail_timed_out_job(job_id, None, None)
+            return
+        _update_job(
+            job_id,
+            status="failed",
+            error=_clip(str(exc) or "Course generation failed", _ERROR_LIMIT),
+            mark_done=True,
+        )
+    finally:
+        _update_job(job_id, mark_done=True)
 
 
 # COURSES
@@ -27,7 +322,9 @@ def list_courses(user: Annotated[User, Depends(get_current_user)]):
 
 
 @app.post("/courses", status_code=201)
-def add_course(user: Annotated[User, Depends(get_current_user)], course: RequestAddCourse):
+def add_course(
+    user: Annotated[User, Depends(get_current_user)], course: RequestAddCourse
+):
     course_id = uuid4()
     valid_course = Course(
         **course.model_dump(),
@@ -43,6 +340,58 @@ def add_course(user: Annotated[User, Depends(get_current_user)], course: Request
     return {"id": course_id}
 
 
+@app.post("/courses/generate", status_code=202, response_model=GenerateJobOut)
+def start_course_generation(
+    user: Annotated[User, Depends(get_current_user)],
+    body: GenerateCourseRequest,
+    response: Response,
+):
+    job = GenerationJob(
+        job_id=uuid4(),
+        user_id=user.id,
+        status="pending",
+        detail="Queued",
+        started_at=time.monotonic(),
+    )
+    with _jobs_lock:
+        _cancel_stale_jobs()
+        _evict_finished_jobs()
+        active = next(
+            (
+                existing
+                for existing in _jobs.values()
+                if _blocks_new_build(existing, user.id)
+            ),
+            None,
+        )
+        if active is not None:
+            raise HTTPException(
+                status_code=409,
+                detail=f"A course build is already in progress: {active.job_id}",
+            )
+        _jobs[job.job_id] = job
+        snapshot = replace(job)
+    response.headers["Location"] = f"/courses/generate/{job.job_id}"
+    threading.Thread(
+        target=_run_generation_job,
+        args=(job.job_id, user.id, body),
+        name=f"generate-{job.job_id}",
+        daemon=True,
+    ).start()
+    return _job_response(snapshot)
+
+
+@app.get("/courses/generate/{job_id}", response_model=GenerateJobOut)
+def get_course_generation(
+    user: Annotated[User, Depends(get_current_user)],
+    job_id: UUID,
+):
+    job = _snapshot_job(job_id)
+    if job is None or job.user_id != user.id:
+        raise HTTPException(status_code=404, detail="Generation job not found")
+    return _job_response(job)
+
+
 # WEEKS
 @app.get("/courses/{course_id}/weeks", response_model=list[WeekOut])
 def list_weeks(user: Annotated[User, Depends(get_current_user)], course_id: UUID):
@@ -52,7 +401,11 @@ def list_weeks(user: Annotated[User, Depends(get_current_user)], course_id: UUID
 
 
 @app.post("/courses/{course_id}/weeks", status_code=201)
-def add_week(user: Annotated[User, Depends(get_current_user)], course_id: UUID, week: RequestAddWeek):
+def add_week(
+    user: Annotated[User, Depends(get_current_user)],
+    course_id: UUID,
+    week: RequestAddWeek,
+):
     if not get_owned_course(course_id=course_id, user_id=user.id):
         raise HTTPException(401, "Access denied to course")
     week_id = uuid4()
@@ -81,7 +434,11 @@ def list_assignments(user: Annotated[User, Depends(get_current_user)], week_id: 
 
 
 @app.post("/weeks/{week_id}/assignments", status_code=201)
-def add_assignment(user: Annotated[User, Depends(get_current_user)], week_id: UUID, assignment: RequestAddAssignment):
+def add_assignment(
+    user: Annotated[User, Depends(get_current_user)],
+    week_id: UUID,
+    assignment: RequestAddAssignment,
+):
     if not get_owned_week(week_id=week_id, user_id=user.id):
         raise HTTPException(401, "Access denied to week")
     assignment_id = uuid4()
@@ -107,7 +464,11 @@ def list_quiz(user: Annotated[User, Depends(get_current_user)], assignment_id: U
 
 
 @app.post("/assignments/{assignment_id}/quiz", status_code=201)
-def add_quiz(user: Annotated[User, Depends(get_current_user)], assignment_id: UUID, quiz: RequestAddQuiz):
+def add_quiz(
+    user: Annotated[User, Depends(get_current_user)],
+    assignment_id: UUID,
+    quiz: RequestAddQuiz,
+):
     if not get_owned_assignment(assignment_id=assignment_id, user_id=user.id):
         raise HTTPException(401, "Access denied to assignment")
     quiz_id = uuid4()
