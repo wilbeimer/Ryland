@@ -38,6 +38,7 @@ It is also a place to try agentic planning: one model, a narrow set of tools, an
 ## Features
 
 - Tool-calling course builder (Claude)
+- HTTP job to start a build and poll its progress
 - Courses, weeks, text assignments, and quizzes
 - Rubrics stored with each assignment
 - Quizzes with short-answer and multiple-choice questions
@@ -54,26 +55,32 @@ It is also a place to try agentic planning: one model, a narrow set of tools, an
 ```text
         Learner goal
               │
-              ▼
-     agent/agent_loop.py
-     (Claude + CONTEXT.md)
-              │
-              ▼
-        agent/tools.py
-   create_course / create_week
-   create_assignment / create_quiz
-   ask_user
-              │
-              ▼
-         backend/db.py
-         curriculum.db
-              │
-              ▼
-      backend/endpoints.py
-         FastAPI routes
+              ├──────────────────────────────┐
+              ▼                              ▼
+   POST /courses/generate          python -m agent.agent_loop
+   goal, level, time, timezone     terminal prompt + ask_user
+              │                              │
+              └──────────────┬───────────────┘
+                             ▼
+                    agent/agent_loop.py
+                    (Claude + CONTEXT.md)
+                             │
+                             ▼
+                       agent/tools.py
+                  create_course / create_week
+                  create_assignment / create_quiz
+                       ask_user
+                             │
+                             ▼
+                        backend/db.py
+                        curriculum.db
+                             │
+                             ▼
+                     backend/endpoints.py
+                        FastAPI routes
 ```
 
-The agent and the API share one schema. The agent writes rows. The API lists and creates the same records for the current user.
+The agent and the API share one schema. The agent writes rows through the same database functions the API uses. The API lists and creates those records for the current user, and can start a build.
 
 A course belongs to a user. A week belongs to a course, and week numbers are unique within that course. An assignment is either `text` or `quiz` and belongs to a week. A quiz belongs to one assignment and stores a time limit plus questions. Correct answers stay in the database. The quiz read endpoint returns the public shape, which leaves them out.
 
@@ -124,21 +131,67 @@ uvicorn backend.endpoints:app --reload
 
 The API listens on `http://localhost:8000`. Interactive docs are at `http://localhost:8000/docs`.
 
-### Run the agent
+### Call it from a local page
 
-Put your key in a `.env` file in the repository root:
+A Vite dev server on another port is a different origin, so the API sends CORS headers. The default allows `http://localhost:5173` and `http://127.0.0.1:5173`. Set a comma-separated list to change that:
+
+```bash
+CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
+```
+
+Put `CORS_ORIGINS` and `ANTHROPIC_API_KEY` in a `.env` file in the repository root. The API loads that file on startup. Restart uvicorn after editing it. Run a single worker. Generation jobs live in that process and are gone after a restart or a reload.
+
+### Generate a course over HTTP
+
+`POST /courses/generate` takes the details the terminal agent asks for, starts a build, and returns immediately with a job id. Poll `GET /courses/generate/{job_id}` until `status` is `succeeded` or `failed`. On success the body includes `course_id` and the course `name` and `description`. Weeks, assignments, and quizzes are the existing read routes.
+
+```bash
+curl -s -X POST http://localhost:8000/courses/generate \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "goal": "Learn SQL joins well enough to write reports",
+    "level": "beginner, comfortable with SELECT",
+    "time_available": "4 hours a week for 3 weeks",
+    "timezone": "America/New_York"
+  }'
+```
+
+The response is `202` with `job_id` and `status: "pending"`. The `Location` header points at the status route.
+
+```bash
+curl -s http://localhost:8000/courses/generate/<job_id>
+```
+
+While the job runs, `detail` moves through the turns (`Turn 2`, `Using create_week`). That is the progress a page can show. The build calls Claude and can take a while. Polling keeps this to two ordinary requests: the page does not hold a stream open, and refreshing the status call does not start a second build. The job is only in memory.
+
+`timezone` is an IANA name such as `America/New_York`. The server uses it, together with the current time, so the agent can set due dates. The seeded user from `python -m backend.db` has to exist first. The course is saved for that user. This path does not read from the terminal. If the model still calls `ask_user`, the tool answers from the request instead of waiting for input.
+
+A succeeded job has a `course_id`. If the agent hits the 10-turn cap after it has created the course, that id is still returned and the course may be incomplete. If it never creates a course, `status` is `failed` and `error` says why.
+
+### Run the agent in the terminal
+
+The CLI still works. Put your key in `.env` if it is not already there:
 
 ```bash
 ANTHROPIC_API_KEY=sk-ant-...
 ```
 
-Then:
+Then, from the repository root:
 
 ```bash
 python -m agent.agent_loop
 ```
 
 Type a learning goal at the prompt. The agent asks follow-up questions in the terminal when it needs your level, available time, the current date, or your timezone. It then creates the course in `backend/curriculum.db`. The model is `claude-haiku-4-5`, and a run stops after 10 turns.
+
+### Test the generate endpoint
+
+The generate test mocks the agent, so it does not need an API key. Pytest and HTTPX are not in `requirements.txt`:
+
+```bash
+pip install pytest httpx
+pytest tests/test_generate.py
+```
 
 ---
 
@@ -150,6 +203,8 @@ Every route depends on `get_current_user`, which always loads the seeded user ab
 | --- | --- | --- | --- |
 | `GET` | `/courses` | | `200` list of courses |
 | `POST` | `/courses` | `name`, `description` | `201` `{"id"}` |
+| `POST` | `/courses/generate` | `goal`, `level`, `time_available`, `timezone` | `202` job `{job_id, status}` |
+| `GET` | `/courses/generate/{job_id}` | | `200` job; `course_id` and `course` when it succeeded |
 | `GET` | `/courses/{course_id}/weeks` | | `200` weeks, ordered by `week_number` |
 | `POST` | `/courses/{course_id}/weeks` | `week_number`, `description` | `201` `{"id"}` |
 | `GET` | `/weeks/{week_id}/assignments` | | `200` list of assignments |
@@ -167,15 +222,17 @@ Every route depends on `get_current_user`, which always loads the seeded user ab
 
 | Status | When |
 | --- | --- |
-| `404` | The course, week, assignment, or quiz is missing, or it belongs to another user |
+| `404` | The course, week, assignment, quiz, or generation job is missing, or it belongs to another user |
 | `409` | A week with that number already exists on the course |
-| `422` | The row violates a database constraint (empty name, invalid type, bad date, non-positive quiz time limit, invalid JSON) |
+| `422` | The row violates a database constraint (empty name, invalid type, bad date, non-positive quiz time limit, invalid JSON), or a generate field is missing or blank |
 
 ---
 
 ## Agent
 
-`agent/CONTEXT.md` is the system prompt. It tells the model to plan the outline first, then build in order: course, weeks, assignments, and a quiz only for assignments of type `quiz`. Clarifying questions go through the `ask_user` tool, which reads an answer from the terminal.
+`agent/CONTEXT.md` is the system prompt. It tells the model to plan the outline first, then build in order: course, weeks, assignments, and a quiz only for assignments of type `quiz`. Clarifying questions go through the `ask_user` tool.
+
+From the terminal, `ask_user` reads an answer with `input()`. From `POST /courses/generate`, the request already carries the goal, level, time available, and timezone, and the server adds the current time in that timezone. `ask_user` answers from that brief and does not read the terminal. The model is the same either way: `claude-haiku-4-5`, with `ANTHROPIC_API_KEY`.
 
 | Tool | Writes | Returns |
 | --- | --- | --- |
@@ -183,7 +240,7 @@ Every route depends on `get_current_user`, which always loads the seeded user ab
 | `create_week` | Week number and description on a course | `week_id` |
 | `create_assignment` | Type, name, student-facing instructions, rubric, and due date | `assignment_id` |
 | `create_quiz` | Time limit and questions on a quiz assignment | `quiz_id` |
-| `ask_user` | Nothing | The answer typed at the prompt |
+| `ask_user` | Nothing | The answer typed at the prompt, or the generate-request brief |
 
 Tool errors come back to the model so it can correct the input and retry. The agent does not search the web. `CONTEXT.md` tells it not to invent URLs or titles.
 
@@ -223,7 +280,9 @@ Active development. What works today:
 
 - Course, week, assignment, and quiz persistence
 - A tool-calling agent that fills those tables from a learning goal
+- `POST /courses/generate` to start that agent from a page, plus a status poll
 - A read/write HTTP API scoped to one seeded user
+- CORS for a local Vite origin
 - CI for lint, format, and tests
 
 Not built yet:
@@ -241,6 +300,7 @@ Not built yet:
 - [x] FastAPI CRUD for that schema
 - [x] Tool-calling course builder
 - [x] SQLite persistence
+- [x] HTTP course generation (job id and status poll)
 - [x] GitHub Actions CI
 - [ ] User authentication
 - [ ] Submission storage and grading
