@@ -8,7 +8,13 @@ import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
-from agent.agent_loop import Agent, AgentRunResult, learner_brief, run_generation
+from agent.agent_loop import (
+    CONTEXT_FILE,
+    Agent,
+    AgentRunResult,
+    learner_brief,
+    run_generation,
+)
 from agent.tools import ask_user
 from backend.db import add_course_to_db, add_user_to_db, init_db
 from backend.endpoints import allowed_origins, app
@@ -63,7 +69,7 @@ def wait_for_job(client: TestClient, job_id: str) -> dict:
         response = client.get(f"/courses/generate/{job_id}")
         assert response.status_code == 200
         last = response.json()
-        if last["status"] in {"succeeded", "failed"}:
+        if last["status"] in {"succeeded", "incomplete", "failed"}:
             return last
         time.sleep(0.02)
     raise AssertionError(last)
@@ -74,7 +80,9 @@ def test_generate_polls_until_course_is_saved(client, monkeypatch):
     release = threading.Event()
     course_id = uuid4()
 
-    def fake_run_generation(*, user_id, goal, level, time_available, timezone_name, on_progress=None):
+    def fake_run_generation(
+        *, user_id, goal, level, time_available, timezone_name, on_progress=None
+    ):
         assert goal == GENERATE_BODY["goal"]
         assert level == GENERATE_BODY["level"]
         assert time_available == GENERATE_BODY["time_available"]
@@ -91,7 +99,9 @@ def test_generate_polls_until_course_is_saved(client, monkeypatch):
                 description=goal,
             )
         )
-        return AgentRunResult(course_id=str(course_id), summary="Built SQL Joins", completed=True)
+        return AgentRunResult(
+            course_id=str(course_id), summary="Built SQL Joins", completed=True
+        )
 
     monkeypatch.setattr("backend.endpoints.run_generation", fake_run_generation)
 
@@ -143,6 +153,91 @@ def test_generate_reports_failure_without_a_course(client, monkeypatch):
     assert client.get("/courses").json() == []
 
 
+def test_turn_cap_after_create_course_is_incomplete(client, monkeypatch):
+    course_id = uuid4()
+
+    def fake_run_generation(
+        *, user_id, goal, level, time_available, timezone_name, on_progress=None
+    ):
+        add_course_to_db(
+            Course(
+                id=course_id,
+                user_id=user_id,
+                name="Partial SQL",
+                description=goal,
+            )
+        )
+        return AgentRunResult(
+            course_id=str(course_id),
+            summary="Stopped mid-outline",
+            completed=False,
+        )
+
+    monkeypatch.setattr("backend.endpoints.run_generation", fake_run_generation)
+    created = client.post("/courses/generate", json=GENERATE_BODY)
+    assert created.status_code == 202
+    finished = wait_for_job(client, created.json()["job_id"])
+    assert finished["status"] == "incomplete"
+    assert finished["course_id"] == str(course_id)
+    assert finished["course"]["name"] == "Partial SQL"
+    assert "10-turn cap" in finished["detail"]
+    assert "may be missing" in finished["detail"]
+    assert "Stopped mid-outline" in finished["detail"]
+    assert "10-turn cap" in finished["error"]
+
+
+def test_second_build_is_rejected_while_one_is_running(client, monkeypatch):
+    started = threading.Event()
+    release = threading.Event()
+
+    def fake_run_generation(**kwargs):
+        on_progress = kwargs.get("on_progress")
+        if on_progress:
+            on_progress("Using create_course")
+        started.set()
+        assert release.wait(timeout=2)
+        return AgentRunResult(course_id=None, summary="", completed=True)
+
+    monkeypatch.setattr("backend.endpoints.run_generation", fake_run_generation)
+    try:
+        first = client.post("/courses/generate", json=GENERATE_BODY)
+        assert first.status_code == 202
+        job_id = first.json()["job_id"]
+        assert started.wait(timeout=2)
+        second = client.post("/courses/generate", json=GENERATE_BODY)
+        assert second.status_code == 409
+        assert job_id in second.json()["detail"]
+    finally:
+        release.set()
+
+    assert wait_for_job(client, job_id)["status"] == "failed"
+    third = client.post("/courses/generate", json=GENERATE_BODY)
+    assert third.status_code == 202
+    assert wait_for_job(client, third.json()["job_id"])["status"] == "failed"
+
+
+def test_finished_jobs_expire(client, monkeypatch):
+    def fake_run_generation(**kwargs):
+        return AgentRunResult(course_id=None, summary="no course", completed=True)
+
+    monkeypatch.setattr("backend.endpoints.run_generation", fake_run_generation)
+    monkeypatch.setattr("backend.endpoints._MAX_FINISHED_JOBS", 1)
+    first = client.post("/courses/generate", json=GENERATE_BODY)
+    first_id = first.json()["job_id"]
+    assert wait_for_job(client, first_id)["status"] == "failed"
+
+    second = client.post("/courses/generate", json=GENERATE_BODY)
+    second_id = second.json()["job_id"]
+    assert wait_for_job(client, second_id)["status"] == "failed"
+
+    # The next read evicts the oldest finished job once the cap is exceeded.
+    assert client.get(f"/courses/generate/{first_id}").status_code == 404
+    assert client.get(f"/courses/generate/{second_id}").status_code == 200
+
+    monkeypatch.setattr("backend.endpoints._FINISHED_JOB_TTL_SECONDS", 0)
+    assert client.get(f"/courses/generate/{second_id}").status_code == 404
+
+
 def test_generate_rejects_blank_fields(client):
     response = client.post(
         "/courses/generate",
@@ -155,6 +250,20 @@ def test_generate_rejects_blank_fields(client):
         json={"goal": "Learn SQL joins", "level": "beginner"},
     )
     assert missing.status_code == 422
+
+
+def test_generate_rejects_invalid_timezone(client, monkeypatch):
+    def fail_if_called(**kwargs):
+        raise AssertionError("invalid timezone should not start a build")
+
+    monkeypatch.setattr("backend.endpoints.run_generation", fail_if_called)
+    response = client.post(
+        "/courses/generate",
+        json={**GENERATE_BODY, "timezone": "Eastern"},
+    )
+    assert response.status_code == 422
+    assert "timezone" in response.text
+    assert client.get("/courses").json() == []
 
 
 def test_unknown_generation_job_is_not_found(client):
@@ -235,3 +344,15 @@ def test_run_generation_requires_api_key(monkeypatch):
 def test_cli_agent_still_asks_on_the_terminal_by_default():
     agent = Agent(user_id=SEEDED_USER, client=object(), model="claude-haiku-4-5")
     assert agent.ask is ask_user
+
+
+def test_context_file_does_not_depend_on_cwd(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    agent = Agent(
+        user_id=SEEDED_USER,
+        client=object(),
+        model="claude-haiku-4-5",
+        context_file=CONTEXT_FILE,
+    )
+    assert CONTEXT_FILE.is_file()
+    assert "course-building agent" in agent.system_prompt

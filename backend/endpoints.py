@@ -1,8 +1,9 @@
-from contextlib import asynccontextmanager
-from dataclasses import dataclass, replace
 import logging
 import os
 import threading
+import time
+from contextlib import asynccontextmanager
+from dataclasses import dataclass, replace
 from typing import Annotated
 from uuid import UUID, uuid4
 
@@ -12,9 +13,44 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from agent.agent_loop import run_generation
 from backend.auth import get_current_user
-from backend.db import add_assignment_to_db, add_course_to_db, add_quiz_to_db, add_week_to_db, get_assignments, get_courses, get_owned_assignment, get_owned_course, get_owned_week, get_quiz, get_weeks, init_db
-from backend.models import Assignment, AssignmentOut, CourseOut, GenerateCourseRequest, GenerateJobOut, PublicQuizOut, Quiz, RequestAddAssignment, RequestAddQuiz, RequestAddWeek, Course, RequestAddCourse, User, Week, WeekOut
-from backend.exceptions import DuplicateWeekError, InvalidAssignmentError, InvalidCourseError, InvalidQuizError, InvalidWeekError
+from backend.db import (
+    add_assignment_to_db,
+    add_course_to_db,
+    add_quiz_to_db,
+    add_week_to_db,
+    get_assignments,
+    get_courses,
+    get_owned_assignment,
+    get_owned_course,
+    get_owned_week,
+    get_quiz,
+    get_weeks,
+    init_db,
+)
+from backend.exceptions import (
+    DuplicateWeekError,
+    InvalidAssignmentError,
+    InvalidCourseError,
+    InvalidQuizError,
+    InvalidWeekError,
+)
+from backend.models import (
+    Assignment,
+    AssignmentOut,
+    Course,
+    CourseOut,
+    GenerateCourseRequest,
+    GenerateJobOut,
+    PublicQuizOut,
+    Quiz,
+    RequestAddAssignment,
+    RequestAddCourse,
+    RequestAddQuiz,
+    RequestAddWeek,
+    User,
+    Week,
+    WeekOut,
+)
 
 
 @asynccontextmanager
@@ -55,11 +91,48 @@ class GenerationJob:
     detail: str | None = None
     course_id: UUID | None = None
     error: str | None = None
+    finished_at: float | None = None
 
 
 # One uvicorn process. A local page polls these; a restart drops them.
+# Finished jobs expire after the TTL, and only the newest cap is kept.
+_FINISHED_JOB_TTL_SECONDS = 30 * 60
+_MAX_FINISHED_JOBS = 20
+_ACTIVE_STATUSES = {"pending", "running"}
+_TERMINAL_STATUSES = {"succeeded", "failed", "incomplete"}
+_DETAIL_LIMIT = 2000
+_ERROR_LIMIT = 500
 _jobs: dict[UUID, GenerationJob] = {}
 _jobs_lock = threading.Lock()
+
+
+def _clip(text: str | None, limit: int) -> str | None:
+    if not text:
+        return None
+    return text[:limit]
+
+
+def _evict_finished_jobs() -> None:
+    """Drop expired or overflow finished jobs. Caller holds _jobs_lock."""
+    now = time.monotonic()
+    expired = [
+        job_id
+        for job_id, job in _jobs.items()
+        if job.finished_at is not None
+        and now - job.finished_at >= _FINISHED_JOB_TTL_SECONDS
+    ]
+    for job_id in expired:
+        del _jobs[job_id]
+
+    finished = [
+        job_id for job_id, job in _jobs.items() if job.status in _TERMINAL_STATUSES
+    ]
+    overflow = len(finished) - _MAX_FINISHED_JOBS
+    if overflow <= 0:
+        return
+    finished.sort(key=lambda job_id: _jobs[job_id].finished_at or 0)
+    for job_id in finished[:overflow]:
+        del _jobs[job_id]
 
 
 def _update_job(job_id: UUID, **fields) -> None:
@@ -69,10 +142,13 @@ def _update_job(job_id: UUID, **fields) -> None:
             return
         for key, value in fields.items():
             setattr(job, key, value)
+        if job.status in _TERMINAL_STATUSES and job.finished_at is None:
+            job.finished_at = time.monotonic()
 
 
 def _snapshot_job(job_id: UUID) -> GenerationJob | None:
     with _jobs_lock:
+        _evict_finished_jobs()
         job = _jobs.get(job_id)
         if job is None:
             return None
@@ -96,7 +172,9 @@ def _job_response(job: GenerationJob) -> GenerateJobOut:
     )
 
 
-def _run_generation_job(job_id: UUID, user_id: UUID, body: GenerateCourseRequest) -> None:
+def _run_generation_job(
+    job_id: UUID, user_id: UUID, body: GenerateCourseRequest
+) -> None:
     def on_progress(message: str) -> None:
         _update_job(job_id, status="running", detail=message)
 
@@ -110,13 +188,27 @@ def _run_generation_job(job_id: UUID, user_id: UUID, body: GenerateCourseRequest
             timezone_name=body.timezone,
             on_progress=on_progress,
         )
+        if result.course_id and not result.completed:
+            message = (
+                "Generation hit the 10-turn cap before the agent finished. "
+                "The course was saved but may be missing weeks, assignments, or quizzes."
+            )
+            detail = f"{message}\n{result.summary}" if result.summary else message
+            _update_job(
+                job_id,
+                status="incomplete",
+                course_id=UUID(str(result.course_id)),
+                detail=_clip(detail, _DETAIL_LIMIT),
+                error=_clip(message, _ERROR_LIMIT),
+            )
+            return
+
         if result.course_id:
-            detail = (result.summary or "Course created")[:2000]
             _update_job(
                 job_id,
                 status="succeeded",
                 course_id=UUID(str(result.course_id)),
-                detail=detail,
+                detail=_clip(result.summary or "Course created", _DETAIL_LIMIT),
                 error=None,
             )
             return
@@ -125,10 +217,19 @@ def _run_generation_job(job_id: UUID, user_id: UUID, body: GenerateCourseRequest
             error = "The agent finished without creating a course"
         else:
             error = "Generation hit the turn limit before creating a course"
-        _update_job(job_id, status="failed", error=error, detail=result.summary or None)
+        _update_job(
+            job_id,
+            status="failed",
+            error=_clip(error, _ERROR_LIMIT),
+            detail=_clip(result.summary, _DETAIL_LIMIT),
+        )
     except Exception as exc:
         logger.exception("Course generation failed for job %s", job_id)
-        _update_job(job_id, status="failed", error=(str(exc) or "Course generation failed")[:500])
+        _update_job(
+            job_id,
+            status="failed",
+            error=_clip(str(exc) or "Course generation failed", _ERROR_LIMIT),
+        )
 
 
 # COURSES
@@ -138,7 +239,9 @@ def list_courses(user: Annotated[User, Depends(get_current_user)]):
 
 
 @app.post("/courses", status_code=201)
-def add_course(user: Annotated[User, Depends(get_current_user)], course: RequestAddCourse):
+def add_course(
+    user: Annotated[User, Depends(get_current_user)], course: RequestAddCourse
+):
     course_id = uuid4()
     valid_course = Course(
         **course.model_dump(),
@@ -160,10 +263,26 @@ def start_course_generation(
     body: GenerateCourseRequest,
     response: Response,
 ):
-    job = GenerationJob(job_id=uuid4(), user_id=user.id, status="pending", detail="Queued")
+    job = GenerationJob(
+        job_id=uuid4(), user_id=user.id, status="pending", detail="Queued"
+    )
     with _jobs_lock:
+        _evict_finished_jobs()
+        active = next(
+            (
+                existing
+                for existing in _jobs.values()
+                if existing.user_id == user.id and existing.status in _ACTIVE_STATUSES
+            ),
+            None,
+        )
+        if active is not None:
+            raise HTTPException(
+                status_code=409,
+                detail=f"A course build is already in progress: {active.job_id}",
+            )
         _jobs[job.job_id] = job
-    snapshot = replace(job)
+        snapshot = replace(job)
     response.headers["Location"] = f"/courses/generate/{job.job_id}"
     threading.Thread(
         target=_run_generation_job,
@@ -194,7 +313,11 @@ def list_weeks(user: Annotated[User, Depends(get_current_user)], course_id: UUID
 
 
 @app.post("/courses/{course_id}/weeks", status_code=201)
-def add_week(user: Annotated[User, Depends(get_current_user)], course_id: UUID, week: RequestAddWeek):
+def add_week(
+    user: Annotated[User, Depends(get_current_user)],
+    course_id: UUID,
+    week: RequestAddWeek,
+):
     if not get_owned_course(course_id=course_id, user_id=user.id):
         raise HTTPException(401, "Access denied to course")
     week_id = uuid4()
@@ -223,7 +346,11 @@ def list_assignments(user: Annotated[User, Depends(get_current_user)], week_id: 
 
 
 @app.post("/weeks/{week_id}/assignments", status_code=201)
-def add_assignment(user: Annotated[User, Depends(get_current_user)], week_id: UUID, assignment: RequestAddAssignment):
+def add_assignment(
+    user: Annotated[User, Depends(get_current_user)],
+    week_id: UUID,
+    assignment: RequestAddAssignment,
+):
     if not get_owned_week(week_id=week_id, user_id=user.id):
         raise HTTPException(401, "Access denied to week")
     assignment_id = uuid4()
@@ -249,7 +376,11 @@ def list_quiz(user: Annotated[User, Depends(get_current_user)], assignment_id: U
 
 
 @app.post("/assignments/{assignment_id}/quiz", status_code=201)
-def add_quiz(user: Annotated[User, Depends(get_current_user)], assignment_id: UUID, quiz: RequestAddQuiz):
+def add_quiz(
+    user: Annotated[User, Depends(get_current_user)],
+    assignment_id: UUID,
+    quiz: RequestAddQuiz,
+):
     if not get_owned_assignment(assignment_id=assignment_id, user_id=user.id):
         raise HTTPException(401, "Access denied to assignment")
     quiz_id = uuid4()

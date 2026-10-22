@@ -143,7 +143,7 @@ Put `CORS_ORIGINS` and `ANTHROPIC_API_KEY` in a `.env` file in the repository ro
 
 ### Generate a course over HTTP
 
-`POST /courses/generate` takes the details the terminal agent asks for, starts a build, and returns immediately with a job id. Poll `GET /courses/generate/{job_id}` until `status` is `succeeded` or `failed`. On success the body includes `course_id` and the course `name` and `description`. Weeks, assignments, and quizzes are the existing read routes.
+`POST /courses/generate` takes the details the terminal agent asks for, starts a build, and returns immediately with a job id. Poll `GET /courses/generate/{job_id}` until `status` is `succeeded`, `incomplete`, or `failed`. On `succeeded` or `incomplete` the body includes `course_id` and the course `name` and `description`. Weeks, assignments, and quizzes are the existing read routes. A second POST while a build is `pending` or `running` returns `409`.
 
 ```bash
 curl -s -X POST http://localhost:8000/courses/generate \
@@ -162,11 +162,11 @@ The response is `202` with `job_id` and `status: "pending"`. The `Location` head
 curl -s http://localhost:8000/courses/generate/<job_id>
 ```
 
-While the job runs, `detail` moves through the turns (`Turn 2`, `Using create_week`). That is the progress a page can show. The build calls Claude and can take a while. Polling keeps this to two ordinary requests: the page does not hold a stream open, and refreshing the status call does not start a second build. The job is only in memory.
+While the job runs, `detail` moves through the turns (`Turn 2`, `Using create_week`). That is the progress a page can show. The build calls Claude and can take a while. Polling keeps this to ordinary requests: the page does not hold a stream open, and refreshing the status call does not start a second build. The job is only in memory. Finished jobs are dropped after 30 minutes, and only the 20 newest finished jobs are kept.
 
-`timezone` is an IANA name such as `America/New_York`. The server uses it, together with the current time, so the agent can set due dates. The seeded user from `python -m backend.db` has to exist first. The course is saved for that user. This path does not read from the terminal. If the model still calls `ask_user`, the tool answers from the request instead of waiting for input.
+`timezone` must be an IANA name such as `America/New_York`. Anything else is `422` and does not start a build. The server uses that zone, together with the current time, so the agent can set due dates. The seeded user from `python -m backend.db` has to exist first. The course is saved for that user. This path does not read from the terminal. If the model still calls `ask_user`, the tool answers from the request instead of waiting for input.
 
-A succeeded job has a `course_id`. If the agent hits the 10-turn cap after it has created the course, that id is still returned and the course may be incomplete. If it never creates a course, `status` is `failed` and `error` says why.
+`succeeded` means the agent finished and created a course. `incomplete` means it hit the 10-turn cap after creating the course: `course_id` is set, and `detail` says the course may be missing weeks, assignments, or quizzes. If it never creates a course, `status` is `failed` and `error` says why.
 
 ### Run the agent in the terminal
 
@@ -186,10 +186,10 @@ Type a learning goal at the prompt. The agent asks follow-up questions in the te
 
 ### Test the generate endpoint
 
-The generate test mocks the agent, so it does not need an API key. Pytest and HTTPX are not in `requirements.txt`:
+The generate test mocks the agent, so it does not need an API key. HTTPX is in `requirements.txt` because `TestClient` imports it. Pytest is not:
 
 ```bash
-pip install pytest httpx
+pip install pytest
 pytest tests/test_generate.py
 ```
 
@@ -204,7 +204,7 @@ Every route depends on `get_current_user`, which always loads the seeded user ab
 | `GET` | `/courses` | | `200` list of courses |
 | `POST` | `/courses` | `name`, `description` | `201` `{"id"}` |
 | `POST` | `/courses/generate` | `goal`, `level`, `time_available`, `timezone` | `202` job `{job_id, status}` |
-| `GET` | `/courses/generate/{job_id}` | | `200` job; `course_id` and `course` when it succeeded |
+| `GET` | `/courses/generate/{job_id}` | | `200` job; `course_id` and `course` when `succeeded` or `incomplete` |
 | `GET` | `/courses/{course_id}/weeks` | | `200` weeks, ordered by `week_number` |
 | `POST` | `/courses/{course_id}/weeks` | `week_number`, `description` | `201` `{"id"}` |
 | `GET` | `/weeks/{week_id}/assignments` | | `200` list of assignments |
@@ -223,8 +223,8 @@ Every route depends on `get_current_user`, which always loads the seeded user ab
 | Status | When |
 | --- | --- |
 | `404` | The course, week, assignment, quiz, or generation job is missing, or it belongs to another user |
-| `409` | A week with that number already exists on the course |
-| `422` | The row violates a database constraint (empty name, invalid type, bad date, non-positive quiz time limit, invalid JSON), or a generate field is missing or blank |
+| `409` | A week with that number already exists on the course, or a course build is already in progress |
+| `422` | The row violates a database constraint (empty name, invalid type, bad date, non-positive quiz time limit, invalid JSON), or a generate field is missing, blank, or not a real IANA timezone |
 
 ---
 

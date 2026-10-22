@@ -2,19 +2,28 @@ import os
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from dotenv import load_dotenv
 from anthropic import Anthropic
+from dotenv import load_dotenv
 
+from agent.tools import (
+    TOOLS,
+    ask_user,
+    create_assignment,
+    create_course,
+    create_quiz,
+    create_week,
+)
 from backend.db import init_db
-from agent.tools import TOOLS, ask_user, create_assignment, create_course, create_quiz, create_week
 
 load_dotenv()
 
 MAX_ITERATIONS = 10
 MODEL = "claude-haiku-4-5"
+CONTEXT_FILE = Path(__file__).resolve().parent / "CONTEXT.md"
 
 
 @dataclass
@@ -32,9 +41,9 @@ class Agent:
         self.tools = tools if tools is not None else []
         self.ask = ask if ask is not None else ask_user
 
-        self.system_prompt = ''
+        self.system_prompt = ""
         if context_file:
-            with open(context_file, 'r') as context:
+            with open(context_file, "r") as context:
                 self.system_prompt = context.read()
 
         self.responses = []
@@ -72,14 +81,13 @@ class Agent:
 
 def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
     messages: list[dict] = [{"role": "user", "content": task}]
-    context_file = "agent/CONTEXT.md"
     on_progress: Callable[[str], None] | None = kwargs.get("on_progress")
     agent = Agent(
         user_id=user_id,
         client=kwargs["client"],
         model=kwargs["model"],
         tools=TOOLS,
-        context_file=context_file,
+        context_file=CONTEXT_FILE,
         ask=kwargs.get("ask"),
     )
 
@@ -121,12 +129,14 @@ def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
                 ):
                     course_id = str(result["course_id"])
 
-                tool_results.append({
-                    "type": "tool_result",
-                    "tool_use_id": block.id,
-                    "content": str(result),
-                    "is_error": is_error
-                })
+                tool_results.append(
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": block.id,
+                        "content": str(result),
+                        "is_error": is_error,
+                    }
+                )
 
         messages.append({"role": "assistant", "content": response.content})
 
@@ -142,7 +152,9 @@ def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
     return AgentRunResult(course_id=course_id, summary=summary, completed=completed)
 
 
-def learner_brief(goal: str, level: str, time_available: str, timezone_name: str) -> str:
+def learner_brief(
+    goal: str, level: str, time_available: str, timezone_name: str
+) -> str:
     """The facts CONTEXT.md would otherwise collect with ask_user."""
     try:
         now = datetime.now(ZoneInfo(timezone_name))
