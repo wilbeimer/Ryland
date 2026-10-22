@@ -143,7 +143,7 @@ Put `CORS_ORIGINS` and `ANTHROPIC_API_KEY` in a `.env` file in the repository ro
 
 ### Generate a course over HTTP
 
-`POST /courses/generate` takes the details the terminal agent asks for, starts a build, and returns immediately with a job id. Poll `GET /courses/generate/{job_id}` until `status` is `succeeded`, `incomplete`, or `failed`. On `succeeded` or `incomplete` the body includes `course_id` and the course `name` and `description`. Weeks, assignments, and quizzes are the existing read routes. A second POST while a build is `pending` or `running` returns `409`. A build still in one of those states after 15 minutes is marked `failed` so it no longer blocks a new one.
+`POST /courses/generate` takes the details the terminal agent asks for, starts a build, and returns immediately with a job id. Poll `GET /courses/generate/{job_id}` until `status` is `succeeded`, `incomplete`, or `failed`. On `succeeded` or `incomplete` the body includes `course_id` and the course `name` and `description`. Weeks, assignments, and quizzes are the existing read routes. A second POST returns `409` while that user's worker is still running. A build still `pending` or `running` after 15 minutes is asked to stop. The worker checks that flag before each model turn and each tool call, then stops. A call already in flight can finish. The job stays on the `409` until the worker exits, then `status` is `failed`. If a course was saved before the stop, that failed job still includes its `course_id`.
 
 ```bash
 curl -s -X POST http://localhost:8000/courses/generate \

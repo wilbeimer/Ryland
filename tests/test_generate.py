@@ -14,6 +14,7 @@ from agent.agent_loop import (
     Agent,
     AgentRunResult,
     learner_brief,
+    run_agent,
     run_generation,
 )
 from agent.tools import ask_user
@@ -82,7 +83,14 @@ def test_generate_polls_until_course_is_saved(client, monkeypatch):
     course_id = uuid4()
 
     def fake_run_generation(
-        *, user_id, goal, level, time_available, timezone_name, on_progress=None
+        *,
+        user_id,
+        goal,
+        level,
+        time_available,
+        timezone_name,
+        on_progress=None,
+        should_stop=None,
     ):
         assert goal == GENERATE_BODY["goal"]
         assert level == GENERATE_BODY["level"]
@@ -158,7 +166,14 @@ def test_turn_cap_after_create_course_is_incomplete(client, monkeypatch):
     course_id = uuid4()
 
     def fake_run_generation(
-        *, user_id, goal, level, time_available, timezone_name, on_progress=None
+        *,
+        user_id,
+        goal,
+        level,
+        time_available,
+        timezone_name,
+        on_progress=None,
+        should_stop=None,
     ):
         add_course_to_db(
             Course(
@@ -187,21 +202,44 @@ def test_turn_cap_after_create_course_is_incomplete(client, monkeypatch):
     assert finished["error"] is None
 
 
-def test_stale_running_job_is_failed_and_stops_blocking(client, monkeypatch):
+def test_timed_out_worker_stops_before_another_build(client, monkeypatch):
     clock = {"now": 1_000.0}
     monkeypatch.setattr("backend.endpoints.time.monotonic", lambda: clock["now"])
     started = threading.Event()
     release = threading.Event()
+    course_id = uuid4()
+    writes_after_stop = {"n": 0}
 
     def fake_run_generation(**kwargs):
+        should_stop = kwargs["should_stop"]
+        user_id = kwargs["user_id"]
         on_progress = kwargs.get("on_progress")
         if on_progress:
             on_progress("Using create_course")
-        started.set()
-        assert release.wait(timeout=5)
+        if not started.is_set():
+            add_course_to_db(
+                Course(
+                    id=course_id,
+                    user_id=user_id,
+                    name="SQL Joins",
+                    description=kwargs["goal"],
+                )
+            )
+            started.set()
+            assert release.wait(timeout=5)
+            if not should_stop():
+                writes_after_stop["n"] += 1
+            return AgentRunResult(
+                course_id=str(course_id),
+                summary="stopped after the course",
+                completed=False,
+                cancelled=bool(should_stop()),
+            )
         return AgentRunResult(course_id=None, summary="", completed=True)
 
     monkeypatch.setattr("backend.endpoints.run_generation", fake_run_generation)
+    minutes = _ACTIVE_JOB_TIMEOUT_SECONDS // 60
+    unit = "minute" if minutes == 1 else "minutes"
     try:
         first = client.post("/courses/generate", json=GENERATE_BODY)
         assert first.status_code == 202
@@ -216,15 +254,82 @@ def test_stale_running_job_is_failed_and_stops_blocking(client, monkeypatch):
         clock["now"] += _ACTIVE_JOB_TIMEOUT_SECONDS
         stale = client.get(f"/courses/generate/{job_id}")
         assert stale.status_code == 200
-        assert stale.json()["status"] == "failed"
-        assert "timed out" in stale.json()["error"]
-        assert "15 minutes" in stale.json()["error"]
+        assert stale.json()["status"] == "running"
+        assert stale.json()["error"] is None
+        assert "Stopping the build" in stale.json()["detail"]
+        still_blocked = client.post("/courses/generate", json=GENERATE_BODY)
+        assert still_blocked.status_code == 409
+
+        release.set()
+        finished = wait_for_job(client, job_id)
+        assert finished["status"] == "failed"
+        assert f"timed out after {minutes} {unit}" in finished["error"]
+        assert finished["course_id"] == str(course_id)
+        assert writes_after_stop["n"] == 0
+        assert len(client.get("/courses").json()) == 1
 
         again = client.post("/courses/generate", json=GENERATE_BODY)
         assert again.status_code == 202
         assert again.json()["job_id"] != job_id
+        assert wait_for_job(client, again.json()["job_id"])["status"] == "failed"
     finally:
         release.set()
+
+
+def test_run_agent_stops_before_model_turn_and_tool_call(monkeypatch):
+    calls = {"model": 0, "tool": 0}
+
+    class _Block:
+        def __init__(self, kind: str):
+            self.type = kind
+            self.name = "create_course"
+            self.input = {}
+            self.id = "tool-1"
+            self.text = "hello"
+
+    class _Response:
+        def __init__(self, content):
+            self.content = content
+
+    def fake_make_call(self, messages):
+        calls["model"] += 1
+        return _Response([_Block("tool_use")])
+
+    def fake_tool(self, name, tool_input):
+        calls["tool"] += 1
+        return {"course_id": "course-1"}, False
+
+    monkeypatch.setattr(Agent, "make_call", fake_make_call)
+    monkeypatch.setattr(Agent, "process_tool_call", fake_tool)
+
+    stopped = run_agent(
+        user_id=SEEDED_USER,
+        task="build a course",
+        client=object(),
+        model="test",
+        should_stop=lambda: True,
+    )
+    assert stopped.cancelled is True
+    assert stopped.completed is False
+    assert stopped.course_id is None
+    assert calls == {"model": 0, "tool": 0}
+
+    checks = {"n": 0}
+
+    def stop_before_tool() -> bool:
+        checks["n"] += 1
+        return checks["n"] > 1
+
+    stopped_tool = run_agent(
+        user_id=SEEDED_USER,
+        task="build a course",
+        client=object(),
+        model="test",
+        should_stop=stop_before_tool,
+    )
+    assert stopped_tool.cancelled is True
+    assert stopped_tool.course_id is None
+    assert calls == {"model": 1, "tool": 0}
 
 
 def test_second_build_is_rejected_while_one_is_running(client, monkeypatch):

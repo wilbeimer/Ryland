@@ -31,6 +31,7 @@ class AgentRunResult:
     course_id: str | None
     summary: str
     completed: bool
+    cancelled: bool = False
 
 
 class Agent:
@@ -79,9 +80,14 @@ class Agent:
         return self.responses[-1]
 
 
+def _stop_requested(should_stop: Callable[[], bool] | None) -> bool:
+    return bool(should_stop and should_stop())
+
+
 def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
     messages: list[dict] = [{"role": "user", "content": task}]
     on_progress: Callable[[str], None] | None = kwargs.get("on_progress")
+    should_stop: Callable[[], bool] | None = kwargs.get("should_stop")
     agent = Agent(
         user_id=user_id,
         client=kwargs["client"],
@@ -96,6 +102,15 @@ def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
     completed = False
 
     for iteration in range(MAX_ITERATIONS):
+        if _stop_requested(should_stop):
+            print("Agent stopped")
+            return AgentRunResult(
+                course_id=course_id,
+                summary="\n".join(summary_parts),
+                completed=False,
+                cancelled=True,
+            )
+
         print(f"\n--- Turn {iteration + 1} ---")
         if on_progress:
             on_progress(f"Turn {iteration + 1}")
@@ -110,6 +125,14 @@ def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
                 if block.text and block.text.strip():
                     summary_parts.append(block.text.strip())
             elif block.type == "tool_use":
+                if _stop_requested(should_stop):
+                    print("Agent stopped")
+                    return AgentRunResult(
+                        course_id=course_id,
+                        summary="\n".join(summary_parts),
+                        completed=False,
+                        cancelled=True,
+                    )
                 has_tool_use = True
                 print(f"Using tool: {block.name}")
                 print(f"Input: {block.input}")
@@ -183,6 +206,7 @@ def run_generation(
     time_available: str,
     timezone_name: str,
     on_progress: Callable[[str], None] | None = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> AgentRunResult:
     """Run one course build without reading from the terminal.
 
@@ -220,6 +244,7 @@ def run_generation(
         client=client,
         ask=answer_from_brief,
         on_progress=on_progress,
+        should_stop=should_stop,
     )
 
 

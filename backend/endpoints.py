@@ -3,7 +3,7 @@ import os
 import threading
 import time
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from typing import Annotated
 from uuid import UUID, uuid4
 
@@ -91,13 +91,15 @@ class GenerationJob:
     detail: str | None = None
     course_id: UUID | None = None
     error: str | None = None
-    started_at: float = 0.0
+    started_at: float = field(default_factory=time.monotonic)
     finished_at: float | None = None
+    cancel: threading.Event = field(default_factory=threading.Event)
+    worker_done: threading.Event = field(default_factory=threading.Event)
 
 
 # One uvicorn process. A local page polls these; a restart drops them.
 # Finished jobs expire after the TTL, and only the newest cap is kept.
-# An active job older than the timeout is failed so it cannot block new builds.
+# A timed-out build is asked to stop. It keeps the 409 until that worker exits.
 _FINISHED_JOB_TTL_SECONDS = 30 * 60
 _MAX_FINISHED_JOBS = 20
 _ACTIVE_JOB_TIMEOUT_SECONDS = 15 * 60
@@ -138,40 +140,76 @@ def _evict_finished_jobs() -> None:
         del _jobs[job_id]
 
 
-def _fail_stale_jobs() -> None:
-    """Fail active jobs past the timeout. Caller holds _jobs_lock."""
-    now = time.monotonic()
+def _timeout_message() -> str:
     minutes = _ACTIVE_JOB_TIMEOUT_SECONDS // 60
     unit = "minute" if minutes == 1 else "minutes"
-    message = (
+    return (
         f"Course generation timed out after {minutes} {unit} before it finished. "
         "Start a new build to try again."
     )
+
+
+def _cancel_stale_jobs() -> None:
+    """Ask timed-out workers to stop. Caller holds _jobs_lock.
+
+    The job stays active until the worker notices and exits, so a new build
+    cannot overlap it.
+    """
+    now = time.monotonic()
     for job in _jobs.values():
-        if job.status not in _ACTIVE_STATUSES:
+        if job.status not in _ACTIVE_STATUSES or job.cancel.is_set():
             continue
         if now - job.started_at < _ACTIVE_JOB_TIMEOUT_SECONDS:
             continue
-        job.status = "failed"
-        job.error = _clip(message, _ERROR_LIMIT)
-        job.detail = job.error
-        job.finished_at = now
+        job.cancel.set()
+        job.detail = "Stopping the build after the timeout."
 
 
-def _update_job(job_id: UUID, **fields) -> None:
+def _blocks_new_build(job: GenerationJob, user_id: UUID) -> bool:
+    return job.user_id == user_id and not job.worker_done.is_set()
+
+
+def _update_job(job_id: UUID, *, mark_done: bool = False, **fields) -> None:
     with _jobs_lock:
         job = _jobs.get(job_id)
-        if job is None or job.finished_at is not None:
+        if job is None:
             return
-        for key, value in fields.items():
-            setattr(job, key, value)
-        if job.status in _TERMINAL_STATUSES and job.finished_at is None:
-            job.finished_at = time.monotonic()
+        terminal = fields.get("status") in _TERMINAL_STATUSES
+        # A cancel is in progress. Ignore progress writes, but keep the final status.
+        if job.finished_at is None and (terminal or not job.cancel.is_set()):
+            for key, value in fields.items():
+                setattr(job, key, value)
+            if job.status in _TERMINAL_STATUSES:
+                job.finished_at = time.monotonic()
+        if mark_done:
+            job.worker_done.set()
+
+
+def _job_should_stop(job_id: UUID) -> bool:
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+        return job is None or job.cancel.is_set()
+
+
+def _fail_timed_out_job(
+    job_id: UUID, course_id: str | None, summary: str | None
+) -> None:
+    detail = "Stopping the build after the timeout."
+    if summary and summary.strip():
+        detail = summary.strip()
+    _update_job(
+        job_id,
+        status="failed",
+        course_id=UUID(str(course_id)) if course_id else None,
+        error=_clip(_timeout_message(), _ERROR_LIMIT),
+        detail=_clip(detail, _DETAIL_LIMIT),
+        mark_done=True,
+    )
 
 
 def _snapshot_job(job_id: UUID) -> GenerationJob | None:
     with _jobs_lock:
-        _fail_stale_jobs()
+        _cancel_stale_jobs()
         _evict_finished_jobs()
         job = _jobs.get(job_id)
         if job is None:
@@ -200,9 +238,14 @@ def _run_generation_job(
     job_id: UUID, user_id: UUID, body: GenerateCourseRequest
 ) -> None:
     def on_progress(message: str) -> None:
+        if _job_should_stop(job_id):
+            return
         _update_job(job_id, status="running", detail=message)
 
     try:
+        if _job_should_stop(job_id):
+            _fail_timed_out_job(job_id, None, None)
+            return
         _update_job(job_id, status="running", detail="Starting course generation")
         result = run_generation(
             user_id=user_id,
@@ -211,7 +254,12 @@ def _run_generation_job(
             time_available=body.time_available,
             timezone_name=body.timezone,
             on_progress=on_progress,
+            should_stop=lambda: _job_should_stop(job_id),
         )
+        if result.cancelled or _job_should_stop(job_id):
+            _fail_timed_out_job(job_id, result.course_id, result.summary)
+            return
+
         if result.course_id and not result.completed:
             message = (
                 f"Generation hit the {MAX_ITERATIONS}-turn cap before the agent finished. "
@@ -224,6 +272,7 @@ def _run_generation_job(
                 course_id=UUID(str(result.course_id)),
                 detail=_clip(detail, _DETAIL_LIMIT),
                 error=None,
+                mark_done=True,
             )
             return
 
@@ -234,6 +283,7 @@ def _run_generation_job(
                 course_id=UUID(str(result.course_id)),
                 detail=_clip(result.summary or "Course created", _DETAIL_LIMIT),
                 error=None,
+                mark_done=True,
             )
             return
 
@@ -248,14 +298,21 @@ def _run_generation_job(
             status="failed",
             error=_clip(error, _ERROR_LIMIT),
             detail=_clip(result.summary, _DETAIL_LIMIT),
+            mark_done=True,
         )
     except Exception as exc:
         logger.exception("Course generation failed for job %s", job_id)
+        if _job_should_stop(job_id):
+            _fail_timed_out_job(job_id, None, None)
+            return
         _update_job(
             job_id,
             status="failed",
             error=_clip(str(exc) or "Course generation failed", _ERROR_LIMIT),
+            mark_done=True,
         )
+    finally:
+        _update_job(job_id, mark_done=True)
 
 
 # COURSES
@@ -297,13 +354,13 @@ def start_course_generation(
         started_at=time.monotonic(),
     )
     with _jobs_lock:
-        _fail_stale_jobs()
+        _cancel_stale_jobs()
         _evict_finished_jobs()
         active = next(
             (
                 existing
                 for existing in _jobs.values()
-                if existing.user_id == user.id and existing.status in _ACTIVE_STATUSES
+                if _blocks_new_build(existing, user.id)
             ),
             None,
         )
