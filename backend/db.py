@@ -1,15 +1,22 @@
+import json
+import sqlite3
 from contextlib import contextmanager
 from datetime import timedelta
-import sqlite3
 from pathlib import Path
 from uuid import UUID
-import json
 
 from fastapi import HTTPException
 from pydantic import SecretStr
 
+from backend.exceptions import (
+    DuplicateWeekError,
+    InvalidAssignmentError,
+    InvalidCourseError,
+    InvalidQuizError,
+    InvalidUserError,
+    InvalidWeekError,
+)
 from backend.models import Assignment, Course, Quiz, User, Week
-from backend.exceptions import DuplicateWeekError, InvalidAssignmentError, InvalidCourseError, InvalidQuizError, InvalidUserError, InvalidWeekError
 
 DB_PATH = Path(__file__).parent / "curriculum.db"
 
@@ -28,8 +35,7 @@ def get_conn(path=DB_PATH):
 
 def init_db():
     with get_conn() as conn:
-        conn.executescript(
-            """
+        conn.executescript("""
             CREATE TABLE IF NOT EXISTS User (
                 id TEXT PRIMARY KEY,
                 email TEXT NOT NULL UNIQUE COLLATE NOCASE,
@@ -73,8 +79,7 @@ def init_db():
                 questions TEXT NOT NULL CHECK (json_valid(questions)),
                 FOREIGN KEY (assignment_id) REFERENCES Assignment(id) ON DELETE CASCADE
             );
-            """
-        )
+            """)
 
 
 # USERS
@@ -86,7 +91,7 @@ def get_user_by_id(id: str):
                 FROM User
                 WHERE id=?
             """,
-            (id,)
+            (id,),
         ).fetchone()
         if not row:
             raise HTTPException(401, "Couldn't identify the user")
@@ -103,7 +108,7 @@ def add_user_to_db(user: User):
                     (id, email, password)
                     VALUES (?, ?, ?)
                 """,
-                (str(user.id), user.email, user.password.get_secret_value())
+                (str(user.id), user.email, user.password.get_secret_value()),
             )
         return str(user.id)
     except sqlite3.IntegrityError as e:
@@ -116,7 +121,7 @@ def add_course_to_db(course: Course):
         with get_conn() as conn:
             conn.execute(
                 "INSERT INTO Course (id, user_id, name, description) VALUES (?, ?, ?, ?)",
-                (str(course.id), str(course.user_id), course.name, course.description)
+                (str(course.id), str(course.user_id), course.name, course.description),
             )
         return str(course.id)
     except sqlite3.IntegrityError as e:
@@ -131,7 +136,7 @@ def get_courses(user_id: UUID) -> list[dict]:
             FROM Course
             WHERE user_id=?
             """,
-            (str(user_id),)
+            (str(user_id),),
         ).fetchall()
     return [dict(row) for row in rows]
 
@@ -149,16 +154,14 @@ def add_week_to_db(week: Week) -> str:
                            description)
                 VALUES (?, ?, ?, ?)
                 """,
-                (
-                    str(week.id),
-                    str(week.course_id),
-                    week.week_number,
-                    week.description)
+                (str(week.id), str(week.course_id), week.week_number, week.description),
             )
         return str(week.id)
     except sqlite3.IntegrityError as e:
         if e.sqlite_errorname == "SQLITE_CONSTRAINT_UNIQUE":
-            raise DuplicateWeekError("A week with this number already exists in the course") from e
+            raise DuplicateWeekError(
+                "A week with this number already exists in the course"
+            ) from e
         raise InvalidWeekError("Invalid week data provided") from e
 
 
@@ -171,7 +174,7 @@ def get_weeks(course_id: UUID) -> list[dict]:
             WHERE course_id=?
             ORDER BY week_number
             """,
-            (str(course_id),)
+            (str(course_id),),
         ).fetchall()
     return [dict(row) for row in rows]
 
@@ -199,8 +202,8 @@ def add_assignment_to_db(assignment: Assignment) -> str:
                     assignment.name,
                     assignment.description,
                     json.dumps(assignment.rubric),
-                    assignment.due_date.isoformat()
-                )
+                    assignment.due_date.isoformat(),
+                ),
             )
             return str(assignment.id)
     except sqlite3.IntegrityError as e:
@@ -215,7 +218,7 @@ def get_assignments(week_id: UUID) -> list[dict]:
             FROM Assignment
             WHERE week_id=?
             """,
-            (str(week_id),)
+            (str(week_id),),
         ).fetchall()
         result = []
         for row in rows:
@@ -239,8 +242,8 @@ def add_quiz_to_db(quiz: Quiz) -> str:
                     str(quiz.id),
                     str(quiz.assignment_id),
                     int(quiz.time_limit.total_seconds()),
-                    json.dumps([q.model_dump(mode="json") for q in quiz.questions])
-                )
+                    json.dumps([q.model_dump(mode="json") for q in quiz.questions]),
+                ),
             )
 
             return str(quiz.id)
@@ -256,13 +259,13 @@ def get_quiz(assignment_id: UUID) -> dict:
             FROM Quiz
             WHERE assignment_id=?
             """,
-            (str(assignment_id),)
+            (str(assignment_id),),
         ).fetchone()
         if row is None:
             raise HTTPException(404, "No quiz found for this assignment")
         item = dict(row)
-        item['questions'] = json.loads(item['questions'])
-        item['time_limit'] = timedelta(seconds=item["time_limit"])
+        item["questions"] = json.loads(item["questions"])
+        item["time_limit"] = timedelta(seconds=item["time_limit"])
         return item
 
 
@@ -279,7 +282,7 @@ def get_owned_course(course_id: UUID, user_id: UUID):
             (
                 str(course_id),
                 str(user_id),
-            )
+            ),
         ).fetchone()
         if not row:
             raise HTTPException(404, "Course not found")
@@ -299,7 +302,7 @@ def get_owned_week(week_id: UUID, user_id: UUID):
             (
                 str(week_id),
                 str(user_id),
-            )
+            ),
         ).fetchone()
         if not row:
             raise HTTPException(404, "Week not found")
@@ -320,7 +323,7 @@ def get_owned_assignment(assignment_id: UUID, user_id: UUID):
             (
                 str(assignment_id),
                 str(user_id),
-            )
+            ),
         ).fetchone()
         if not row:
             raise HTTPException(404, "Assigment not found")
@@ -329,8 +332,10 @@ def get_owned_assignment(assignment_id: UUID, user_id: UUID):
 
 if __name__ == "__main__":
     init_db()
-    add_user_to_db(User(
-        id=UUID('00000000-0000-0000-0000-000000000001'),
-        email='test@mail.com',
-        password=SecretStr('password')
-    ))
+    add_user_to_db(
+        User(
+            id=UUID("00000000-0000-0000-0000-000000000001"),
+            email="test@mail.com",
+            password=SecretStr("password"),
+        )
+    )

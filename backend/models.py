@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import Optional
+from typing import Literal
 from uuid import UUID
-from pydantic import BaseModel, SecretStr
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+
+from pydantic import BaseModel, Field, SecretStr, field_validator
 
 
 class AssignmentType(Enum):
@@ -11,8 +13,8 @@ class AssignmentType(Enum):
 
 
 class QuestionType(Enum):
-    SHORT = 'short answer'
-    MULTI = 'multiple choice'
+    SHORT = "short answer"
+    MULTI = "multiple choice"
 
 
 class User(BaseModel):
@@ -88,8 +90,8 @@ class Submission(BaseModel):
     id: UUID
     assignment_id: UUID
     submission_time: datetime
-    content: Optional[dict] = None
-    grade: Optional[float] = None
+    content: dict | None = None
+    grade: float | None = None
 
 
 class QuizQuestion(BaseModel):
@@ -127,3 +129,49 @@ class PublicQuizOut(BaseModel):
     id: UUID
     time_limit: timedelta
     questions: list[QuizQuestionOut]
+
+
+class GenerateCourseRequest(BaseModel):
+    goal: str = Field(min_length=1, description="What the learner wants to learn")
+    level: str = Field(
+        min_length=1, description="Current level, in the learner's own words"
+    )
+    time_available: str = Field(
+        min_length=1,
+        description="How much time they can spend, including pace and duration",
+    )
+    timezone: str = Field(
+        min_length=1,
+        description="IANA timezone name used for due dates, for example America/New_York",
+    )
+
+    @field_validator("goal", "level", "time_available")
+    @classmethod
+    def strip_blank(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("must not be blank")
+        return stripped
+
+    @field_validator("timezone")
+    @classmethod
+    def require_iana_timezone(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("must not be blank")
+        try:
+            ZoneInfo(stripped)
+        except (ZoneInfoNotFoundError, ValueError) as exc:
+            raise ValueError(
+                "must be an IANA timezone name, for example America/New_York"
+            ) from exc
+        return stripped
+
+
+class GenerateJobOut(BaseModel):
+    job_id: UUID
+    status: Literal["pending", "running", "succeeded", "incomplete", "failed"]
+    detail: str | None = None
+    course_id: UUID | None = None
+    course: CourseOut | None = None
+    error: str | None = None
