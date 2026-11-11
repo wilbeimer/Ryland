@@ -1,0 +1,43 @@
+:root {
+  /* Penpot dark theme tokens */
+  --color-background: #2a2b2a;
+  --color-surface: #343534;
+  --color-border: #454745;
+  --color-text-primary: #fbf9ef;
+  --color-text-muted: #a8a394;
+  --color-accent-primary: #f2676a;
+  --color-accent-secondary: #e5446d;
+  --color-accent-pop: #532627;
+  --radius: 10px;
+  --radius-pill: 30px;
+  --font-main: 'Cormorant Garamond', Georgia, serif;
+  --page-max-width: 1280px;
+  --course-grid-gap: 13px;
+  --nav-height: 43px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-main);
+  font-weight: 500;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+a {
+  font: inherit;
+}
