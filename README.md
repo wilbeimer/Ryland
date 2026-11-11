@@ -93,6 +93,7 @@ Authentication is a stand-in. Every request resolves to a single seeded user. Th
 ### Prerequisites
 
 - Python 3.12 (the version CI runs)
+- Node.js 22 (for the frontend)
 - An Anthropic API key, only if you want to run the course-building agent
 
 ### Install
@@ -131,9 +132,21 @@ uvicorn backend.endpoints:app --reload
 
 The API listens on `http://localhost:8000`. Interactive docs are at `http://localhost:8000/docs`.
 
+### Run the frontend
+
+With the API already running:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open `http://localhost:5173`. In development and `npm run preview`, Vite proxies `/api` to `http://127.0.0.1:8000`, so the home page can call `GET /courses` without CORS. For a production static build, set `VITE_API_BASE_URL` to the API origin (for example `http://localhost:8000`) before `npm run build`.
+
 ### Call it from a local page
 
-A Vite dev server on another port is a different origin, so the API sends CORS headers. The default allows `http://localhost:5173` and `http://127.0.0.1:5173`. Set a comma-separated list to change that:
+If the page talks to the API on another origin directly (not through the Vite `/api` proxy), the API sends CORS headers. The default allows `http://localhost:5173` and `http://127.0.0.1:5173`. Set a comma-separated list to change that:
 
 ```bash
 CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
@@ -265,12 +278,19 @@ Tool errors come back to the model so it can correct the input and retry. The ag
 - Tool use defined in `agent/tools.py`
 - System prompt in `agent/CONTEXT.md`
 
+### Frontend
+
+- Vite
+- React 19
+- TypeScript
+
 ### DevOps
 
 - GitHub Actions on `main` and `develop` (`.github/workflows/ci.yml`)
 - Ruff
 - Black
 - Pytest with coverage on `backend`
+- Frontend lint and production build
 
 ---
 
@@ -283,13 +303,14 @@ Active development. What works today:
 - `POST /courses/generate` to start that agent from a page, plus a status poll
 - A read/write HTTP API scoped to one seeded user
 - CORS for a local Vite origin
-- CI for lint, format, and tests
+- A TypeScript courses home page that lists courses from the API
+- CI for lint, format, backend tests, and the frontend build
 
 Not built yet:
 
 - Real authentication (the current user is hard-coded)
 - A grading pipeline (`Submission` is modeled in `backend/models.py` and has no table or routes)
-- A frontend
+- Course detail / generate / assignment pages beyond the home list
 - Retrieval over external learning resources
 
 ---
@@ -304,5 +325,6 @@ Not built yet:
 - [x] GitHub Actions CI
 - [ ] User authentication
 - [ ] Submission storage and grading
-- [ ] Frontend
+- [x] Courses home frontend
+- [ ] Course detail and generate UI
 - [ ] Resource retrieval

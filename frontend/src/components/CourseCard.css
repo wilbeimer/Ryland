@@ -15,9 +15,10 @@
   font-size: 24px;
   font-weight: 500;
   line-height: 1.2;
-  white-space: nowrap;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .course-card__rule {

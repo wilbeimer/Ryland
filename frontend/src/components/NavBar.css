@@ -33,19 +33,28 @@
   padding: 0 12px;
   border: 1px solid var(--color-accent-pop);
   border-radius: var(--radius);
-  background: var(--color-accent-primary);
+  background: var(--color-accent-secondary);
   color: var(--color-text-primary);
   text-decoration: none;
   font-size: 18px;
   line-height: 1.2;
   text-align: center;
   box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
-  transition: transform 160ms ease, filter 160ms ease;
 }
 
-.nav-bar__item:hover {
-  filter: brightness(1.05);
-  transform: translateY(-1px);
+.nav-bar__item--active {
+  background: var(--color-accent-primary);
+  color: var(--color-accent-pop);
+  box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.25);
+}
+
+.nav-bar__item--disabled {
+  background: var(--color-surface);
+  border-color: var(--color-border);
+  color: var(--color-text-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.85;
 }
 
 .nav-bar__item:focus-visible {

@@ -12,7 +12,9 @@ export function CourseCard({ course, index = 0 }: CourseCardProps) {
       className="course-card"
       style={{ animationDelay: `${80 + index * 40}ms` }}
     >
-      <h2 className="course-card__name">{course.name}</h2>
+      <h2 className="course-card__name" title={course.name}>
+        {course.name}
+      </h2>
       <div className="course-card__rule" aria-hidden="true" />
       <p className="course-card__description">{course.description}</p>
     </article>
