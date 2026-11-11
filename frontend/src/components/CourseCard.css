@@ -21,12 +21,13 @@
 }
 
 .course-card__rule {
+  display: block;
   width: 133px;
   max-width: 100%;
-  height: 0;
+  height: 1px;
   margin: 8px 0 4px;
+  background: var(--color-accent-primary);
   border: 0;
-  border-top: 1px solid var(--color-accent-primary);
 }
 
 .course-card__description {
