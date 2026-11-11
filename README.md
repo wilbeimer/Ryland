@@ -134,15 +134,19 @@ The API listens on `http://localhost:8000`. Interactive docs are at `http://loca
 
 ### Run the frontend
 
-With the API already running:
+For v1 the frontend is localhost-only. Start the API, then the Vite dev server:
 
 ```bash
+# terminal 1 — API
+uvicorn backend.endpoints:app --reload
+
+# terminal 2 — frontend
 cd frontend
 npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. In development and `npm run preview`, Vite proxies `/api` to `http://127.0.0.1:8000`, so the home page can call `GET /courses` without CORS. For a production static build, set `VITE_API_BASE_URL` to the API origin (for example `http://localhost:8000`) before `npm run build`.
+Open `http://localhost:5173`. The `/api` proxy only works on the Vite dev server in this setup: it forwards `/api` to `http://127.0.0.1:8000` so the home page can call `GET /courses` without CORS. A static `dist/` deploy does not get that proxy; set `VITE_API_BASE_URL` to the API origin (for example `http://localhost:8000`) before `npm run build` if you need that path.
 
 ### Call it from a local page
 

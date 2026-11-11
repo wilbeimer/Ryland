@@ -4,7 +4,10 @@ export type Course = {
   description: string
 }
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || '/api'
+const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(
+  /\/$/,
+  '',
+)
 
 function isCourse(value: unknown): value is Course {
   if (typeof value !== 'object' || value === null) {

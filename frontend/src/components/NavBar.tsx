@@ -24,11 +24,9 @@ export function NavBar({ active = 'Courses' }: NavBarProps) {
           if (!available) {
             return (
               <li key={label}>
-                <span
-                  className="nav-bar__item nav-bar__item--disabled"
-                  aria-disabled="true"
-                >
+                <span className="nav-bar__item nav-bar__item--disabled">
                   {label}
+                  <span className="visually-hidden"> (coming soon)</span>
                 </span>
               </li>
             )
