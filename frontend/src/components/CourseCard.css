@@ -6,7 +6,9 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  animation: course-card-in 420ms ease both;
+  /* `backwards` (not `both`): keep pre-start translateY, but clear the
+     transform after settle so hairlines are not AA'd away on row 2. */
+  animation: course-card-in 420ms ease backwards;
 }
 
 .course-card__name {
@@ -23,12 +25,14 @@
 
 .course-card__rule {
   display: block;
-  width: 133px;
-  max-width: 100%;
-  height: 1px;
+  width: min(133px, 100%);
+  /* Intentional 2px (was 1px): a 1px box at fractional device-pixel Y can
+     round to <1 device pixel and vanish after the enter animation. */
+  height: 2px;
+  flex-shrink: 0;
   margin: 8px 0 4px;
-  background: var(--color-accent-primary);
   border: 0;
+  background: var(--color-accent-primary);
 }
 
 .course-card__description {
