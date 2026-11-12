@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ryland">
+  <rect width="64" height="64" rx="14" fill="#2A2B2A"/>
+  <rect x="4" y="4" width="56" height="56" rx="12" fill="#343534" stroke="#454745"/>
+  <text
+    x="32"
+    y="42"
+    text-anchor="middle"
+    font-family="Georgia, 'Times New Roman', serif"
+    font-size="34"
+    font-weight="600"
+    fill="#FBF9EF"
+  >R</text>
+  <rect x="18" y="46" width="28" height="3" rx="1.5" fill="#F2676A"/>
+</svg>
