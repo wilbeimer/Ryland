@@ -12,7 +12,7 @@
   cursor: pointer;
   font-size: 16px;
   line-height: 1.2;
-  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.12);
+  box-shadow: 2px 2px 4px var(--shadow-raised);
 }
 
 .theme-toggle:hover {

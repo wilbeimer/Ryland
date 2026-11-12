@@ -45,9 +45,10 @@
 }
 
 .nav-bar__item--active {
+  /* Penpot Nav Item text uses text.primary on accent.primary fill */
   background: var(--color-accent-primary);
-  color: var(--color-accent-pop);
-  box-shadow: inset 1px 1px 3px rgba(0, 0, 0, 0.25);
+  color: var(--color-text-primary);
+  box-shadow: inset 1px 1px 3px var(--shadow-inset);
 }
 
 .nav-bar__item--disabled {

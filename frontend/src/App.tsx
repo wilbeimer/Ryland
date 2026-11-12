@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { fetchCourses, type Course } from './api'
 import { CourseCard } from './components/CourseCard'
 import { GeneratePage } from './components/GeneratePage'
@@ -6,6 +6,7 @@ import { NavBar, type NavLabel } from './components/NavBar'
 import { ThemeToggle } from './components/ThemeToggle'
 import {
   applyTheme,
+  persistTheme,
   resolveInitialTheme,
   type Theme,
 } from './theme'
@@ -22,6 +23,7 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(() => resolveInitialTheme())
   const [view, setView] = useState<View>('Courses')
   const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const userNavigatedRef = useRef(false)
 
   useEffect(() => {
     applyTheme(theme)
@@ -36,8 +38,9 @@ export default function App() {
           return
         }
         setState({ status: 'ready', courses })
-        // Once we know the list is empty, open Generate so home isn't a dead end.
-        if (courses.length === 0) {
+        // Once we know the list is empty, open Generate so home isn't a dead end —
+        // but don't override a tab the user already chose while loading.
+        if (courses.length === 0 && !userNavigatedRef.current) {
           setView('Generate')
         }
       })
@@ -56,12 +59,17 @@ export default function App() {
 
   function handleNavigate(label: NavLabel) {
     if (label === 'Courses' || label === 'Generate') {
+      userNavigatedRef.current = true
       setView(label)
     }
   }
 
   function handleThemeToggle() {
-    setTheme((current) => (current === 'dark' ? 'light' : 'dark'))
+    setTheme((current) => {
+      const next = current === 'dark' ? 'light' : 'dark'
+      persistTheme(next)
+      return next
+    })
   }
 
   return (
