@@ -6,13 +6,13 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  /* Opacity-only enter animation: translateY + fill-mode left a compositor
-     transform that anti-aliased away hairlines (especially grid row 2). */
-  animation: course-card-in 420ms ease both;
+  /* `backwards` (not `both`): keep pre-start translateY, but clear the
+     transform after settle so hairlines are not AA'd away on row 2. */
+  animation: course-card-in 420ms ease backwards;
 }
 
 .course-card__name {
-  margin: 0 0 4px;
+  margin: 0;
   color: var(--color-text-primary);
   font-size: 24px;
   font-weight: 500;
@@ -21,16 +21,18 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  /* Draw the accent rule as a title background so it paints with the text
-     layer. A separate 1px sibling box was vanishing after settle on row 2. */
-  padding-bottom: 10px;
-  background-image: linear-gradient(
-    var(--color-accent-primary),
-    var(--color-accent-primary)
-  );
-  background-repeat: no-repeat;
-  background-position: left bottom;
-  background-size: 133px 2px;
+}
+
+.course-card__rule {
+  display: block;
+  width: min(133px, 100%);
+  /* Intentional 2px (was 1px): a 1px box at fractional device-pixel Y can
+     round to <1 device pixel and vanish after the enter animation. */
+  height: 2px;
+  flex-shrink: 0;
+  margin: 8px 0 4px;
+  border: 0;
+  background: var(--color-accent-primary);
 }
 
 .course-card__description {
@@ -48,9 +50,11 @@
 @keyframes course-card-in {
   from {
     opacity: 0;
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
+    transform: translateY(0);
   }
 }
 
