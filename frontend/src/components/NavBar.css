@@ -34,7 +34,7 @@
   border: 1px solid var(--color-accent-pop);
   border-radius: var(--radius);
   background: var(--color-accent-secondary);
-  color: var(--color-text-primary);
+  color: var(--color-nav-active-text);
   text-decoration: none;
   font: inherit;
   font-size: 18px;
