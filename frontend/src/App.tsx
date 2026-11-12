@@ -65,11 +65,9 @@ export default function App() {
   }
 
   function handleThemeToggle() {
-    setTheme((current) => {
-      const next = current === 'dark' ? 'light' : 'dark'
-      persistTheme(next)
-      return next
-    })
+    const next = theme === 'dark' ? 'light' : 'dark'
+    persistTheme(next)
+    setTheme(next)
   }
 
   return (

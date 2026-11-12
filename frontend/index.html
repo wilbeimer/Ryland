@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ryland — Courses</title>
     <script>
+      /* Keep in sync with STORAGE_KEY + resolveInitialTheme() in src/theme.ts
+         (localStorage → prefers-color-scheme → dark). */
       ;(function () {
         try {
           var stored = localStorage.getItem('ryland-theme')

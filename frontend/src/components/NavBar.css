@@ -45,9 +45,8 @@
 }
 
 .nav-bar__item--active {
-  /* Penpot Nav Item text uses text.primary on accent.primary fill */
   background: var(--color-accent-primary);
-  color: var(--color-text-primary);
+  color: var(--color-nav-active-text);
   box-shadow: inset 1px 1px 3px var(--shadow-inset);
 }
 

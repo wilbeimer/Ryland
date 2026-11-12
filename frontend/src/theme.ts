@@ -1,5 +1,6 @@
 export type Theme = 'dark' | 'light'
 
+/** Keep in sync with the inline theme bootstrap in `index.html`. */
 const STORAGE_KEY = 'ryland-theme'
 
 export function getStoredTheme(): Theme | null {
@@ -24,6 +25,8 @@ function systemTheme(): Theme {
   return 'dark'
 }
 
+/** Resolution order: localStorage → prefers-color-scheme → dark.
+ *  Keep in sync with the inline theme bootstrap in `index.html`. */
 export function resolveInitialTheme(): Theme {
   return getStoredTheme() ?? systemTheme()
 }
