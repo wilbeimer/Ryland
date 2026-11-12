@@ -6,11 +6,13 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
+  /* Opacity-only enter animation: translateY + fill-mode left a compositor
+     transform that anti-aliased away hairlines (especially grid row 2). */
   animation: course-card-in 420ms ease both;
 }
 
 .course-card__name {
-  margin: 0;
+  margin: 0 0 4px;
   color: var(--color-text-primary);
   font-size: 24px;
   font-weight: 500;
@@ -19,19 +21,16 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-}
-
-.course-card__rule {
-  display: block;
-  width: 133px;
-  max-width: 100%;
-  /* Hairline via border (not background-on-1px-box): under fractional
-     DPR a 1px-tall filled box can paint <1 device pixel and vanish. */
-  height: 0;
-  margin: 8px 0 4px;
-  border: 0;
-  border-top: 1px solid var(--color-accent-primary);
-  background: transparent;
+  /* Draw the accent rule as a title background so it paints with the text
+     layer. A separate 1px sibling box was vanishing after settle on row 2. */
+  padding-bottom: 10px;
+  background-image: linear-gradient(
+    var(--color-accent-primary),
+    var(--color-accent-primary)
+  );
+  background-repeat: no-repeat;
+  background-position: left bottom;
+  background-size: 133px 2px;
 }
 
 .course-card__description {
@@ -49,13 +48,9 @@
 @keyframes course-card-in {
   from {
     opacity: 0;
-    transform: translateY(8px);
   }
   to {
     opacity: 1;
-    /* `translateY(0)` still leaves a transform matrix (fill-mode: both),
-       which promotes a compositor layer and can AA away the 1px rule. */
-    transform: none;
   }
 }
 
