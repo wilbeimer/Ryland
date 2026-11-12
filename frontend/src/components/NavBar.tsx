@@ -1,20 +1,22 @@
 import './NavBar.css'
 
+/** Order: middle tabs, then Generate (2nd from right), Account/profile (rightmost). */
 const NAV_ITEMS = [
   { label: 'Courses', available: true },
-  { label: 'Generate', available: false },
   { label: 'Weeks', available: false },
   { label: 'Quizzes', available: false },
+  { label: 'Generate', available: true },
   { label: 'Account', available: false },
 ] as const
 
-type NavLabel = (typeof NAV_ITEMS)[number]['label']
+export type NavLabel = (typeof NAV_ITEMS)[number]['label']
 
 type NavBarProps = {
   active?: NavLabel
+  onNavigate?: (label: NavLabel) => void
 }
 
-export function NavBar({ active = 'Courses' }: NavBarProps) {
+export function NavBar({ active = 'Courses', onNavigate }: NavBarProps) {
   return (
     <nav className="nav-bar" aria-label="Primary">
       <ul className="nav-bar__list">
@@ -34,16 +36,18 @@ export function NavBar({ active = 'Courses' }: NavBarProps) {
 
           return (
             <li key={label}>
-              <span
+              <button
+                type="button"
                 className={
                   isActive
                     ? 'nav-bar__item nav-bar__item--active'
                     : 'nav-bar__item'
                 }
                 aria-current={isActive ? 'page' : undefined}
+                onClick={() => onNavigate?.(label)}
               >
                 {label}
-              </span>
+              </button>
             </li>
           )
         })}

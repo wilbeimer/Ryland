@@ -9,7 +9,7 @@
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
-  box-shadow: inset 2px 2px 4px 1px rgba(0, 0, 0, 0.2);
+  box-shadow: inset 2px 2px 4px 1px var(--shadow-inset);
 }
 
 .nav-bar__list {
@@ -36,10 +36,12 @@
   background: var(--color-accent-secondary);
   color: var(--color-text-primary);
   text-decoration: none;
+  font: inherit;
   font-size: 18px;
   line-height: 1.2;
   text-align: center;
-  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  box-shadow: 2px 2px 4px var(--shadow-raised);
 }
 
 .nav-bar__item--active {

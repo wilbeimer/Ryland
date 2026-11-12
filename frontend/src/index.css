@@ -1,4 +1,5 @@
-:root {
+:root,
+[data-theme='dark'] {
   /* Penpot dark theme tokens */
   --color-background: #2a2b2a;
   --color-surface: #343534;
@@ -8,12 +9,34 @@
   --color-accent-primary: #f2676a;
   --color-accent-secondary: #e5446d;
   --color-accent-pop: #532627;
+  --color-status-success: #4cc38a;
+  --color-status-warning: #e8b04b;
+  --color-status-failure: #ff5c5c;
   --radius: 10px;
   --radius-pill: 30px;
   --font-main: 'Cormorant Garamond', Georgia, serif;
   --page-max-width: 1280px;
   --course-grid-gap: 13px;
   --nav-height: 43px;
+  --shadow-inset: rgba(0, 0, 0, 0.2);
+  --shadow-raised: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme='light'] {
+  /* Penpot light theme tokens */
+  --color-background: #f1eedf;
+  --color-surface: #fbf9ef;
+  --color-border: #ddd8c4;
+  --color-text-primary: #2a2b2a;
+  --color-text-muted: #706c61;
+  --color-accent-primary: #e5446d;
+  --color-accent-secondary: #f2676a;
+  --color-accent-pop: #fe999b;
+  --color-status-success: #2f9e6e;
+  --color-status-warning: #d99a1e;
+  --color-status-failure: #c62828;
+  --shadow-inset: rgba(42, 43, 42, 0.08);
+  --shadow-raised: rgba(42, 43, 42, 0.12);
 }
 
 *,

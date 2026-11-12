@@ -12,6 +12,12 @@
   gap: 17px;
 }
 
+.home__toolbar {
+  display: flex;
+  justify-content: flex-end;
+  width: min(645px, 100%);
+}
+
 .home__title {
   margin: 0;
   color: var(--color-text-primary);
