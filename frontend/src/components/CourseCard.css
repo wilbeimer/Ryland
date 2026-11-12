@@ -25,10 +25,13 @@
   display: block;
   width: 133px;
   max-width: 100%;
-  height: 1px;
+  /* Hairline via border (not background-on-1px-box): under fractional
+     DPR a 1px-tall filled box can paint <1 device pixel and vanish. */
+  height: 0;
   margin: 8px 0 4px;
-  background: var(--color-accent-primary);
   border: 0;
+  border-top: 1px solid var(--color-accent-primary);
+  background: transparent;
 }
 
 .course-card__description {
@@ -50,7 +53,9 @@
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    /* `translateY(0)` still leaves a transform matrix (fill-mode: both),
+       which promotes a compositor layer and can AA away the 1px rule. */
+    transform: none;
   }
 }
 
