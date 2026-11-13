@@ -10,6 +10,7 @@ import {
   resolveInitialTheme,
   type Theme,
 } from './theme'
+import { useGenerationJob } from './useGenerationJob'
 import './App.css'
 
 type LoadState =
@@ -23,7 +24,16 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(() => resolveInitialTheme())
   const [view, setView] = useState<View>('Courses')
   const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [coursesVersion, setCoursesVersion] = useState(0)
   const userNavigatedRef = useRef(false)
+
+  const {
+    phase: generationPhase,
+    beginGeneration,
+    resumedFromConflict,
+  } = useGenerationJob(() => {
+    setCoursesVersion((version) => version + 1)
+  })
 
   useEffect(() => {
     applyTheme(theme)
@@ -31,6 +41,7 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false
+    const isInitialLoad = coursesVersion === 0
 
     fetchCourses()
       .then((courses) => {
@@ -40,22 +51,33 @@ export default function App() {
         setState({ status: 'ready', courses })
         // Once we know the list is empty, open Generate so home isn't a dead end —
         // but don't override a tab the user already chose while loading.
-        if (courses.length === 0 && !userNavigatedRef.current) {
+        if (
+          isInitialLoad &&
+          courses.length === 0 &&
+          !userNavigatedRef.current
+        ) {
           setView('Generate')
         }
       })
       .catch((error: unknown) => {
-        if (!cancelled) {
-          const message =
-            error instanceof Error ? error.message : 'Failed to load courses'
-          setState({ status: 'error', message })
+        if (cancelled) {
+          return
         }
+        const message =
+          error instanceof Error ? error.message : 'Failed to load courses'
+        // Initial load: show the error. Later refreshes (e.g. after generate)
+        // keep the last good list instead of wiping it.
+        setState((prev) =>
+          isInitialLoad || prev.status !== 'ready'
+            ? { status: 'error', message }
+            : prev,
+        )
       })
 
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [coursesVersion])
 
   function handleNavigate(label: NavLabel) {
     if (label === 'Courses' || label === 'Generate') {
@@ -81,9 +103,17 @@ export default function App() {
       </header>
 
       <main className="home__main">
-        {view === 'Generate' ? (
-          <GeneratePage />
-        ) : (
+        {/* Keep Generate mounted so form fields survive tab switches;
+            job polling is owned by useGenerationJob above. */}
+        <div hidden={view !== 'Generate'}>
+          <GeneratePage
+            phase={generationPhase}
+            onBeginGeneration={beginGeneration}
+            resumedFromConflict={resumedFromConflict}
+          />
+        </div>
+
+        {view === 'Courses' && (
           <>
             {state.status === 'loading' && (
               <p className="home__status" role="status">

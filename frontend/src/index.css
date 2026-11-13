@@ -10,11 +10,15 @@
   --color-accent-primary: #e5446d;
   --color-accent-secondary: #f2676a;
   --color-accent-pop: #532627;
+  --color-status-success: #4cc38a;
+  --color-status-warning: #e8b04b;
+  --color-status-failure: #ff5c5c;
   /* Active nav text: Penpot accent.pop on accent.primary (~4.1:1) */
   --color-nav-active-text: #532627;
   --radius: 10px;
   --radius-pill: 30px;
   --font-main: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'EB Garamond', 'Cormorant Garamond', Georgia, serif;
   --page-max-width: 1280px;
   --course-grid-gap: 13px;
   --nav-height: 43px;
@@ -33,6 +37,10 @@
   --color-accent-primary: #e5446d;
   --color-accent-secondary: #f2676a;
   --color-accent-pop: #fe999b;
+  /* Darkened vs Penpot for AA on background #f1eedf (~4.5:1+ at 15px). */
+  --color-status-success: #1f7a52;
+  --color-status-warning: #8a5a00;
+  --color-status-failure: #c62828;
   /* Active nav text: Penpot text.primary on accent.primary (~3.6:1).
      Darkening the fill further lowers contrast with this dark text, so
      accent.primary stays as the active background. */
