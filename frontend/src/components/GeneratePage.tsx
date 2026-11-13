@@ -105,9 +105,7 @@ export function GeneratePage({ phase, onBeginGeneration }: GeneratePageProps) {
         ? 'warning'
         : phase.kind === 'done'
           ? 'success'
-          : phase.kind === 'idle'
-            ? 'progress'
-            : 'progress'
+          : 'progress'
 
   const statusDetail =
     phase.kind === 'done' &&

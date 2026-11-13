@@ -234,13 +234,10 @@ function isTransientPollError(error: unknown): boolean {
   }
   if (error instanceof ApiError) {
     // 404 means the in-memory job is gone (e.g. uvicorn --reload); not transient.
-    if (error.status === 404) {
-      return false
-    }
     return error.status >= 500 || error.status === 429
   }
-  // TypeError / Failed to fetch / network blips
-  return true
+  // Network blips (Failed to fetch, etc.) — not parse/shape errors.
+  return error instanceof TypeError
 }
 
 function sleep(ms: number, signal?: AbortSignal): Promise<void> {
@@ -268,6 +265,7 @@ function sleep(ms: number, signal?: AbortSignal): Promise<void> {
 async function fetchGenerationJobWithRetry(
   jobId: string,
   signal?: AbortSignal,
+  onRetry?: (attempt: number) => void,
 ): Promise<GenerationJob> {
   let attempt = 0
   for (;;) {
@@ -285,6 +283,7 @@ async function fetchGenerationJobWithRetry(
           Math.min(attempt, TRANSIENT_BACKOFF_MS.length - 1)
         ] ?? 4000
       attempt += 1
+      onRetry?.(attempt)
       await sleep(delay, signal)
     }
   }
@@ -297,6 +296,7 @@ export async function pollGenerationJob(
     signal?: AbortSignal
     intervalMs?: number
     onUpdate?: (job: GenerationJob) => void
+    onRetry?: (attempt: number) => void
   },
 ): Promise<GenerationJob> {
   const intervalMs = options?.intervalMs ?? DEFAULT_POLL_MS
@@ -307,7 +307,11 @@ export async function pollGenerationJob(
       throw new DOMException('Polling aborted', 'AbortError')
     }
 
-    const job = await fetchGenerationJobWithRetry(jobId, signal)
+    const job = await fetchGenerationJobWithRetry(
+      jobId,
+      signal,
+      options?.onRetry,
+    )
     options?.onUpdate?.(job)
 
     if (isTerminalGenerationStatus(job.status)) {

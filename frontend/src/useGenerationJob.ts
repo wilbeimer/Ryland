@@ -17,11 +17,11 @@ export type GenerationPhase =
   | { kind: 'done'; job: GenerationJob }
   | { kind: 'error'; message: string; job?: GenerationJob }
 
-function placeholderJob(jobId: string): GenerationJob {
+function placeholderJob(jobId: string, detail = 'Resuming…'): GenerationJob {
   return {
     job_id: jobId,
     status: 'pending',
-    detail: 'Resuming…',
+    detail,
     course_id: null,
     course: null,
     error: null,
@@ -74,6 +74,22 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
       onUpdate: (job) => {
         if (!cancelled) {
           setPhase({ kind: 'polling', job })
+        }
+      },
+      onRetry: () => {
+        if (!cancelled) {
+          setPhase((current) => {
+            if (current.kind !== 'polling') {
+              return current
+            }
+            return {
+              kind: 'polling',
+              job: {
+                ...current.job,
+                detail: 'Reconnecting…',
+              },
+            }
+          })
         }
       },
     })
@@ -142,7 +158,13 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
         const conflictId = parseConflictJobId(error.detail)
         if (conflictId) {
           setStoredActiveJobId(conflictId)
-          setPhase({ kind: 'polling', job: placeholderJob(conflictId) })
+          setPhase({
+            kind: 'polling',
+            job: placeholderJob(
+              conflictId,
+              'A build was already running, so I am tracking that one.',
+            ),
+          })
           setActiveJobId(conflictId)
           return
         }
