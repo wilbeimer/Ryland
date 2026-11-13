@@ -23,6 +23,7 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(() => resolveInitialTheme())
   const [view, setView] = useState<View>('Courses')
   const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [coursesVersion, setCoursesVersion] = useState(0)
   const userNavigatedRef = useRef(false)
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function App() {
 
   useEffect(() => {
     let cancelled = false
+    const isInitialLoad = coursesVersion === 0
 
     fetchCourses()
       .then((courses) => {
@@ -40,7 +42,11 @@ export default function App() {
         setState({ status: 'ready', courses })
         // Once we know the list is empty, open Generate so home isn't a dead end —
         // but don't override a tab the user already chose while loading.
-        if (courses.length === 0 && !userNavigatedRef.current) {
+        if (
+          isInitialLoad &&
+          courses.length === 0 &&
+          !userNavigatedRef.current
+        ) {
           setView('Generate')
         }
       })
@@ -55,7 +61,7 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [coursesVersion])
 
   function handleNavigate(label: NavLabel) {
     if (label === 'Courses' || label === 'Generate') {
@@ -70,6 +76,10 @@ export default function App() {
     setTheme(next)
   }
 
+  function handleCourseCreated() {
+    setCoursesVersion((version) => version + 1)
+  }
+
   return (
     <div className="home">
       <header className="home__header">
@@ -82,7 +92,7 @@ export default function App() {
 
       <main className="home__main">
         {view === 'Generate' ? (
-          <GeneratePage />
+          <GeneratePage onCourseCreated={handleCourseCreated} />
         ) : (
           <>
             {state.status === 'loading' && (
