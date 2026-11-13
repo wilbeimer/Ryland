@@ -10,6 +10,7 @@ import {
   resolveInitialTheme,
   type Theme,
 } from './theme'
+import { useGenerationJob } from './useGenerationJob'
 import './App.css'
 
 type LoadState =
@@ -25,6 +26,10 @@ export default function App() {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const [coursesVersion, setCoursesVersion] = useState(0)
   const userNavigatedRef = useRef(false)
+
+  const { phase: generationPhase, beginGeneration } = useGenerationJob(() => {
+    setCoursesVersion((version) => version + 1)
+  })
 
   useEffect(() => {
     applyTheme(theme)
@@ -51,11 +56,18 @@ export default function App() {
         }
       })
       .catch((error: unknown) => {
-        if (!cancelled) {
-          const message =
-            error instanceof Error ? error.message : 'Failed to load courses'
-          setState({ status: 'error', message })
+        if (cancelled) {
+          return
         }
+        const message =
+          error instanceof Error ? error.message : 'Failed to load courses'
+        // Initial load: show the error. Later refreshes (e.g. after generate)
+        // keep the last good list instead of wiping it.
+        setState((prev) =>
+          isInitialLoad || prev.status !== 'ready'
+            ? { status: 'error', message }
+            : prev,
+        )
       })
 
     return () => {
@@ -76,10 +88,6 @@ export default function App() {
     setTheme(next)
   }
 
-  function handleCourseCreated() {
-    setCoursesVersion((version) => version + 1)
-  }
-
   return (
     <div className="home">
       <header className="home__header">
@@ -91,9 +99,16 @@ export default function App() {
       </header>
 
       <main className="home__main">
-        {view === 'Generate' ? (
-          <GeneratePage onCourseCreated={handleCourseCreated} />
-        ) : (
+        {/* Keep Generate mounted so form fields survive tab switches;
+            job polling is owned by useGenerationJob above. */}
+        <div hidden={view !== 'Generate'}>
+          <GeneratePage
+            phase={generationPhase}
+            onBeginGeneration={beginGeneration}
+          />
+        </div>
+
+        {view === 'Courses' && (
           <>
             {state.status === 'loading' && (
               <p className="home__status" role="status">

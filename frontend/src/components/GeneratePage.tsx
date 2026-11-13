@@ -1,10 +1,6 @@
-import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
-import {
-  ApiError,
-  pollGenerationJob,
-  startCourseGeneration,
-  type GenerationJob,
-} from '../api'
+import { useId, useState, type FormEvent } from 'react'
+import type { GenerateCourseRequest } from '../api'
+import type { GenerationPhase } from '../useGenerationJob'
 import './GeneratePage.css'
 
 type FormFields = {
@@ -14,16 +10,9 @@ type FormFields = {
   time_available: string
 }
 
-type JobPhase =
-  | { kind: 'idle' }
-  | { kind: 'submitting' }
-  | { kind: 'polling'; job: GenerationJob }
-  | { kind: 'done'; job: GenerationJob }
-  | { kind: 'error'; message: string; job?: GenerationJob }
-
 export type GeneratePageProps = {
-  /** Called when a build finishes with a course (succeeded or incomplete). */
-  onCourseCreated?: (job: GenerationJob) => void
+  phase: GenerationPhase
+  onBeginGeneration: (body: GenerateCourseRequest) => void | Promise<void>
 }
 
 function detectTimezone(): string {
@@ -54,85 +43,34 @@ function allFieldsFilled(fields: FormFields): boolean {
 
 /**
  * Course generation form (Penpot Generation page).
- * Isolated route/component — swap internals freely without touching Courses home.
+ * Job polling lives in App via useGenerationJob so tab switches don't abort it.
  */
-export function GeneratePage({ onCourseCreated }: GeneratePageProps) {
+export function GeneratePage({ phase, onBeginGeneration }: GeneratePageProps) {
   const formId = useId()
   const [fields, setFields] = useState<FormFields>(() =>
     emptyFields(detectTimezone()),
   )
-  const [phase, setPhase] = useState<JobPhase>({ kind: 'idle' })
-  const abortRef = useRef<AbortController | null>(null)
-  const createdNotifyRef = useRef<string | null>(null)
-
-  useEffect(() => {
-    return () => {
-      abortRef.current?.abort()
-    }
-  }, [])
 
   function updateField<K extends keyof FormFields>(key: K, value: FormFields[K]) {
     setFields((prev) => ({ ...prev, [key]: value }))
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (!allFieldsFilled(fields) || phase.kind === 'submitting' || phase.kind === 'polling') {
+    if (
+      !allFieldsFilled(fields) ||
+      phase.kind === 'submitting' ||
+      phase.kind === 'polling'
+    ) {
       return
     }
 
-    abortRef.current?.abort()
-    const controller = new AbortController()
-    abortRef.current = controller
-    createdNotifyRef.current = null
-    setPhase({ kind: 'submitting' })
-
-    try {
-      const started = await startCourseGeneration(
-        {
-          goal: fields.goal.trim(),
-          level: fields.level.trim(),
-          time_available: fields.time_available.trim(),
-          timezone: fields.timezone.trim(),
-        },
-        controller.signal,
-      )
-      setPhase({ kind: 'polling', job: started })
-
-      const finished = await pollGenerationJob(started.job_id, {
-        signal: controller.signal,
-        onUpdate: (job) => setPhase({ kind: 'polling', job }),
-      })
-
-      if (finished.status === 'failed') {
-        setPhase({
-          kind: 'error',
-          message: finished.error || finished.detail || 'Course generation failed',
-          job: finished,
-        })
-        return
-      }
-
-      setPhase({ kind: 'done', job: finished })
-      if (
-        finished.course_id &&
-        createdNotifyRef.current !== finished.job_id
-      ) {
-        createdNotifyRef.current = finished.job_id
-        onCourseCreated?.(finished)
-      }
-    } catch (error: unknown) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        return
-      }
-      const message =
-        error instanceof ApiError
-          ? error.detail
-          : error instanceof Error
-            ? error.message
-            : 'Course generation failed'
-      setPhase({ kind: 'error', message })
-    }
+    void onBeginGeneration({
+      goal: fields.goal.trim(),
+      level: fields.level.trim(),
+      time_available: fields.time_available.trim(),
+      timezone: fields.timezone.trim(),
+    })
   }
 
   const busy = phase.kind === 'submitting' || phase.kind === 'polling'
@@ -167,7 +105,16 @@ export function GeneratePage({ onCourseCreated }: GeneratePageProps) {
         ? 'warning'
         : phase.kind === 'done'
           ? 'success'
-          : 'progress'
+          : phase.kind === 'idle'
+            ? 'progress'
+            : 'progress'
+
+  const statusDetail =
+    phase.kind === 'done' &&
+    phase.job.detail &&
+    phase.job.status === 'succeeded'
+      ? phase.job.detail
+      : null
 
   return (
     <section className="generate" aria-labelledby={`${formId}-heading`}>
@@ -254,18 +201,17 @@ export function GeneratePage({ onCourseCreated }: GeneratePageProps) {
         </button>
       </form>
 
-      {statusMessage && (
-        <p
-          className={`generate__status generate__status--${statusTone}`}
-          role={statusTone === 'error' ? 'alert' : 'status'}
-          aria-live="polite"
-        >
-          {statusMessage}
-          {phase.kind === 'done' && phase.job.detail && phase.job.status === 'succeeded' && (
-            <span className="generate__status-detail">{phase.job.detail}</span>
-          )}
-        </p>
-      )}
+      <p
+        className={`generate__status generate__status--${statusTone}${
+          statusMessage ? '' : ' generate__status--empty'
+        }`}
+        role="status"
+      >
+        {statusMessage}
+        {statusDetail && (
+          <span className="generate__status-detail">{statusDetail}</span>
+        )}
+      </p>
     </section>
   )
 }

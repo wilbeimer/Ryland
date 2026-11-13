@@ -109,11 +109,20 @@
 .generate__status {
   margin: 28px 0 0;
   max-width: 42ch;
+  min-height: 1.35em;
   font-family: var(--font-body);
   font-size: 15px;
   line-height: 1.35;
   text-align: center;
+}
+
+.generate__status:not(.generate__status--empty) {
   animation: generate-status-in 280ms ease both;
+}
+
+.generate__status--empty {
+  margin-top: 28px;
+  visibility: hidden;
 }
 
 .generate__status-detail {
