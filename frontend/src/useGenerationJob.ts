@@ -52,6 +52,8 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
       ? { kind: 'polling', job: placeholderJob(stored) }
       : { kind: 'idle' }
   })
+  /** Set on 409 resume; cleared when that build reaches a terminal phase. */
+  const [resumedFromConflict, setResumedFromConflict] = useState(false)
   const notifiedJobRef = useRef<string | null>(null)
   const onCourseSavedRef = useRef(onCourseSaved)
 
@@ -99,6 +101,7 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
         }
         setStoredActiveJobId(null)
         setActiveJobId(null)
+        setResumedFromConflict(false)
 
         if (finished.status === 'failed') {
           setPhase({
@@ -129,6 +132,7 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
         }
         setStoredActiveJobId(null)
         setActiveJobId(null)
+        setResumedFromConflict(false)
         setPhase({ kind: 'error', message: errorMessage(error) })
       })
 
@@ -146,6 +150,7 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
     }
 
     notifiedJobRef.current = null
+    setResumedFromConflict(false)
     setPhase({ kind: 'submitting' })
 
     try {
@@ -158,12 +163,10 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
         const conflictId = parseConflictJobId(error.detail)
         if (conflictId) {
           setStoredActiveJobId(conflictId)
+          setResumedFromConflict(true)
           setPhase({
             kind: 'polling',
-            job: placeholderJob(
-              conflictId,
-              'A build was already running, so I am tracking that one.',
-            ),
+            job: placeholderJob(conflictId),
           })
           setActiveJobId(conflictId)
           return
@@ -173,5 +176,5 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
     }
   }
 
-  return { phase, beginGeneration }
+  return { phase, beginGeneration, resumedFromConflict }
 }

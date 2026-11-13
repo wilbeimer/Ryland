@@ -27,7 +27,11 @@ export default function App() {
   const [coursesVersion, setCoursesVersion] = useState(0)
   const userNavigatedRef = useRef(false)
 
-  const { phase: generationPhase, beginGeneration } = useGenerationJob(() => {
+  const {
+    phase: generationPhase,
+    beginGeneration,
+    resumedFromConflict,
+  } = useGenerationJob(() => {
     setCoursesVersion((version) => version + 1)
   })
 
@@ -105,6 +109,7 @@ export default function App() {
           <GeneratePage
             phase={generationPhase}
             onBeginGeneration={beginGeneration}
+            resumedFromConflict={resumedFromConflict}
           />
         </div>
 

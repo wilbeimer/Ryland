@@ -13,6 +13,8 @@ type FormFields = {
 export type GeneratePageProps = {
   phase: GenerationPhase
   onBeginGeneration: (body: GenerateCourseRequest) => void | Promise<void>
+  /** True after a 409 resume until that build finishes. */
+  resumedFromConflict?: boolean
 }
 
 function detectTimezone(): string {
@@ -45,7 +47,11 @@ function allFieldsFilled(fields: FormFields): boolean {
  * Course generation form (Penpot Generation page).
  * Job polling lives in App via useGenerationJob so tab switches don't abort it.
  */
-export function GeneratePage({ phase, onBeginGeneration }: GeneratePageProps) {
+export function GeneratePage({
+  phase,
+  onBeginGeneration,
+  resumedFromConflict = false,
+}: GeneratePageProps) {
   const formId = useId()
   const [fields, setFields] = useState<FormFields>(() =>
     emptyFields(detectTimezone()),
@@ -113,6 +119,10 @@ export function GeneratePage({ phase, onBeginGeneration }: GeneratePageProps) {
     phase.job.status === 'succeeded'
       ? phase.job.detail
       : null
+
+  const showConflictNotice =
+    resumedFromConflict &&
+    (phase.kind === 'submitting' || phase.kind === 'polling')
 
   return (
     <section className="generate" aria-labelledby={`${formId}-heading`}>
@@ -198,6 +208,12 @@ export function GeneratePage({ phase, onBeginGeneration }: GeneratePageProps) {
           {busy ? 'Generating…' : 'Generate'}
         </button>
       </form>
+
+      {showConflictNotice && (
+        <p className="generate__notice" role="status">
+          A build was already running. Showing its progress instead.
+        </p>
+      )}
 
       <p
         className={`generate__status generate__status--${statusTone}${
