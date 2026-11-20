@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from agent.agent_loop import MAX_ITERATIONS, run_generation
+from agent.agent_loop import MAX_ITERATIONS, AskCancelled, run_generation
 from backend.auth import get_current_user
 from backend.db import (
     add_assignment_to_db,
@@ -40,6 +40,7 @@ from backend.models import (
     AssignmentOut,
     Course,
     CourseOut,
+    GenerateAnswersRequest,
     GenerateCourseRequest,
     GenerateJobOut,
     PublicQuizOut,
@@ -92,10 +93,16 @@ class GenerationJob:
     detail: str | None = None
     course_id: UUID | None = None
     error: str | None = None
+    questions: list[str] | None = None
+    pending_answers: list[str] | None = None
     started_at: float = field(default_factory=time.monotonic)
+    # Time spent in awaiting_input is excluded from the 15-minute agent clock.
+    awaiting_elapsed: float = 0.0
+    awaiting_since: float | None = None
     finished_at: float | None = None
     cancel: threading.Event = field(default_factory=threading.Event)
     worker_done: threading.Event = field(default_factory=threading.Event)
+    input_ready: threading.Event = field(default_factory=threading.Event)
 
 
 # One uvicorn process. A local page polls these; a restart drops them.
@@ -104,7 +111,9 @@ class GenerationJob:
 _FINISHED_JOB_TTL_SECONDS = 30 * 60
 _MAX_FINISHED_JOBS = 20
 _ACTIVE_JOB_TIMEOUT_SECONDS = 15 * 60
-_ACTIVE_STATUSES = {"pending", "running"}
+# Abandoned clarifying waits get their own limit (agent clock is paused meanwhile).
+_AWAITING_INPUT_TIMEOUT_SECONDS = 60 * 60
+_ACTIVE_STATUSES = {"pending", "running", "awaiting_input"}
 _TERMINAL_STATUSES = {"succeeded", "failed", "incomplete"}
 _DETAIL_LIMIT = 2000
 _ERROR_LIMIT = 500
@@ -150,20 +159,45 @@ def _timeout_message() -> str:
     )
 
 
+def _awaiting_timeout_message() -> str:
+    minutes = _AWAITING_INPUT_TIMEOUT_SECONDS // 60
+    unit = "minute" if minutes == 1 else "minutes"
+    return (
+        f"Waited too long for clarifying answers ({minutes} {unit}). "
+        "Start a new build to try again."
+    )
+
+
+def _agent_elapsed(job: GenerationJob, now: float) -> float:
+    """Wall time since start, minus time spent waiting on clarifying answers."""
+    paused = job.awaiting_elapsed
+    if job.awaiting_since is not None:
+        paused += max(0.0, now - job.awaiting_since)
+    return max(0.0, now - job.started_at - paused)
+
+
 def _cancel_stale_jobs() -> None:
     """Ask timed-out workers to stop. Caller holds _jobs_lock.
 
     The job stays active until the worker notices and exits, so a new build
-    cannot overlap it.
+    cannot overlap it. Time spent in awaiting_input does not count toward the
+    agent timeout; abandoned waits use a separate longer limit.
     """
     now = time.monotonic()
     for job in _jobs.values():
         if job.status not in _ACTIVE_STATUSES or job.cancel.is_set():
             continue
-        if now - job.started_at < _ACTIVE_JOB_TIMEOUT_SECONDS:
+        if job.status == "awaiting_input" and job.awaiting_since is not None:
+            if now - job.awaiting_since >= _AWAITING_INPUT_TIMEOUT_SECONDS:
+                job.cancel.set()
+                job.detail = "Stopping the build after waiting too long for answers."
+                job.input_ready.set()
+            continue
+        if _agent_elapsed(job, now) < _ACTIVE_JOB_TIMEOUT_SECONDS:
             continue
         job.cancel.set()
         job.detail = "Stopping the build after the timeout."
+        job.input_ready.set()
 
 
 def _blocks_new_build(job: GenerationJob, user_id: UUID) -> bool:
@@ -195,14 +229,31 @@ def _job_should_stop(job_id: UUID) -> bool:
 def _fail_timed_out_job(
     job_id: UUID, course_id: str | None, summary: str | None
 ) -> None:
-    detail = "Stopping the build after the timeout."
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+        waited_too_long = bool(
+            job
+            and (
+                "waiting too long for answers" in (job.detail or "")
+                or (
+                    job.awaiting_since is not None
+                    and time.monotonic() - job.awaiting_since
+                    >= _AWAITING_INPUT_TIMEOUT_SECONDS
+                )
+            )
+        )
+        if job is not None and job.detail and job.detail.strip():
+            detail = job.detail.strip()
+        else:
+            detail = "Stopping the build after the timeout."
     if summary and summary.strip():
         detail = summary.strip()
+    error = _awaiting_timeout_message() if waited_too_long else _timeout_message()
     _update_job(
         job_id,
         status="failed",
         course_id=UUID(str(course_id)) if course_id else None,
-        error=_clip(_timeout_message(), _ERROR_LIMIT),
+        error=_clip(error, _ERROR_LIMIT),
         detail=_clip(detail, _DETAIL_LIMIT),
         mark_done=True,
     )
@@ -225,6 +276,11 @@ def _job_response(job: GenerationJob) -> GenerateJobOut:
             if str(row["id"]) == str(job.course_id):
                 course = CourseOut.model_validate(row)
                 break
+    questions = (
+        list(job.questions)
+        if job.status == "awaiting_input" and job.questions
+        else None
+    )
     return GenerateJobOut(
         job_id=job.job_id,
         status=job.status,
@@ -232,7 +288,46 @@ def _job_response(job: GenerationJob) -> GenerateJobOut:
         course_id=job.course_id,
         course=course,
         error=job.error,
+        questions=questions,
     )
+
+
+def _wait_for_clarifying_answers(job_id: UUID, questions: list[str]) -> list[str]:
+    """Pause the worker until the client POSTs answers (or the job is cancelled)."""
+    with _jobs_lock:
+        job = _jobs.get(job_id)
+        if job is None or job.cancel.is_set():
+            raise AskCancelled()
+        job.status = "awaiting_input"
+        job.detail = "Waiting for your answers"
+        job.questions = list(questions)
+        job.pending_answers = None
+        job.error = None
+        job.awaiting_since = time.monotonic()
+        job.input_ready.clear()
+        ready = job.input_ready
+
+    while True:
+        ready.wait(timeout=0.5)
+        with _jobs_lock:
+            job = _jobs.get(job_id)
+            if job is None or job.cancel.is_set():
+                raise AskCancelled()
+            if job.input_ready.is_set() and job.pending_answers is not None:
+                answers = list(job.pending_answers)
+                job.pending_answers = None
+                job.input_ready.clear()
+                if job.awaiting_since is not None:
+                    job.awaiting_elapsed += max(
+                        0.0, time.monotonic() - job.awaiting_since
+                    )
+                    job.awaiting_since = None
+                if job.status == "awaiting_input":
+                    job.status = "running"
+                    job.detail = "Resuming course generation"
+                    job.questions = None
+                return answers
+            ready = job.input_ready
 
 
 def _run_generation_job(
@@ -241,7 +336,15 @@ def _run_generation_job(
     def on_progress(message: str) -> None:
         if _job_should_stop(job_id):
             return
-        _update_job(job_id, status="running", detail=message)
+        _update_job(
+            job_id,
+            status="running",
+            detail=message,
+            questions=None,
+        )
+
+    def on_ask(questions: list[str]) -> list[str]:
+        return _wait_for_clarifying_answers(job_id, questions)
 
     def on_course_created(course_id: str) -> None:
         if _job_should_stop(job_id):
@@ -262,6 +365,7 @@ def _run_generation_job(
             on_progress=on_progress,
             on_course_created=on_course_created,
             should_stop=lambda: _job_should_stop(job_id),
+            on_ask=on_ask,
         )
         if result.cancelled or _job_should_stop(job_id):
             _fail_timed_out_job(job_id, result.course_id, result.summary)
@@ -415,6 +519,47 @@ def get_course_generation(
     if job is None or job.user_id != user.id:
         raise HTTPException(status_code=404, detail="Generation job not found")
     return _job_response(job)
+
+
+@app.post(
+    "/courses/generate/{job_id}/answers",
+    response_model=GenerateJobOut,
+)
+def submit_generation_answers(
+    user: Annotated[User, Depends(get_current_user)],
+    job_id: UUID,
+    body: GenerateAnswersRequest,
+):
+    with _jobs_lock:
+        _cancel_stale_jobs()
+        _evict_finished_jobs()
+        job = _jobs.get(job_id)
+        if job is None or job.user_id != user.id:
+            raise HTTPException(status_code=404, detail="Generation job not found")
+        if job.status != "awaiting_input" or not job.questions:
+            raise HTTPException(
+                status_code=409,
+                detail="This build is not waiting for clarifying answers",
+            )
+        if len(body.answers) != len(job.questions):
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"Expected {len(job.questions)} answers, "
+                    f"got {len(body.answers)}"
+                ),
+            )
+        job.pending_answers = list(body.answers)
+        # Flip off awaiting_input immediately so polls hide the clarifying box.
+        if job.awaiting_since is not None:
+            job.awaiting_elapsed += max(0.0, time.monotonic() - job.awaiting_since)
+            job.awaiting_since = None
+        job.status = "running"
+        job.detail = "Resuming course generation"
+        job.questions = None
+        job.input_ready.set()
+        snapshot = replace(job)
+    return _job_response(snapshot)
 
 
 # WEEKS

@@ -13,13 +13,19 @@ from agent.agent_loop import (
     MAX_ITERATIONS,
     Agent,
     AgentRunResult,
+    AskCancelled,
     learner_brief,
     run_agent,
     run_generation,
 )
 from agent.tools import ask_user
 from backend.db import add_course_to_db, add_user_to_db, init_db
-from backend.endpoints import _ACTIVE_JOB_TIMEOUT_SECONDS, allowed_origins, app
+from backend.endpoints import (
+    _ACTIVE_JOB_TIMEOUT_SECONDS,
+    _AWAITING_INPUT_TIMEOUT_SECONDS,
+    allowed_origins,
+    app,
+)
 from backend.models import Course, User
 
 SEEDED_USER = UUID("00000000-0000-0000-0000-000000000001")
@@ -77,6 +83,19 @@ def wait_for_job(client: TestClient, job_id: str) -> dict:
     raise AssertionError(last)
 
 
+def wait_for_status(client: TestClient, job_id: str, status: str) -> dict:
+    deadline = time.time() + 5
+    last = None
+    while time.time() < deadline:
+        response = client.get(f"/courses/generate/{job_id}")
+        assert response.status_code == 200
+        last = response.json()
+        if last["status"] == status:
+            return last
+        time.sleep(0.02)
+    raise AssertionError(last)
+
+
 def test_generate_polls_until_course_is_saved(client, monkeypatch):
     started = threading.Event()
     release = threading.Event()
@@ -92,11 +111,13 @@ def test_generate_polls_until_course_is_saved(client, monkeypatch):
         on_progress=None,
         on_course_created=None,
         should_stop=None,
+        on_ask=None,
     ):
         assert goal == GENERATE_BODY["goal"]
         assert level == GENERATE_BODY["level"]
         assert time_available == GENERATE_BODY["time_available"]
         assert timezone_name == GENERATE_BODY["timezone"]
+        assert on_ask is not None
         if on_progress:
             on_progress("Using create_course")
         started.set()
@@ -178,7 +199,9 @@ def test_turn_cap_after_create_course_is_incomplete(client, monkeypatch):
         on_progress=None,
         on_course_created=None,
         should_stop=None,
+        on_ask=None,
     ):
+        assert on_ask is not None
         add_course_to_db(
             Course(
                 id=course_id,
@@ -496,6 +519,268 @@ def test_run_generation_requires_api_key(monkeypatch):
 def test_cli_agent_still_asks_on_the_terminal_by_default():
     agent = Agent(user_id=SEEDED_USER, client=object(), model="claude-haiku-4-5")
     assert agent.ask is ask_user
+
+
+def test_generate_pauses_for_clarifying_answers_then_resumes(client, monkeypatch):
+    course_id = uuid4()
+    asked = threading.Event()
+    saw_answers = threading.Event()
+
+    def fake_run_generation(**kwargs):
+        on_ask = kwargs["on_ask"]
+        on_progress = kwargs.get("on_progress")
+        user_id = kwargs["user_id"]
+        if on_progress:
+            on_progress("Planning the outline")
+        asked.set()
+        answers = on_ask(
+            [
+                "Do you prefer theory or hands-on labs?",
+                "Any topics to skip?",
+            ]
+        )
+        assert answers == ["hands-on labs", "skip recursion"]
+        saw_answers.set()
+        if on_progress:
+            on_progress("Using create_course")
+        add_course_to_db(
+            Course(
+                id=course_id,
+                user_id=user_id,
+                name="SQL Joins",
+                description=kwargs["goal"],
+            )
+        )
+        return AgentRunResult(
+            course_id=str(course_id),
+            summary="Built with clarifications",
+            completed=True,
+        )
+
+    monkeypatch.setattr("backend.endpoints.run_generation", fake_run_generation)
+
+    created = client.post("/courses/generate", json=GENERATE_BODY)
+    assert created.status_code == 202
+    job_id = created.json()["job_id"]
+    assert asked.wait(timeout=2)
+
+    waiting = wait_for_status(client, job_id, "awaiting_input")
+    assert waiting["questions"] == [
+        "Do you prefer theory or hands-on labs?",
+        "Any topics to skip?",
+    ]
+    assert waiting["detail"] == "Waiting for your answers"
+    assert waiting["course_id"] is None
+
+    # Still blocks a second build while waiting on the user.
+    blocked = client.post("/courses/generate", json=GENERATE_BODY)
+    assert blocked.status_code == 409
+    assert job_id in blocked.json()["detail"]
+
+    wrong_count = client.post(
+        f"/courses/generate/{job_id}/answers",
+        json={"answers": ["only one"]},
+    )
+    assert wrong_count.status_code == 422
+
+    blank = client.post(
+        f"/courses/generate/{job_id}/answers",
+        json={"answers": ["hands-on labs", "   "]},
+    )
+    assert blank.status_code == 422
+
+    resumed = client.post(
+        f"/courses/generate/{job_id}/answers",
+        json={"answers": ["hands-on labs", "skip recursion"]},
+    )
+    assert resumed.status_code == 200
+    body = resumed.json()
+    assert body["status"] == "running"
+    assert body["questions"] is None
+    assert body["detail"] == "Resuming course generation"
+    assert saw_answers.wait(timeout=2)
+
+    finished = wait_for_job(client, job_id)
+    assert finished["status"] == "succeeded"
+    assert finished["course_id"] == str(course_id)
+    assert finished["questions"] is None
+
+    not_waiting = client.post(
+        f"/courses/generate/{job_id}/answers",
+        json={"answers": ["too late"]},
+    )
+    assert not_waiting.status_code == 409
+
+
+def test_awaiting_input_does_not_consume_agent_timeout(client, monkeypatch):
+    clock = {"now": 1_000.0}
+    monkeypatch.setattr("backend.endpoints.time.monotonic", lambda: clock["now"])
+    asked = threading.Event()
+    release = threading.Event()
+    course_id = uuid4()
+
+    def fake_run_generation(**kwargs):
+        on_ask = kwargs["on_ask"]
+        asked.set()
+        answers = on_ask(["Still there?"])
+        assert answers == ["yes"]
+        assert release.wait(timeout=2)
+        add_course_to_db(
+            Course(
+                id=course_id,
+                user_id=kwargs["user_id"],
+                name="SQL Joins",
+                description=kwargs["goal"],
+            )
+        )
+        return AgentRunResult(
+            course_id=str(course_id),
+            summary="Finished after a slow answer",
+            completed=True,
+        )
+
+    monkeypatch.setattr("backend.endpoints.run_generation", fake_run_generation)
+
+    created = client.post("/courses/generate", json=GENERATE_BODY)
+    job_id = created.json()["job_id"]
+    assert asked.wait(timeout=2)
+    wait_for_status(client, job_id, "awaiting_input")
+
+    # Wall clock exceeds the agent timeout while waiting on the learner.
+    clock["now"] += _ACTIVE_JOB_TIMEOUT_SECONDS + 120
+    still_waiting = client.get(f"/courses/generate/{job_id}")
+    assert still_waiting.status_code == 200
+    assert still_waiting.json()["status"] == "awaiting_input"
+    assert still_waiting.json()["error"] is None
+
+    resumed = client.post(
+        f"/courses/generate/{job_id}/answers",
+        json={"answers": ["yes"]},
+    )
+    assert resumed.status_code == 200
+    assert resumed.json()["status"] == "running"
+    release.set()
+
+    finished = wait_for_job(client, job_id)
+    assert finished["status"] == "succeeded"
+    assert finished["course_id"] == str(course_id)
+
+
+def test_awaiting_input_has_its_own_timeout(client, monkeypatch):
+    clock = {"now": 1_000.0}
+    monkeypatch.setattr("backend.endpoints.time.monotonic", lambda: clock["now"])
+    asked = threading.Event()
+
+    def fake_run_generation(**kwargs):
+        asked.set()
+        try:
+            kwargs["on_ask"](["Are you still there?"])
+        except AskCancelled:
+            return AgentRunResult(
+                course_id=None,
+                summary="",
+                completed=False,
+                cancelled=True,
+            )
+        return AgentRunResult(course_id=None, summary="", completed=True)
+
+    monkeypatch.setattr("backend.endpoints.run_generation", fake_run_generation)
+
+    created = client.post("/courses/generate", json=GENERATE_BODY)
+    job_id = created.json()["job_id"]
+    assert asked.wait(timeout=2)
+    wait_for_status(client, job_id, "awaiting_input")
+
+    clock["now"] += _AWAITING_INPUT_TIMEOUT_SECONDS + 1
+    stale = client.get(f"/courses/generate/{job_id}")
+    assert stale.status_code == 200
+    assert "waiting too long for answers" in stale.json()["detail"]
+
+    finished = wait_for_job(client, job_id)
+    assert finished["status"] == "failed"
+    assert "Waited too long for clarifying answers" in finished["error"]
+
+
+def test_run_agent_batches_ask_user_through_on_ask(monkeypatch):
+    class _Block:
+        def __init__(self, kind: str, **fields):
+            self.type = kind
+            self.name = fields.get("name")
+            self.input = fields.get("input", {})
+            self.id = fields.get("id", "tool-1")
+            self.text = fields.get("text", "")
+
+    class _Response:
+        def __init__(self, content):
+            self.content = content
+
+    calls = {"n": 0}
+    asked = []
+
+    def fake_make_call(self, messages):
+        calls["n"] += 1
+        if calls["n"] == 1:
+            return _Response(
+                [
+                    _Block(
+                        "tool_use",
+                        name="ask_user",
+                        id="ask-1",
+                        input={"question": "Pace?"},
+                    ),
+                    _Block(
+                        "tool_use",
+                        name="ask_user",
+                        id="ask-2",
+                        input={"question": "Focus?"},
+                    ),
+                ]
+            )
+        return _Response([_Block("text", text="done")])
+
+    def on_ask(questions):
+        asked.append(list(questions))
+        return ["steady", "joins"]
+
+    monkeypatch.setattr(Agent, "make_call", fake_make_call)
+    result = run_agent(
+        user_id=SEEDED_USER,
+        task="build",
+        client=object(),
+        model="test",
+        on_ask=on_ask,
+    )
+    assert asked == [["Pace?", "Focus?"]]
+    assert result.completed is True
+    assert result.cancelled is False
+
+
+def test_run_agent_on_ask_cancel_marks_cancelled(monkeypatch):
+    class _Block:
+        def __init__(self):
+            self.type = "tool_use"
+            self.name = "ask_user"
+            self.input = {"question": "Need more detail?"}
+            self.id = "ask-1"
+
+    class _Response:
+        def __init__(self):
+            self.content = [_Block()]
+
+    monkeypatch.setattr(Agent, "make_call", lambda self, messages: _Response())
+
+    def on_ask(questions):
+        raise AskCancelled()
+
+    result = run_agent(
+        user_id=SEEDED_USER,
+        task="build",
+        client=object(),
+        model="test",
+        on_ask=on_ask,
+    )
+    assert result.cancelled is True
+    assert result.completed is False
 
 
 def test_context_file_does_not_depend_on_cwd(tmp_path, monkeypatch):

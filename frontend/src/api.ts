@@ -31,6 +31,7 @@ export type GenerateCourseRequest = {
 export type GenerationStatus =
   | 'pending'
   | 'running'
+  | 'awaiting_input'
   | 'succeeded'
   | 'incomplete'
   | 'failed'
@@ -42,6 +43,11 @@ export type GenerationJob = {
   course_id: string | null
   course: Course | null
   error: string | null
+  questions: string[] | null
+}
+
+export type GenerateAnswersRequest = {
+  answers: string[]
 }
 
 export class ApiError extends Error {
@@ -120,9 +126,16 @@ function isGenerationStatus(value: unknown): value is GenerationStatus {
   return (
     value === 'pending' ||
     value === 'running' ||
+    value === 'awaiting_input' ||
     value === 'succeeded' ||
     value === 'incomplete' ||
     value === 'failed'
+  )
+}
+
+function isQuestionList(value: unknown): value is string[] {
+  return (
+    Array.isArray(value) && value.every((item) => typeof item === 'string')
   )
 }
 
@@ -133,14 +146,26 @@ function isGenerationJob(value: unknown): value is GenerationJob {
   const job = value as Record<string, unknown>
   const courseOk =
     job.course === null || job.course === undefined || isCourse(job.course)
+  const questionsOk =
+    job.questions === null ||
+    job.questions === undefined ||
+    isQuestionList(job.questions)
   return (
     typeof job.job_id === 'string' &&
     isGenerationStatus(job.status) &&
     (job.detail === null || typeof job.detail === 'string') &&
     (job.course_id === null || typeof job.course_id === 'string') &&
     (job.error === null || typeof job.error === 'string') &&
-    courseOk
+    courseOk &&
+    questionsOk
   )
+}
+
+function normalizeGenerationJob(job: GenerationJob): GenerationJob {
+  return {
+    ...job,
+    questions: job.questions ?? null,
+  }
 }
 
 async function readErrorDetail(response: Response): Promise<string> {
@@ -271,7 +296,7 @@ export async function startCourseGeneration(
   if (!isGenerationJob(data)) {
     throw new Error('Failed to start generation (unexpected response)')
   }
-  return data
+  return normalizeGenerationJob(data)
 }
 
 export async function fetchGenerationJob(
@@ -295,7 +320,33 @@ export async function fetchGenerationJob(
   if (!isGenerationJob(data)) {
     throw new Error('Failed to load generation status (unexpected response)')
   }
-  return data
+  return normalizeGenerationJob(data)
+}
+
+export async function submitGenerationAnswers(
+  jobId: string,
+  body: GenerateAnswersRequest,
+  signal?: AbortSignal,
+): Promise<GenerationJob> {
+  const response = await fetch(
+    `${API_BASE}/courses/generate/${encodeURIComponent(jobId)}/answers`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      signal,
+    },
+  )
+
+  if (!response.ok) {
+    throw new ApiError(response.status, await readErrorDetail(response))
+  }
+
+  const data: unknown = await response.json()
+  if (!isGenerationJob(data)) {
+    throw new Error('Failed to submit answers (unexpected response)')
+  }
+  return normalizeGenerationJob(data)
 }
 
 export function isTerminalGenerationStatus(
