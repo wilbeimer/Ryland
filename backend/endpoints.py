@@ -18,6 +18,7 @@ from backend.db import (
     add_course_to_db,
     add_quiz_to_db,
     add_week_to_db,
+    delete_course_from_db,
     get_assignments,
     get_courses,
     get_owned_assignment,
@@ -338,6 +339,17 @@ def add_course(
         logger.exception("Constraint violation creating course")
         raise HTTPException(status_code=422, detail="Invalid course data")
     return {"id": course_id}
+
+
+@app.delete("/courses/{course_id}", status_code=204)
+def delete_course(
+    user: Annotated[User, Depends(get_current_user)],
+    course_id: UUID,
+):
+    get_owned_course(course_id, user.id)
+    if not delete_course_from_db(course_id, user.id):
+        raise HTTPException(status_code=404, detail="Course not found")
+    return Response(status_code=204)
 
 
 @app.post("/courses/generate", status_code=202, response_model=GenerateJobOut)

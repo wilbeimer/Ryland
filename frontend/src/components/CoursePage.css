@@ -17,6 +17,31 @@
   animation: course-title-in 500ms ease both;
 }
 
+.course-page__delete {
+  margin-top: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-status-failure);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.2;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.course-page__delete:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.course-page__delete-error {
+  margin-top: 12px;
+}
+
 .course-page__weeks {
   display: flex;
   flex-direction: column;

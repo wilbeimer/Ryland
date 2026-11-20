@@ -163,6 +163,22 @@ export default function App() {
     setView({ kind: 'course', course })
   }
 
+  function handleCourseDeleted(courseId: string) {
+    userNavigatedRef.current = true
+    restoreFocusCourseIdRef.current = null
+    courseButtonRefs.current.delete(courseId)
+    writeCourseIdToUrl(null)
+    setState((current) =>
+      current.status === 'ready'
+        ? {
+            status: 'ready',
+            courses: current.courses.filter((course) => course.id !== courseId),
+          }
+        : current,
+    )
+    setView({ kind: 'courses' })
+  }
+
   const navActive: NavLabel =
     view.kind === 'generate' ? 'Generate' : 'Courses'
 
@@ -184,7 +200,11 @@ export default function App() {
         </div>
 
         {view.kind === 'course' && (
-          <CoursePage key={view.course.id} course={view.course} />
+          <CoursePage
+            key={view.course.id}
+            course={view.course}
+            onDeleted={handleCourseDeleted}
+          />
         )}
 
         {view.kind === 'courses' && (

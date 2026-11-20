@@ -80,6 +80,16 @@ export async function fetchCourses(): Promise<Course[]> {
   return data
 }
 
+export async function deleteCourse(courseId: string): Promise<void> {
+  const response = await fetch(
+    `${API_BASE}/courses/${encodeURIComponent(courseId)}`,
+    { method: 'DELETE' },
+  )
+  if (!response.ok) {
+    throw new Error(`Failed to delete course (${response.status})`)
+  }
+}
+
 export async function fetchWeeks(courseId: string): Promise<Week[]> {
   const response = await fetch(`${API_BASE}/courses/${courseId}/weeks`)
   if (!response.ok) {

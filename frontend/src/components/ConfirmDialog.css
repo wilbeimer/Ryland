@@ -1,0 +1,104 @@
+.confirm-dialog {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.confirm-dialog__backdrop {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: rgba(0, 0, 0, 0.45);
+  cursor: pointer;
+}
+
+.confirm-dialog__panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: min(420px, 100%);
+  padding: 24px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: 2px 4px 16px var(--shadow-raised);
+}
+
+.confirm-dialog__title {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.confirm-dialog__message {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.confirm-dialog__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.confirm-dialog__cancel,
+.confirm-dialog__confirm {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 100px;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: var(--radius);
+  font-family: var(--font-main);
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.confirm-dialog__cancel {
+  border: 1px solid var(--color-border);
+  background: var(--color-background);
+  color: var(--color-text-primary);
+}
+
+.confirm-dialog__confirm {
+  border: 1px solid var(--color-status-failure);
+  background: var(--color-status-failure);
+  color: var(--color-text-primary);
+}
+
+.confirm-dialog__cancel:disabled,
+.confirm-dialog__confirm:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.confirm-dialog__cancel:focus-visible,
+.confirm-dialog__confirm:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+[data-theme='light'] .confirm-dialog__confirm {
+  color: #fbf9ef;
+}

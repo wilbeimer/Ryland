@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react'
-import { fetchWeeks, type Course, type Week } from '../api'
+import { deleteCourse, fetchWeeks, type Course, type Week } from '../api'
+import { ConfirmDialog } from './ConfirmDialog'
 import { WeekWidget } from './WeekWidget'
 import './CoursePage.css'
 
 type CoursePageProps = {
   course: Course
+  onDeleted?: (courseId: string) => void
 }
 
 type WeeksState =
@@ -12,9 +14,12 @@ type WeeksState =
   | { status: 'error'; message: string }
   | { status: 'ready'; weeks: Week[] }
 
-export function CoursePage({ course }: CoursePageProps) {
+export function CoursePage({ course, onDeleted }: CoursePageProps) {
   const [state, setState] = useState<WeeksState>({ status: 'loading' })
   const [retryToken, setRetryToken] = useState(0)
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+  const [deleteError, setDeleteError] = useState<string | null>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
 
   useEffect(() => {
@@ -43,15 +48,47 @@ export function CoursePage({ course }: CoursePageProps) {
     }
   }, [course.id, retryToken])
 
+  async function handleConfirmDelete() {
+    setDeleting(true)
+    setDeleteError(null)
+    try {
+      await deleteCourse(course.id)
+      setConfirmOpen(false)
+      onDeleted?.(course.id)
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to delete course'
+      setDeleteError(message)
+      setDeleting(false)
+      setConfirmOpen(false)
+    }
+  }
+
   return (
     <div className="course-page">
-      <h1
-        ref={titleRef}
-        className="course-page__title"
-        tabIndex={-1}
-      >
+      <h1 ref={titleRef} className="course-page__title" tabIndex={-1}>
         {course.name}
       </h1>
+
+      <button
+        type="button"
+        className="course-page__delete"
+        onClick={() => {
+          setDeleteError(null)
+          setConfirmOpen(true)
+        }}
+      >
+        Delete course
+      </button>
+
+      {deleteError && (
+        <p
+          className="course-page__status course-page__status--error course-page__delete-error"
+          role="alert"
+        >
+          {deleteError}
+        </p>
+      )}
 
       <div className="course-page__weeks">
         {state.status === 'loading' && (
@@ -87,6 +124,24 @@ export function CoursePage({ course }: CoursePageProps) {
             <WeekWidget key={week.id} week={week} index={index} />
           ))}
       </div>
+
+      {confirmOpen && (
+        <ConfirmDialog
+          title="Delete this course?"
+          message={`“${course.name}” and all of its weeks, assignments, and quizzes will be removed. This cannot be undone.`}
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          busy={deleting}
+          onCancel={() => {
+            if (!deleting) {
+              setConfirmOpen(false)
+            }
+          }}
+          onConfirm={() => {
+            void handleConfirmDelete()
+          }}
+        />
+      )}
     </div>
   )
 }
