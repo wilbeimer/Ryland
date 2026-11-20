@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
 
-from agent.agent_loop import AskCancelled, MAX_ITERATIONS, run_generation
+from agent.agent_loop import MAX_ITERATIONS, AskCancelled, run_generation
 from backend.auth import get_current_user
 from backend.db import (
     add_assignment_to_db,

@@ -670,7 +670,8 @@ def test_run_agent_on_ask_cancel_marks_cancelled(monkeypatch):
             self.id = "ask-1"
 
     class _Response:
-        content = [_Block()]
+        def __init__(self):
+            self.content = [_Block()]
 
     monkeypatch.setattr(Agent, "make_call", lambda self, messages: _Response())
 
