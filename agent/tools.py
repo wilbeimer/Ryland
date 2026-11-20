@@ -1,8 +1,9 @@
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 from uuid import UUID, uuid4
 
 from pydantic import ValidationError
 
+from backend.course_dates import DEFAULT_COURSE_COLOR, due_datetime_for_assignment
 from backend.db import (
     InvalidAssignmentError,
     InvalidCourseError,
@@ -11,9 +12,10 @@ from backend.db import (
     add_course_to_db,
     add_quiz_to_db,
     add_week_to_db,
+    get_week_schedule_context,
 )
 from backend.exceptions import InvalidQuizError
-from backend.models import Assignment, Course, Quiz, Week
+from backend.models import Assignment, AssignmentType, Course, Quiz, Week
 
 TOOLS = [
     {
@@ -128,8 +130,9 @@ TOOLS = [
                 "due_date": {
                     "type": "string",
                     "description": (
-                        "Due date and time in ISO 8601 with a timezone offset, "
-                        "e.g. 2026-10-15T23:59:00-04:00"
+                        "Optional ISO 8601 due date with timezone offset. "
+                        "The server keeps it only when it falls inside the week's "
+                        "date range; otherwise it assigns a date inside that week."
                     ),
                 },
             },
@@ -139,7 +142,6 @@ TOOLS = [
                 "assignment_name",
                 "assignment_description",
                 "rubric",
-                "due_date",
             ],
         },
     },
@@ -215,7 +217,12 @@ TOOLS = [
 ]
 
 
-def create_course(tool_input, user_id: UUID) -> tuple[dict[str, str], bool]:
+def create_course(
+    tool_input,
+    user_id: UUID,
+    *,
+    start_date: date | None = None,
+) -> tuple[dict[str, str], bool]:
     course_id = uuid4()
     try:
         course = Course(
@@ -223,6 +230,8 @@ def create_course(tool_input, user_id: UUID) -> tuple[dict[str, str], bool]:
             user_id=user_id,
             name=tool_input["course_name"],
             description=tool_input["course_description"],
+            color=DEFAULT_COURSE_COLOR,
+            start_date=start_date or date.today(),
         )
         course_id = add_course_to_db(course=course)
         return {"course_id": course_id}, False
@@ -252,21 +261,36 @@ def create_week(tool_input) -> tuple[dict[str, str], bool]:
 def create_assignment(tool_input) -> tuple[dict[str, str], bool]:
     assignment_id = uuid4()
     try:
+        week_id = tool_input["week_id"]
+        schedule = get_week_schedule_context(UUID(str(week_id)))
+        if schedule is None:
+            return {"content": "Week not found"}, True
+        assignment_type = AssignmentType(tool_input["assignment_type"])
+        provided = None
+        raw_due = tool_input.get("due_date")
+        if raw_due:
+            provided = datetime.fromisoformat(str(raw_due))
+        due_date = due_datetime_for_assignment(
+            schedule["start_date"],
+            schedule["week_number"],
+            assignment_type,
+            provided,
+        )
         assignment = Assignment(
             id=assignment_id,
-            week_id=tool_input["week_id"],
-            type=tool_input["assignment_type"],
+            week_id=week_id,
+            type=assignment_type,
             name=tool_input["assignment_name"],
             description=tool_input["assignment_description"],
             rubric=tool_input["rubric"],
-            due_date=tool_input["due_date"],
+            due_date=due_date,
         )
         assignment_id = add_assignment_to_db(assignment=assignment)
         return {"assignment_id": assignment_id}, False
     except InvalidAssignmentError as e:
         return {"content": str(e)}, True
-    except KeyError as e:
-        return {"content": f"Missing required fields {e}"}, True
+    except (KeyError, ValueError, TypeError) as e:
+        return {"content": f"Invalid assignment input: {e}"}, True
 
 
 def create_quiz(tool_input) -> tuple[dict[str, str], bool]:

@@ -160,11 +160,11 @@ def test_generate_polls_until_course_is_saved(client, monkeypatch):
     assert finished["status"] == "succeeded"
     assert finished["error"] is None
     assert finished["course_id"] == str(course_id)
-    assert finished["course"] == {
-        "id": str(course_id),
-        "name": "SQL Joins",
-        "description": "Learn SQL joins",
-    }
+    assert finished["course"]["id"] == str(course_id)
+    assert finished["course"]["name"] == "SQL Joins"
+    assert finished["course"]["description"] == "Learn SQL joins"
+    assert finished["course"]["color"] == "#e5446d"
+    assert finished["course"]["start_date"]
     assert finished["detail"] == "Built SQL Joins"
 
     listed = client.get("/courses")

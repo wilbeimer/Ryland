@@ -1,10 +1,13 @@
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from enum import Enum
+from re import fullmatch
 from typing import Literal
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from pydantic import BaseModel, Field, SecretStr, field_validator
+
+from backend.course_dates import DEFAULT_COURSE_COLOR, HEX_COLOR_PATTERN
 
 
 class AssignmentType(Enum):
@@ -23,22 +26,54 @@ class User(BaseModel):
     password: SecretStr
 
 
+def _normalize_hex_color(value: str) -> str:
+    stripped = value.strip()
+    if not fullmatch(HEX_COLOR_PATTERN, stripped):
+        raise ValueError("color must be a #RRGGBB hex string")
+    return stripped.lower()
+
+
 class Course(BaseModel):
     id: UUID
     user_id: UUID
     name: str
     description: str
+    color: str = DEFAULT_COURSE_COLOR
+    start_date: date = Field(default_factory=date.today)
+
+    @field_validator("color")
+    @classmethod
+    def validate_color(cls, value: str) -> str:
+        return _normalize_hex_color(value)
 
 
 class RequestAddCourse(BaseModel):
     name: str
     description: str
+    color: str = DEFAULT_COURSE_COLOR
+    start_date: date | None = None
+
+    @field_validator("color")
+    @classmethod
+    def validate_color(cls, value: str) -> str:
+        return _normalize_hex_color(value)
+
+
+class RequestPatchCourse(BaseModel):
+    color: str
+
+    @field_validator("color")
+    @classmethod
+    def validate_color(cls, value: str) -> str:
+        return _normalize_hex_color(value)
 
 
 class CourseOut(BaseModel):
     id: UUID
     name: str
     description: str
+    color: str
+    start_date: date
 
 
 class Week(BaseModel):
@@ -57,6 +92,8 @@ class WeekOut(BaseModel):
     id: UUID
     week_number: int
     description: str
+    start_date: date
+    end_date: date
 
 
 class Assignment(BaseModel):
@@ -74,7 +111,7 @@ class RequestAddAssignment(BaseModel):
     name: str
     description: str
     rubric: dict
-    due_date: datetime
+    due_date: datetime | None = None
 
 
 class AssignmentOut(BaseModel):

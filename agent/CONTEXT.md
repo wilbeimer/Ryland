@@ -27,7 +27,7 @@ Ask every question through `ask_user`, never in plain text. The answer only come
 
 Ask only when you are missing something that would change the curriculum: the learner's goal, their current level, or the time they have available. If the request already covers these, start building. When you need several things, combine them into a single `ask_user` call instead of asking one at a time.
 
-You also need the current date and the user's timezone to set due dates. If you don't have them, include that in your questions.
+The course start date is set automatically from the generation day in the learner's timezone. Week N covers that start date plus 7*(N-1) through plus 7*N-1 days. Prefer due dates inside each week's range; the server will keep or correct them so assignments land in their week.
 
 ## Designing the curriculum
 

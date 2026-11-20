@@ -8,6 +8,8 @@ const COURSE = {
   id: 'course-1',
   name: 'Intro to Algorithms',
   description: 'Sorting and graphs.',
+  color: '#e5446d',
+  start_date: '2026-01-05',
 }
 
 describe('CoursePage delete', () => {
@@ -25,7 +27,7 @@ describe('CoursePage delete', () => {
         url.pathname === `/api/courses/${COURSE.id}/weeks`
           ? {
               body: [
-                { id: 'week-1', week_number: 1, description: 'Foundations' },
+                { id: 'week-1', week_number: 1, description: 'Foundations', start_date: '2026-01-05', end_date: '2026-01-11' },
               ],
             }
           : null,

@@ -1,7 +1,7 @@
 import os
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from pathlib import Path
 from uuid import UUID
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -39,12 +39,22 @@ class AskCancelled(Exception):
 
 
 class Agent:
-    def __init__(self, user_id, client, model, tools=None, context_file=None, ask=None):
+    def __init__(
+        self,
+        user_id,
+        client,
+        model,
+        tools=None,
+        context_file=None,
+        ask=None,
+        course_start_date: date | None = None,
+    ):
         self.user_id = user_id
         self.client = client
         self.model = model
         self.tools = tools if tools is not None else []
         self.ask = ask if ask is not None else ask_user
+        self.course_start_date = course_start_date or date.today()
 
         self.system_prompt = ""
         if context_file:
@@ -56,7 +66,11 @@ class Agent:
     def process_tool_call(self, tool_name: str, tool_input: dict):
         match tool_name:
             case "create_course":
-                return create_course(tool_input, self.user_id)
+                return create_course(
+                    tool_input,
+                    self.user_id,
+                    start_date=self.course_start_date,
+                )
             case "create_week":
                 return create_week(tool_input)
             case "create_assignment":
@@ -140,6 +154,7 @@ def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
         tools=TOOLS,
         context_file=CONTEXT_FILE,
         ask=kwargs.get("ask"),
+        course_start_date=kwargs.get("course_start_date"),
     )
 
     course_id = None
@@ -288,6 +303,10 @@ def run_generation(
         raise RuntimeError("ANTHROPIC_API_KEY is not set")
 
     brief = learner_brief(goal, level, time_available, timezone_name)
+    try:
+        course_start_date = datetime.now(ZoneInfo(timezone_name)).date()
+    except (ZoneInfoNotFoundError, ValueError):
+        course_start_date = datetime.now(UTC).date()
     task = (
         "Build a complete course for this learner. "
         "The brief already includes their goal, level, time available, timezone, "
@@ -316,6 +335,7 @@ def run_generation(
         on_progress=on_progress,
         on_course_created=on_course_created,
         should_stop=should_stop,
+        course_start_date=course_start_date,
     )
 
 

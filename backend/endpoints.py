@@ -4,6 +4,7 @@ import threading
 import time
 from contextlib import asynccontextmanager
 from dataclasses import dataclass, field, replace
+from datetime import date
 from typing import Annotated
 from uuid import UUID, uuid4
 
@@ -13,6 +14,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from agent.agent_loop import MAX_ITERATIONS, AskCancelled, run_generation
 from backend.auth import get_current_user
+from backend.course_dates import DEFAULT_COURSE_COLOR, due_datetime_for_assignment
 from backend.db import (
     add_assignment_to_db,
     add_course_to_db,
@@ -25,8 +27,10 @@ from backend.db import (
     get_owned_course,
     get_owned_week,
     get_quiz,
+    get_week_schedule_context,
     get_weeks,
     init_db,
+    update_course_color,
 )
 from backend.exceptions import (
     DuplicateWeekError,
@@ -49,6 +53,7 @@ from backend.models import (
     RequestAddCourse,
     RequestAddQuiz,
     RequestAddWeek,
+    RequestPatchCourse,
     User,
     Week,
     WeekOut,
@@ -437,8 +442,11 @@ def add_course(
     user: Annotated[User, Depends(get_current_user)], course: RequestAddCourse
 ):
     course_id = uuid4()
+    payload = course.model_dump()
+    payload["start_date"] = payload.get("start_date") or date.today()
+    payload["color"] = payload.get("color") or DEFAULT_COURSE_COLOR
     valid_course = Course(
-        **course.model_dump(),
+        **payload,
         id=course_id,
         user_id=user.id,
     )
@@ -449,6 +457,19 @@ def add_course(
         logger.exception("Constraint violation creating course")
         raise HTTPException(status_code=422, detail="Invalid course data")
     return {"id": course_id}
+
+
+@app.patch("/courses/{course_id}", response_model=CourseOut)
+def patch_course(
+    user: Annotated[User, Depends(get_current_user)],
+    course_id: UUID,
+    body: RequestPatchCourse,
+):
+    get_owned_course(course_id, user.id)
+    updated = update_course_color(course_id, user.id, body.color)
+    if updated is None:
+        raise HTTPException(status_code=404, detail="Course not found")
+    return updated
 
 
 @app.delete("/courses/{course_id}", status_code=204)
@@ -611,11 +632,24 @@ def add_assignment(
 ):
     if not get_owned_week(week_id=week_id, user_id=user.id):
         raise HTTPException(401, "Access denied to week")
+    schedule = get_week_schedule_context(week_id)
+    if schedule is None:
+        raise HTTPException(status_code=404, detail="Week not found")
     assignment_id = uuid4()
+    due_date = due_datetime_for_assignment(
+        schedule["start_date"],
+        schedule["week_number"],
+        assignment.type,
+        assignment.due_date,
+    )
     valid_assignment = Assignment(
-        **assignment.model_dump(),
         id=assignment_id,
         week_id=week_id,
+        type=assignment.type,
+        name=assignment.name,
+        description=assignment.description,
+        rubric=assignment.rubric,
+        due_date=due_date,
     )
     try:
         assignment_id = add_assignment_to_db(assignment=valid_assignment)

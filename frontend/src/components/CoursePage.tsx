@@ -1,12 +1,20 @@
 import { useEffect, useRef, useState } from 'react'
-import { deleteCourse, fetchWeeks, type Course, type Week } from '../api'
+import {
+  deleteCourse,
+  fetchWeeks,
+  patchCourseColor,
+  type Course,
+  type Week,
+} from '../api'
 import { ConfirmDialog } from './ConfirmDialog'
+import { CourseColorPicker } from './CourseColorPicker'
 import { WeekWidget } from './WeekWidget'
 import './CoursePage.css'
 
 type CoursePageProps = {
   course: Course
   onDeleted?: (courseId: string) => void
+  onCourseUpdated?: (course: Course) => void
 }
 
 type WeeksState =
@@ -14,12 +22,18 @@ type WeeksState =
   | { status: 'error'; message: string }
   | { status: 'ready'; weeks: Week[] }
 
-export function CoursePage({ course, onDeleted }: CoursePageProps) {
+export function CoursePage({
+  course,
+  onDeleted,
+  onCourseUpdated,
+}: CoursePageProps) {
   const [state, setState] = useState<WeeksState>({ status: 'loading' })
   const [retryToken, setRetryToken] = useState(0)
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
+  const [colorBusy, setColorBusy] = useState(false)
+  const [colorError, setColorError] = useState<string | null>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
   const deleteButtonRef = useRef<HTMLButtonElement>(null)
 
@@ -71,11 +85,53 @@ export function CoursePage({ course, onDeleted }: CoursePageProps) {
     }
   }
 
+  async function handleColorChange(color: string) {
+    if (color.toLowerCase() === course.color.toLowerCase()) {
+      return
+    }
+    setColorBusy(true)
+    setColorError(null)
+    try {
+      const updated = await patchCourseColor(course.id, color)
+      onCourseUpdated?.(updated)
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Failed to update course color'
+      setColorError(message)
+    } finally {
+      setColorBusy(false)
+    }
+  }
+
   return (
     <div className="course-page">
-      <h1 ref={titleRef} className="course-page__title" tabIndex={-1}>
-        {course.name}
-      </h1>
+      <div className="course-page__heading">
+        <span
+          className="course-page__color-chip"
+          style={{ background: course.color }}
+          aria-hidden="true"
+        />
+        <h1 ref={titleRef} className="course-page__title" tabIndex={-1}>
+          {course.name}
+        </h1>
+      </div>
+
+      <CourseColorPicker
+        color={course.color}
+        disabled={colorBusy}
+        onChange={(color) => {
+          void handleColorChange(color)
+        }}
+      />
+
+      {colorError && (
+        <p
+          className="course-page__status course-page__status--error course-page__color-error"
+          role="alert"
+        >
+          {colorError}
+        </p>
+      )}
 
       <button
         ref={deleteButtonRef}
