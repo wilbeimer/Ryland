@@ -105,4 +105,43 @@ describe('CoursePage delete', () => {
     })
     expect(deleteCalls).toBe(1)
   })
+
+  it('shows an error and restores focus when delete fails', async () => {
+    const onDeleted = vi.fn()
+
+    mockApi([
+      (url) =>
+        url.pathname === `/api/courses/${COURSE.id}/weeks`
+          ? { body: [] }
+          : null,
+      (url, init) => {
+        if (
+          url.pathname === `/api/courses/${COURSE.id}` &&
+          init?.method === 'DELETE'
+        ) {
+          return { status: 500, body: { detail: 'boom' } }
+        }
+        return null
+      },
+    ])
+
+    const user = userEvent.setup()
+    render(<CoursePage course={COURSE} onDeleted={onDeleted} />)
+
+    await screen.findByRole('heading', { level: 1, name: COURSE.name })
+    const deleteButton = screen.getByRole('button', { name: 'Delete course' })
+    await user.click(deleteButton)
+    await user.click(screen.getByRole('button', { name: 'Delete' }))
+
+    expect(
+      await screen.findByRole('alert'),
+    ).toHaveTextContent(/Failed to delete course \(500\)/)
+    await waitFor(() => {
+      expect(
+        screen.queryByRole('alertdialog', { name: 'Delete this course?' }),
+      ).not.toBeInTheDocument()
+    })
+    expect(onDeleted).not.toHaveBeenCalled()
+    expect(deleteButton).toHaveFocus()
+  })
 })

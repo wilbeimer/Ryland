@@ -50,10 +50,13 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(() => resolveInitialTheme())
   const [view, setView] = useState<View>({ kind: 'courses' })
   const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [deletedNotice, setDeletedNotice] = useState<string | null>(null)
   const userNavigatedRef = useRef(false)
   /** Course id to restore keyboard focus to after leaving detail. */
   const restoreFocusCourseIdRef = useRef<string | null>(null)
   const courseButtonRefs = useRef(new Map<string, HTMLButtonElement>())
+  const coursesHeadingRef = useRef<HTMLHeadingElement>(null)
+  const focusCoursesHeadingRef = useRef(false)
 
   useEffect(() => {
     applyTheme(theme)
@@ -126,6 +129,11 @@ export default function App() {
     if (view.kind !== 'courses') {
       return
     }
+    if (focusCoursesHeadingRef.current) {
+      focusCoursesHeadingRef.current = false
+      coursesHeadingRef.current?.focus()
+      return
+    }
     const courseId = restoreFocusCourseIdRef.current
     if (!courseId) {
       return
@@ -138,6 +146,7 @@ export default function App() {
   function handleNavigate(label: NavLabel) {
     if (label === 'Courses') {
       userNavigatedRef.current = true
+      setDeletedNotice(null)
       if (view.kind === 'course') {
         restoreFocusCourseIdRef.current = view.course.id
       }
@@ -145,6 +154,7 @@ export default function App() {
       setView({ kind: 'courses' })
     } else if (label === 'Generate') {
       userNavigatedRef.current = true
+      setDeletedNotice(null)
       writeCourseIdToUrl(null)
       setView({ kind: 'generate' })
     }
@@ -158,6 +168,7 @@ export default function App() {
 
   function handleSelectCourse(course: Course) {
     userNavigatedRef.current = true
+    setDeletedNotice(null)
     restoreFocusCourseIdRef.current = course.id
     writeCourseIdToUrl(course.id)
     setView({ kind: 'course', course })
@@ -166,8 +177,10 @@ export default function App() {
   function handleCourseDeleted(courseId: string) {
     userNavigatedRef.current = true
     restoreFocusCourseIdRef.current = null
+    focusCoursesHeadingRef.current = true
     courseButtonRefs.current.delete(courseId)
     writeCourseIdToUrl(null)
+    setDeletedNotice('Course deleted')
     setState((current) =>
       current.status === 'ready'
         ? {
@@ -189,7 +202,11 @@ export default function App() {
           <ThemeToggle theme={theme} onToggle={handleThemeToggle} />
         </div>
         <NavBar active={navActive} onNavigate={handleNavigate} />
-        {view.kind === 'courses' && <h1 className="home__title">Courses</h1>}
+        {view.kind === 'courses' && (
+          <h1 ref={coursesHeadingRef} className="home__title" tabIndex={-1}>
+            Courses
+          </h1>
+        )}
       </header>
 
       <main className="home__main">
@@ -209,6 +226,12 @@ export default function App() {
 
         {view.kind === 'courses' && (
           <>
+            {deletedNotice && (
+              <p className="home__status" role="status">
+                {deletedNotice}
+              </p>
+            )}
+
             {state.status === 'loading' && (
               <p className="home__status" role="status">
                 Loading courses…

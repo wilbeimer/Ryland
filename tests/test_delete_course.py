@@ -127,3 +127,76 @@ def test_delete_course_unknown_returns_404(client):
     test_client, _database = client
     response = test_client.delete(f"/courses/{uuid4()}")
     assert response.status_code == 404
+
+
+def test_delete_other_users_course_returns_404_and_leaves_it(client):
+    test_client, database = client
+    other_user = uuid4()
+    course_id = uuid4()
+
+    add_user_to_db(
+        User(
+            id=other_user,
+            email="other@mail.com",
+            password=SecretStr("password"),
+        )
+    )
+    add_course_to_db(
+        Course(
+            id=course_id,
+            user_id=other_user,
+            name="Other Course",
+            description="Not yours",
+        )
+    )
+
+    response = test_client.delete(f"/courses/{course_id}")
+    assert response.status_code == 404
+
+    with sqlite3.connect(database) as conn:
+        row = conn.execute(
+            "SELECT id, user_id FROM Course WHERE id=?",
+            (str(course_id),),
+        ).fetchone()
+        assert row is not None
+        assert row[1] == str(other_user)
+
+
+def test_delete_course_blocked_while_generation_active(client):
+    test_client, database = client
+    from backend import endpoints
+    from backend.endpoints import GenerationJob
+
+    course_id = uuid4()
+    add_course_to_db(
+        Course(
+            id=course_id,
+            user_id=SEEDED_USER,
+            name="Building",
+            description="Still generating",
+        )
+    )
+
+    job = GenerationJob(
+        job_id=uuid4(),
+        user_id=SEEDED_USER,
+        status="running",
+        course_id=course_id,
+    )
+    endpoints._jobs[job.job_id] = job
+
+    try:
+        response = test_client.delete(f"/courses/{course_id}")
+        assert response.status_code == 409
+
+        with sqlite3.connect(database) as conn:
+            assert (
+                conn.execute(
+                    "SELECT COUNT(*) FROM Course WHERE id=?",
+                    (str(course_id),),
+                ).fetchone()[0]
+                == 1
+            )
+    finally:
+        endpoints._jobs.pop(job.job_id, None)
+        job.worker_done.set()

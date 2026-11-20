@@ -21,10 +21,17 @@ export function CoursePage({ course, onDeleted }: CoursePageProps) {
   const [deleting, setDeleting] = useState(false)
   const [deleteError, setDeleteError] = useState<string | null>(null)
   const titleRef = useRef<HTMLHeadingElement>(null)
+  const deleteButtonRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => {
     titleRef.current?.focus()
   }, [course.id])
+
+  useEffect(() => {
+    if (deleteError) {
+      deleteButtonRef.current?.focus()
+    }
+  }, [deleteError])
 
   useEffect(() => {
     let cancelled = false
@@ -71,6 +78,7 @@ export function CoursePage({ course, onDeleted }: CoursePageProps) {
       </h1>
 
       <button
+        ref={deleteButtonRef}
         type="button"
         className="course-page__delete"
         onClick={() => {
