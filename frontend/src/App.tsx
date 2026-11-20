@@ -11,6 +11,7 @@ import {
   resolveInitialTheme,
   type Theme,
 } from './theme'
+import { useGenerationJob } from './useGenerationJob'
 import './App.css'
 
 type LoadState =
@@ -50,6 +51,7 @@ export default function App() {
   const [theme, setTheme] = useState<Theme>(() => resolveInitialTheme())
   const [view, setView] = useState<View>({ kind: 'courses' })
   const [state, setState] = useState<LoadState>({ status: 'loading' })
+  const [coursesVersion, setCoursesVersion] = useState(0)
   const [deletedNotice, setDeletedNotice] = useState<string | null>(null)
   const userNavigatedRef = useRef(false)
   /** Course id to restore keyboard focus to after leaving detail. */
@@ -58,12 +60,21 @@ export default function App() {
   const coursesHeadingRef = useRef<HTMLHeadingElement>(null)
   const focusCoursesHeadingRef = useRef(false)
 
+  const {
+    phase: generationPhase,
+    beginGeneration,
+    resumedFromConflict,
+  } = useGenerationJob(() => {
+    setCoursesVersion((version) => version + 1)
+  })
+
   useEffect(() => {
     applyTheme(theme)
   }, [theme])
 
   useEffect(() => {
     let cancelled = false
+    const isInitialLoad = coursesVersion === 0
 
     fetchCourses()
       .then((courses) => {
@@ -84,22 +95,33 @@ export default function App() {
 
         // Once we know the list is empty, open Generate so home isn't a dead end —
         // but don't override a tab the user already chose while loading.
-        if (courses.length === 0 && !userNavigatedRef.current) {
+        if (
+          isInitialLoad &&
+          courses.length === 0 &&
+          !userNavigatedRef.current
+        ) {
           setView({ kind: 'generate' })
         }
       })
       .catch((error: unknown) => {
-        if (!cancelled) {
-          const message =
-            error instanceof Error ? error.message : 'Failed to load courses'
-          setState({ status: 'error', message })
+        if (cancelled) {
+          return
         }
+        const message =
+          error instanceof Error ? error.message : 'Failed to load courses'
+        // Initial load: show the error. Later refreshes (e.g. after generate)
+        // keep the last good list instead of wiping it.
+        setState((prev) =>
+          isInitialLoad || prev.status !== 'ready'
+            ? { status: 'error', message }
+            : prev,
+        )
       })
 
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [coursesVersion])
 
   useEffect(() => {
     function onPopState() {
@@ -210,10 +232,14 @@ export default function App() {
       </header>
 
       <main className="home__main">
-        {/* Keep Generate mounted (hidden) so #20's polling / form state can
-            survive tab switches once that PR lands. Do not remount via ternary. */}
+        {/* Keep Generate mounted so form fields survive tab switches;
+            job polling is owned by useGenerationJob above. */}
         <div hidden={view.kind !== 'generate'}>
-          <GeneratePage />
+          <GeneratePage
+            phase={generationPhase}
+            onBeginGeneration={beginGeneration}
+            resumedFromConflict={resumedFromConflict}
+          />
         </div>
 
         {view.kind === 'course' && (
