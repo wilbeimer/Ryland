@@ -143,6 +143,10 @@ export function CoursePage({ course, onDeleted }: CoursePageProps) {
           onCancel={() => {
             if (!deleting) {
               setConfirmOpen(false)
+              // Native dialog restore can be skipped on React unmount; put focus back.
+              queueMicrotask(() => {
+                deleteButtonRef.current?.focus()
+              })
             }
           }}
           onConfirm={() => {

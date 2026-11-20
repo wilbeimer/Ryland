@@ -58,6 +58,7 @@ describe('CoursePage delete', () => {
       screen.getByRole('alertdialog', { name: 'Delete this course?' }),
     ).toBeInTheDocument()
 
+    const deleteButton = screen.getByRole('button', { name: 'Delete course' })
     await user.click(screen.getByRole('button', { name: 'Cancel' }))
 
     await waitFor(() => {
@@ -70,6 +71,7 @@ describe('CoursePage delete', () => {
     expect(
       screen.getByRole('heading', { level: 1, name: COURSE.name }),
     ).toBeInTheDocument()
+    expect(deleteButton).toHaveFocus()
   })
 
   it('deletes after confirm and notifies the parent', async () => {
