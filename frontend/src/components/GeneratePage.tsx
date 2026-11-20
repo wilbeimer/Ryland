@@ -13,6 +13,7 @@ type FormFields = {
 export type GeneratePageProps = {
   phase: GenerationPhase
   onBeginGeneration: (body: GenerateCourseRequest) => void | Promise<void>
+  onSubmitAnswers: (answers: string[]) => void | Promise<void>
   /** True after a 409 resume until that build finishes. */
   resumedFromConflict?: boolean
 }
@@ -43,6 +44,108 @@ function allFieldsFilled(fields: FormFields): boolean {
   )
 }
 
+function clarifyingQuestions(phase: GenerationPhase): string[] | null {
+  if (phase.kind !== 'awaiting_input' && phase.kind !== 'answering') {
+    return null
+  }
+  if (!phase.job.questions || phase.job.questions.length === 0) {
+    return null
+  }
+  return phase.job.questions
+}
+
+type ClarifyingBoxProps = {
+  formId: string
+  questions: string[]
+  submitting: boolean
+  error: string | null
+  onSubmitAnswers: (answers: string[]) => void | Promise<void>
+}
+
+/** Own answer drafts so a new question set remounts clean state via `key`. */
+function ClarifyingBox({
+  formId,
+  questions,
+  submitting,
+  error,
+  onSubmitAnswers,
+}: ClarifyingBoxProps) {
+  const [answerDrafts, setAnswerDrafts] = useState(() =>
+    questions.map(() => ''),
+  )
+
+  function handleClarifySubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (submitting) {
+      return
+    }
+    const answers = answerDrafts.map((value) => value.trim())
+    if (answers.length !== questions.length || answers.some((value) => !value)) {
+      return
+    }
+    void onSubmitAnswers(answers)
+  }
+
+  const canAnswer =
+    !submitting &&
+    answerDrafts.length === questions.length &&
+    answerDrafts.every((value) => value.trim() !== '')
+
+  return (
+    <form
+      className="generate__clarify"
+      onSubmit={handleClarifySubmit}
+      noValidate
+      aria-labelledby={`${formId}-clarify-heading`}
+    >
+      <h2 id={`${formId}-clarify-heading`} className="generate__clarify-title">
+        A few clarifying questions
+      </h2>
+      <p className="generate__clarify-copy">
+        Answer these so generation can continue.
+      </p>
+
+      {questions.map((question, index) => (
+        <label key={`${index}-${question}`} className="generate__clarify-field">
+          <span className="generate__clarify-question">{question}</span>
+          <input
+            className="generate__input"
+            type="text"
+            name={`clarify-${index}`}
+            autoComplete="off"
+            value={answerDrafts[index] ?? ''}
+            disabled={submitting}
+            onChange={(event) => {
+              const value = event.target.value
+              setAnswerDrafts((prev) => {
+                const next = [...prev]
+                next[index] = value
+                return next
+              })
+            }}
+            required
+          />
+        </label>
+      ))}
+
+      <button
+        type="submit"
+        className="generate__cta"
+        disabled={!canAnswer}
+        aria-busy={submitting || undefined}
+      >
+        {submitting ? 'Submitting…' : 'Continue'}
+      </button>
+
+      {error && (
+        <p className="generate__status generate__status--error" role="alert">
+          {error}
+        </p>
+      )}
+    </form>
+  )
+}
+
 /**
  * Course generation form (Penpot Generation page).
  * Job polling lives in App via useGenerationJob so tab switches don't abort it.
@@ -50,12 +153,17 @@ function allFieldsFilled(fields: FormFields): boolean {
 export function GeneratePage({
   phase,
   onBeginGeneration,
+  onSubmitAnswers,
   resumedFromConflict = false,
 }: GeneratePageProps) {
   const formId = useId()
   const [fields, setFields] = useState<FormFields>(() =>
     emptyFields(detectTimezone()),
   )
+
+  const questions = clarifyingQuestions(phase)
+  const showClarifying = Boolean(questions?.length)
+  const answering = phase.kind === 'answering'
 
   function updateField<K extends keyof FormFields>(key: K, value: FormFields[K]) {
     setFields((prev) => ({ ...prev, [key]: value }))
@@ -66,7 +174,9 @@ export function GeneratePage({
     if (
       !allFieldsFilled(fields) ||
       phase.kind === 'submitting' ||
-      phase.kind === 'polling'
+      phase.kind === 'polling' ||
+      phase.kind === 'awaiting_input' ||
+      phase.kind === 'answering'
     ) {
       return
     }
@@ -79,12 +189,22 @@ export function GeneratePage({
     })
   }
 
-  const busy = phase.kind === 'submitting' || phase.kind === 'polling'
+  const busy =
+    phase.kind === 'submitting' ||
+    phase.kind === 'polling' ||
+    phase.kind === 'awaiting_input' ||
+    phase.kind === 'answering'
   const canSubmit = allFieldsFilled(fields) && !busy
 
   const statusMessage = (() => {
+    if (showClarifying) {
+      return null
+    }
     if (phase.kind === 'submitting') {
       return 'Starting course generation…'
+    }
+    if (phase.kind === 'answering') {
+      return 'Resuming course generation…'
     }
     if (phase.kind === 'polling') {
       return phase.job.detail || `Status: ${phase.job.status}`
@@ -120,9 +240,19 @@ export function GeneratePage({
       ? phase.job.detail
       : null
 
+  const clarifyError =
+    phase.kind === 'awaiting_input' &&
+    phase.job.detail &&
+    phase.job.detail !== 'Waiting for your answers'
+      ? phase.job.detail
+      : null
+
   const showConflictNotice =
     resumedFromConflict &&
-    (phase.kind === 'submitting' || phase.kind === 'polling')
+    (phase.kind === 'submitting' ||
+      phase.kind === 'polling' ||
+      phase.kind === 'awaiting_input' ||
+      phase.kind === 'answering')
 
   return (
     <section className="generate" aria-labelledby={`${formId}-heading`}>
@@ -208,6 +338,17 @@ export function GeneratePage({
           {busy ? 'Generating…' : 'Generate'}
         </button>
       </form>
+
+      {showClarifying && questions && (
+        <ClarifyingBox
+          key={questions.join('\0')}
+          formId={formId}
+          questions={questions}
+          submitting={answering}
+          error={clarifyError}
+          onSubmitAnswers={onSubmitAnswers}
+        />
+      )}
 
       {showConflictNotice && (
         <p className="generate__notice" role="status">

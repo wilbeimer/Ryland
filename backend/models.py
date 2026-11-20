@@ -168,10 +168,36 @@ class GenerateCourseRequest(BaseModel):
         return stripped
 
 
+class GenerateAnswersRequest(BaseModel):
+    answers: list[str] = Field(
+        min_length=1,
+        description="Answers aligned 1:1 with the pending clarifying questions",
+    )
+
+    @field_validator("answers")
+    @classmethod
+    def strip_and_require_answers(cls, value: list[str]) -> list[str]:
+        cleaned: list[str] = []
+        for item in value:
+            stripped = item.strip() if isinstance(item, str) else ""
+            if not stripped:
+                raise ValueError("answers must not be blank")
+            cleaned.append(stripped)
+        return cleaned
+
+
 class GenerateJobOut(BaseModel):
     job_id: UUID
-    status: Literal["pending", "running", "succeeded", "incomplete", "failed"]
+    status: Literal[
+        "pending",
+        "running",
+        "awaiting_input",
+        "succeeded",
+        "incomplete",
+        "failed",
+    ]
     detail: str | None = None
     course_id: UUID | None = None
     course: CourseOut | None = None
     error: str | None = None
+    questions: list[str] | None = None

@@ -63,6 +63,7 @@ export default function App() {
   const {
     phase: generationPhase,
     beginGeneration,
+    submitAnswers,
     resumedFromConflict,
   } = useGenerationJob(() => {
     setCoursesVersion((version) => version + 1)
@@ -238,6 +239,7 @@ export default function App() {
           <GeneratePage
             phase={generationPhase}
             onBeginGeneration={beginGeneration}
+            onSubmitAnswers={submitAnswers}
             resumedFromConflict={resumedFromConflict}
           />
         </div>

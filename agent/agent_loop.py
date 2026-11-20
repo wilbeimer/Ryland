@@ -34,6 +34,10 @@ class AgentRunResult:
     cancelled: bool = False
 
 
+class AskCancelled(Exception):
+    """Raised when a clarifying-question wait is cancelled (timeout/stop)."""
+
+
 class Agent:
     def __init__(self, user_id, client, model, tools=None, context_file=None, ask=None):
         self.user_id = user_id
@@ -84,11 +88,51 @@ def _stop_requested(should_stop: Callable[[], bool] | None) -> bool:
     return bool(should_stop and should_stop())
 
 
+def _question_from_ask_input(tool_input: object) -> str:
+    if isinstance(tool_input, dict):
+        return str(tool_input.get("question") or "").strip()
+    return ""
+
+
+def _resolve_ask_answers(
+    ask_blocks: list,
+    *,
+    agent: Agent,
+    on_ask: Callable[[list[str]], list[str]] | None,
+) -> dict[str, tuple[str, bool]]:
+    """Answer every ask_user in a turn together so the UI can show one box."""
+    if not ask_blocks:
+        return {}
+
+    questions = [
+        _question_from_ask_input(block.input) or "(no question provided)"
+        for block in ask_blocks
+    ]
+
+    if on_ask is not None:
+        answers = on_ask(questions)
+        if len(answers) != len(questions):
+            raise ValueError(
+                f"on_ask returned {len(answers)} answers for {len(questions)} questions"
+            )
+        return {
+            block.id: (str(answer), False)
+            for block, answer in zip(ask_blocks, answers, strict=True)
+        }
+
+    resolved: dict[str, tuple[str, bool]] = {}
+    for block, question in zip(ask_blocks, questions, strict=True):
+        result, is_error = agent.ask({"question": question})
+        resolved[block.id] = (str(result), is_error)
+    return resolved
+
+
 def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
     messages: list[dict] = [{"role": "user", "content": task}]
     on_progress: Callable[[str], None] | None = kwargs.get("on_progress")
     on_course_created: Callable[[str], None] | None = kwargs.get("on_course_created")
     should_stop: Callable[[], bool] | None = kwargs.get("should_stop")
+    on_ask: Callable[[list[str]], list[str]] | None = kwargs.get("on_ask")
     agent = Agent(
         user_id=user_id,
         client=kwargs["client"],
@@ -118,6 +162,24 @@ def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
 
         response = agent.make_call(messages)
 
+        ask_blocks = [
+            block
+            for block in response.content
+            if block.type == "tool_use" and block.name == "ask_user"
+        ]
+        try:
+            ask_answers = _resolve_ask_answers(
+                ask_blocks, agent=agent, on_ask=on_ask
+            )
+        except AskCancelled:
+            print("Agent stopped while waiting for clarifying answers")
+            return AgentRunResult(
+                course_id=course_id,
+                summary="\n".join(summary_parts),
+                completed=False,
+                cancelled=True,
+            )
+
         tool_results = []
         has_tool_use = False
         for block in response.content:
@@ -140,8 +202,12 @@ def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
                 if on_progress:
                     on_progress(f"Using {block.name}")
 
-                # Execute the tool
-                result, is_error = agent.process_tool_call(block.name, block.input)
+                if block.name == "ask_user":
+                    result, is_error = ask_answers[block.id]
+                else:
+                    result, is_error = agent.process_tool_call(
+                        block.name, block.input
+                    )
                 print(f"Result: {result}")
 
                 if (
@@ -211,12 +277,15 @@ def run_generation(
     on_progress: Callable[[str], None] | None = None,
     on_course_created: Callable[[str], None] | None = None,
     should_stop: Callable[[], bool] | None = None,
+    on_ask: Callable[[list[str]], list[str]] | None = None,
 ) -> AgentRunResult:
     """Run one course build without reading from the terminal.
 
     The brief is what the CLI collects through ask_user: goal, level, time
-    available, timezone, and the current date. If the model calls ask_user
-    anyway, the tool answers from that same brief.
+    available, timezone, and the current date. Prefer not calling ask_user for
+    those fields. When on_ask is provided (HTTP generate job), further
+    clarifying questions pause for the user instead of ending the job. Without
+    on_ask, ask_user is answered from the same brief.
     """
     api_key = os.getenv("ANTHROPIC_API_KEY")
     if not api_key:
@@ -247,6 +316,7 @@ def run_generation(
         model=MODEL,
         client=client,
         ask=answer_from_brief,
+        on_ask=on_ask,
         on_progress=on_progress,
         on_course_created=on_course_created,
         should_stop=should_stop,
