@@ -141,6 +141,63 @@ def get_courses(user_id: UUID) -> list[dict]:
     return [dict(row) for row in rows]
 
 
+def delete_course_from_db(course_id: UUID, user_id: UUID) -> bool:
+    """Delete a course owned by user_id, including weeks/assignments/quizzes.
+
+    Explicit cleanup (not only FK CASCADE) so SQLite stays consistent even when
+    PRAGMA foreign_keys is off, which is the default for this codebase.
+    """
+    with get_conn() as conn:
+        owned = conn.execute(
+            """
+            SELECT id
+            FROM Course
+            WHERE id=?
+            AND user_id=?
+            """,
+            (str(course_id), str(user_id)),
+        ).fetchone()
+        if owned is None:
+            return False
+
+        conn.execute(
+            """
+            DELETE FROM Quiz
+            WHERE assignment_id IN (
+                SELECT a.id
+                FROM Assignment a
+                JOIN Week w ON a.week_id = w.id
+                WHERE w.course_id = ?
+            )
+            """,
+            (str(course_id),),
+        )
+        conn.execute(
+            """
+            DELETE FROM Assignment
+            WHERE week_id IN (
+                SELECT id
+                FROM Week
+                WHERE course_id = ?
+            )
+            """,
+            (str(course_id),),
+        )
+        conn.execute(
+            "DELETE FROM Week WHERE course_id = ?",
+            (str(course_id),),
+        )
+        conn.execute(
+            """
+            DELETE FROM Course
+            WHERE id=?
+            AND user_id=?
+            """,
+            (str(course_id), str(user_id)),
+        )
+        return True
+
+
 # WEEKS
 def add_week_to_db(week: Week) -> str:
     try:
@@ -217,6 +274,7 @@ def get_assignments(week_id: UUID) -> list[dict]:
             SELECT id, type, name, description, rubric, due_date
             FROM Assignment
             WHERE week_id=?
+            ORDER BY due_date
             """,
             (str(week_id),),
         ).fetchall()

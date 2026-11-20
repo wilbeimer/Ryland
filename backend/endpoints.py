@@ -18,6 +18,7 @@ from backend.db import (
     add_course_to_db,
     add_quiz_to_db,
     add_week_to_db,
+    delete_course_from_db,
     get_assignments,
     get_courses,
     get_owned_assignment,
@@ -242,6 +243,11 @@ def _run_generation_job(
             return
         _update_job(job_id, status="running", detail=message)
 
+    def on_course_created(course_id: str) -> None:
+        if _job_should_stop(job_id):
+            return
+        _update_job(job_id, course_id=UUID(str(course_id)))
+
     try:
         if _job_should_stop(job_id):
             _fail_timed_out_job(job_id, None, None)
@@ -254,6 +260,7 @@ def _run_generation_job(
             time_available=body.time_available,
             timezone_name=body.timezone,
             on_progress=on_progress,
+            on_course_created=on_course_created,
             should_stop=lambda: _job_should_stop(job_id),
         )
         if result.cancelled or _job_should_stop(job_id):
@@ -338,6 +345,24 @@ def add_course(
         logger.exception("Constraint violation creating course")
         raise HTTPException(status_code=422, detail="Invalid course data")
     return {"id": course_id}
+
+
+@app.delete("/courses/{course_id}", status_code=204)
+def delete_course(
+    user: Annotated[User, Depends(get_current_user)],
+    course_id: UUID,
+):
+    get_owned_course(course_id, user.id)
+    with _jobs_lock:
+        for job in _jobs.values():
+            if job.course_id == course_id and not job.worker_done.is_set():
+                raise HTTPException(
+                    status_code=409,
+                    detail="Course is still being generated and cannot be deleted yet",
+                )
+    if not delete_course_from_db(course_id, user.id):
+        raise HTTPException(status_code=404, detail="Course not found")
+    return Response(status_code=204)
 
 
 @app.post("/courses/generate", status_code=202, response_model=GenerateJobOut)

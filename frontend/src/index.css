@@ -9,11 +9,13 @@
   --color-text-muted: #a8a394;
   --color-accent-primary: #e5446d;
   --color-accent-secondary: #f2676a;
-  --color-accent-pop: #532627;
+  /* Penpot dark accent.pop (assignment maroon / nav item border) */
+  --color-accent-pop: #914546;
   --color-status-success: #4cc38a;
   --color-status-warning: #e8b04b;
-  --color-status-failure: #ff5c5c;
-  /* Active nav text: Penpot accent.pop on accent.primary (~4.1:1) */
+  /* Lightened vs Penpot for AA on surface #343534 (~4.5:1 at 16px). */
+  --color-status-failure: #ff6e6e;
+  /* Active nav text: darkened for contrast on accent.primary (~4.1:1) */
   --color-nav-active-text: #532627;
   --radius: 10px;
   --radius-pill: 30px;
@@ -37,7 +39,7 @@
   --color-accent-primary: #e5446d;
   --color-accent-secondary: #f2676a;
   --color-accent-pop: #fe999b;
-  /* Darkened vs Penpot for AA on background #f1eedf (~4.5:1+ at 15px). */
+  /* Darkened vs Penpot for AA on background #f1eedf (~4.5:1+ at 15–18px). */
   --color-status-success: #1f7a52;
   --color-status-warning: #8a5a00;
   --color-status-failure: #c62828;

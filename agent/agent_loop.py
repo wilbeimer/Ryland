@@ -87,6 +87,7 @@ def _stop_requested(should_stop: Callable[[], bool] | None) -> bool:
 def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
     messages: list[dict] = [{"role": "user", "content": task}]
     on_progress: Callable[[str], None] | None = kwargs.get("on_progress")
+    on_course_created: Callable[[str], None] | None = kwargs.get("on_course_created")
     should_stop: Callable[[], bool] | None = kwargs.get("should_stop")
     agent = Agent(
         user_id=user_id,
@@ -151,6 +152,8 @@ def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
                     and course_id is None
                 ):
                     course_id = str(result["course_id"])
+                    if on_course_created:
+                        on_course_created(course_id)
 
                 tool_results.append(
                     {
@@ -206,6 +209,7 @@ def run_generation(
     time_available: str,
     timezone_name: str,
     on_progress: Callable[[str], None] | None = None,
+    on_course_created: Callable[[str], None] | None = None,
     should_stop: Callable[[], bool] | None = None,
 ) -> AgentRunResult:
     """Run one course build without reading from the terminal.
@@ -244,6 +248,7 @@ def run_generation(
         client=client,
         ask=answer_from_brief,
         on_progress=on_progress,
+        on_course_created=on_course_created,
         should_stop=should_stop,
     )
 
