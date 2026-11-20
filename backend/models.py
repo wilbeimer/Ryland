@@ -171,6 +171,7 @@ class GenerateCourseRequest(BaseModel):
 class GenerateAnswersRequest(BaseModel):
     answers: list[str] = Field(
         min_length=1,
+        max_length=20,
         description="Answers aligned 1:1 with the pending clarifying questions",
     )
 
@@ -182,6 +183,8 @@ class GenerateAnswersRequest(BaseModel):
             stripped = item.strip() if isinstance(item, str) else ""
             if not stripped:
                 raise ValueError("answers must not be blank")
+            if len(stripped) > 2000:
+                raise ValueError("each answer must be at most 2000 characters")
             cleaned.append(stripped)
         return cleaned
 

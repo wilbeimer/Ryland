@@ -69,6 +69,8 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
   })
   /** Set on 409 resume; cleared when that build reaches a terminal phase. */
   const [resumedFromConflict, setResumedFromConflict] = useState(false)
+  /** Submit failures for clarifying answers — kept out of poll `detail`. */
+  const [answerError, setAnswerError] = useState<string | null>(null)
   const notifiedJobRef = useRef<string | null>(null)
   const onCourseSavedRef = useRef(onCourseSaved)
   const answeringRef = useRef(false)
@@ -125,6 +127,7 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
           return
         }
         answeringRef.current = false
+        setAnswerError(null)
         setStoredActiveJobId(null)
         setActiveJobId(null)
         setResumedFromConflict(false)
@@ -157,6 +160,7 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
           return
         }
         answeringRef.current = false
+        setAnswerError(null)
         setStoredActiveJobId(null)
         setActiveJobId(null)
         setResumedFromConflict(false)
@@ -183,6 +187,7 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
 
     notifiedJobRef.current = null
     answeringRef.current = false
+    setAnswerError(null)
     setResumedFromConflict(false)
     setPhase({ kind: 'submitting' })
 
@@ -216,22 +221,19 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
 
     const job = phase.job
     answeringRef.current = true
+    setAnswerError(null)
     setPhase({ kind: 'answering', job })
 
     try {
       const updated = await submitGenerationAnswers(job.job_id, { answers })
       answeringRef.current = false
+      setAnswerError(null)
       setPhase(phaseFromJob(updated))
     } catch (error: unknown) {
       answeringRef.current = false
-      // Stay on the clarifying box so the user can retry.
-      setPhase({
-        kind: 'awaiting_input',
-        job: {
-          ...job,
-          detail: errorMessage(error),
-        },
-      })
+      // Stay on the clarifying box; keep the error out of poll `detail`.
+      setAnswerError(errorMessage(error))
+      setPhase({ kind: 'awaiting_input', job })
     }
   }
 
@@ -239,6 +241,7 @@ export function useGenerationJob(onCourseSaved?: (job: GenerationJob) => void) {
     phase,
     beginGeneration,
     submitAnswers,
+    answerError,
     resumedFromConflict,
   }
 }

@@ -168,9 +168,7 @@ def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
             if block.type == "tool_use" and block.name == "ask_user"
         ]
         try:
-            ask_answers = _resolve_ask_answers(
-                ask_blocks, agent=agent, on_ask=on_ask
-            )
+            ask_answers = _resolve_ask_answers(ask_blocks, agent=agent, on_ask=on_ask)
         except AskCancelled:
             print("Agent stopped while waiting for clarifying answers")
             return AgentRunResult(
@@ -205,9 +203,7 @@ def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
                 if block.name == "ask_user":
                     result, is_error = ask_answers[block.id]
                 else:
-                    result, is_error = agent.process_tool_call(
-                        block.name, block.input
-                    )
+                    result, is_error = agent.process_tool_call(block.name, block.input)
                 print(f"Result: {result}")
 
                 if (

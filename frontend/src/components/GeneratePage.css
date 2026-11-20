@@ -126,6 +126,15 @@
   line-height: 1.2;
 }
 
+.generate__clarify-title:focus {
+  outline: none;
+}
+
+.generate__clarify-title:focus-visible {
+  outline: 2px solid var(--color-accent-primary);
+  outline-offset: 2px;
+}
+
 .generate__clarify-copy {
   margin: 0;
   max-width: 42ch;

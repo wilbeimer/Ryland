@@ -1,4 +1,4 @@
-import { useId, useState, type FormEvent } from 'react'
+import { useEffect, useId, useRef, useState, type FormEvent } from 'react'
 import type { GenerateCourseRequest } from '../api'
 import type { GenerationPhase } from '../useGenerationJob'
 import './GeneratePage.css'
@@ -14,6 +14,8 @@ export type GeneratePageProps = {
   phase: GenerationPhase
   onBeginGeneration: (body: GenerateCourseRequest) => void | Promise<void>
   onSubmitAnswers: (answers: string[]) => void | Promise<void>
+  /** Failed clarifying-answer submit; survives poll updates. */
+  answerError?: string | null
   /** True after a 409 resume until that build finishes. */
   resumedFromConflict?: boolean
 }
@@ -70,9 +72,20 @@ function ClarifyingBox({
   error,
   onSubmitAnswers,
 }: ClarifyingBoxProps) {
+  const headingRef = useRef<HTMLHeadingElement>(null)
+  const firstInputRef = useRef<HTMLInputElement>(null)
   const [answerDrafts, setAnswerDrafts] = useState(() =>
     questions.map(() => ''),
   )
+
+  useEffect(() => {
+    const heading = headingRef.current
+    if (heading) {
+      heading.focus()
+      return
+    }
+    firstInputRef.current?.focus()
+  }, [])
 
   function handleClarifySubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -98,7 +111,12 @@ function ClarifyingBox({
       noValidate
       aria-labelledby={`${formId}-clarify-heading`}
     >
-      <h2 id={`${formId}-clarify-heading`} className="generate__clarify-title">
+      <h2
+        id={`${formId}-clarify-heading`}
+        className="generate__clarify-title"
+        ref={headingRef}
+        tabIndex={-1}
+      >
         A few clarifying questions
       </h2>
       <p className="generate__clarify-copy">
@@ -109,10 +127,12 @@ function ClarifyingBox({
         <label key={`${index}-${question}`} className="generate__clarify-field">
           <span className="generate__clarify-question">{question}</span>
           <input
+            ref={index === 0 ? firstInputRef : undefined}
             className="generate__input"
             type="text"
             name={`clarify-${index}`}
             autoComplete="off"
+            maxLength={2000}
             value={answerDrafts[index] ?? ''}
             disabled={submitting}
             onChange={(event) => {
@@ -154,6 +174,7 @@ export function GeneratePage({
   phase,
   onBeginGeneration,
   onSubmitAnswers,
+  answerError = null,
   resumedFromConflict = false,
 }: GeneratePageProps) {
   const formId = useId()
@@ -197,8 +218,10 @@ export function GeneratePage({
   const canSubmit = allFieldsFilled(fields) && !busy
 
   const statusMessage = (() => {
-    if (showClarifying) {
-      return null
+    if (showClarifying && questions) {
+      const count = questions.length
+      const noun = count === 1 ? 'question' : 'questions'
+      return `Generation paused: ${count} ${noun}`
     }
     if (phase.kind === 'submitting') {
       return 'Starting course generation…'
@@ -237,13 +260,6 @@ export function GeneratePage({
     phase.kind === 'done' &&
     phase.job.detail &&
     phase.job.status === 'succeeded'
-      ? phase.job.detail
-      : null
-
-  const clarifyError =
-    phase.kind === 'awaiting_input' &&
-    phase.job.detail &&
-    phase.job.detail !== 'Waiting for your answers'
       ? phase.job.detail
       : null
 
@@ -345,7 +361,7 @@ export function GeneratePage({
           formId={formId}
           questions={questions}
           submitting={answering}
-          error={clarifyError}
+          error={answerError}
           onSubmitAnswers={onSubmitAnswers}
         />
       )}
@@ -361,6 +377,7 @@ export function GeneratePage({
           statusMessage ? '' : ' generate__status--empty'
         }`}
         role="status"
+        aria-live="polite"
       >
         {statusMessage}
         {statusDetail && (

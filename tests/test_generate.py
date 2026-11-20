@@ -20,7 +20,12 @@ from agent.agent_loop import (
 )
 from agent.tools import ask_user
 from backend.db import add_course_to_db, add_user_to_db, init_db
-from backend.endpoints import _ACTIVE_JOB_TIMEOUT_SECONDS, allowed_origins, app
+from backend.endpoints import (
+    _ACTIVE_JOB_TIMEOUT_SECONDS,
+    _AWAITING_INPUT_TIMEOUT_SECONDS,
+    allowed_origins,
+    app,
+)
 from backend.models import Course, User
 
 SEEDED_USER = UUID("00000000-0000-0000-0000-000000000001")
@@ -605,6 +610,95 @@ def test_generate_pauses_for_clarifying_answers_then_resumes(client, monkeypatch
         json={"answers": ["too late"]},
     )
     assert not_waiting.status_code == 409
+
+
+def test_awaiting_input_does_not_consume_agent_timeout(client, monkeypatch):
+    clock = {"now": 1_000.0}
+    monkeypatch.setattr("backend.endpoints.time.monotonic", lambda: clock["now"])
+    asked = threading.Event()
+    release = threading.Event()
+    course_id = uuid4()
+
+    def fake_run_generation(**kwargs):
+        on_ask = kwargs["on_ask"]
+        asked.set()
+        answers = on_ask(["Still there?"])
+        assert answers == ["yes"]
+        assert release.wait(timeout=2)
+        add_course_to_db(
+            Course(
+                id=course_id,
+                user_id=kwargs["user_id"],
+                name="SQL Joins",
+                description=kwargs["goal"],
+            )
+        )
+        return AgentRunResult(
+            course_id=str(course_id),
+            summary="Finished after a slow answer",
+            completed=True,
+        )
+
+    monkeypatch.setattr("backend.endpoints.run_generation", fake_run_generation)
+
+    created = client.post("/courses/generate", json=GENERATE_BODY)
+    job_id = created.json()["job_id"]
+    assert asked.wait(timeout=2)
+    wait_for_status(client, job_id, "awaiting_input")
+
+    # Wall clock exceeds the agent timeout while waiting on the learner.
+    clock["now"] += _ACTIVE_JOB_TIMEOUT_SECONDS + 120
+    still_waiting = client.get(f"/courses/generate/{job_id}")
+    assert still_waiting.status_code == 200
+    assert still_waiting.json()["status"] == "awaiting_input"
+    assert still_waiting.json()["error"] is None
+
+    resumed = client.post(
+        f"/courses/generate/{job_id}/answers",
+        json={"answers": ["yes"]},
+    )
+    assert resumed.status_code == 200
+    assert resumed.json()["status"] == "running"
+    release.set()
+
+    finished = wait_for_job(client, job_id)
+    assert finished["status"] == "succeeded"
+    assert finished["course_id"] == str(course_id)
+
+
+def test_awaiting_input_has_its_own_timeout(client, monkeypatch):
+    clock = {"now": 1_000.0}
+    monkeypatch.setattr("backend.endpoints.time.monotonic", lambda: clock["now"])
+    asked = threading.Event()
+
+    def fake_run_generation(**kwargs):
+        asked.set()
+        try:
+            kwargs["on_ask"](["Are you still there?"])
+        except AskCancelled:
+            return AgentRunResult(
+                course_id=None,
+                summary="",
+                completed=False,
+                cancelled=True,
+            )
+        return AgentRunResult(course_id=None, summary="", completed=True)
+
+    monkeypatch.setattr("backend.endpoints.run_generation", fake_run_generation)
+
+    created = client.post("/courses/generate", json=GENERATE_BODY)
+    job_id = created.json()["job_id"]
+    assert asked.wait(timeout=2)
+    wait_for_status(client, job_id, "awaiting_input")
+
+    clock["now"] += _AWAITING_INPUT_TIMEOUT_SECONDS + 1
+    stale = client.get(f"/courses/generate/{job_id}")
+    assert stale.status_code == 200
+    assert "waiting too long for answers" in stale.json()["detail"]
+
+    finished = wait_for_job(client, job_id)
+    assert finished["status"] == "failed"
+    assert "Waited too long for clarifying answers" in finished["error"]
 
 
 def test_run_agent_batches_ask_user_through_on_ask(monkeypatch):
