@@ -42,7 +42,7 @@
 }
 
 .home__status--error {
-  color: var(--color-accent-primary);
+  color: var(--color-status-failure);
 }
 
 .course-list {

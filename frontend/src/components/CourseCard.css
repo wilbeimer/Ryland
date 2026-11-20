@@ -11,6 +11,28 @@
   animation: course-card-in 420ms ease backwards;
 }
 
+/* Full-card hit target; heading/description stay outside the button. */
+.course-card--interactive {
+  position: relative;
+}
+
+.course-card__open {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.course-card__open:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
 .course-card__name {
   margin: 0;
   color: var(--color-text-primary);

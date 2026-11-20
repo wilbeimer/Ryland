@@ -90,6 +90,7 @@ def test_generate_polls_until_course_is_saved(client, monkeypatch):
         time_available,
         timezone_name,
         on_progress=None,
+        on_course_created=None,
         should_stop=None,
     ):
         assert goal == GENERATE_BODY["goal"]
@@ -108,6 +109,8 @@ def test_generate_polls_until_course_is_saved(client, monkeypatch):
                 description=goal,
             )
         )
+        if on_course_created:
+            on_course_created(str(course_id))
         return AgentRunResult(
             course_id=str(course_id), summary="Built SQL Joins", completed=True
         )
@@ -173,6 +176,7 @@ def test_turn_cap_after_create_course_is_incomplete(client, monkeypatch):
         time_available,
         timezone_name,
         on_progress=None,
+        on_course_created=None,
         should_stop=None,
     ):
         add_course_to_db(
@@ -183,6 +187,8 @@ def test_turn_cap_after_create_course_is_incomplete(client, monkeypatch):
                 description=goal,
             )
         )
+        if on_course_created:
+            on_course_created(str(course_id))
         return AgentRunResult(
             course_id=str(course_id),
             summary="Stopped mid-outline",
