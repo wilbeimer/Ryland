@@ -2,13 +2,15 @@
 
 import sqlite3
 from contextlib import contextmanager
-from datetime import date
+from datetime import UTC, date, datetime
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo
 
 import pytest
 from fastapi.testclient import TestClient
 from pydantic import SecretStr
 
+from backend.course_dates import due_datetime_for_assignment
 from backend.db import add_course_to_db, add_user_to_db, add_week_to_db, init_db
 from backend.endpoints import app
 from backend.models import Course, User, Week
@@ -82,3 +84,14 @@ def test_course_color_patch_and_week_date_range(client):
     assert week["week_number"] == 2
     assert week["start_date"] == "2026-03-09"
     assert week["end_date"] == "2026-03-15"
+
+
+def test_due_datetime_uses_learner_timezone():
+    """UTC instant on week start can be the prior local day; fallback stays tz-aware."""
+    tz = ZoneInfo("America/New_York")
+    start = date(2026, 3, 2)
+    # 2026-03-02T01:00Z == 2026-03-01T20:00 America/New_York (before week start).
+    provided = datetime(2026, 3, 2, 1, 0, tzinfo=UTC)
+    result = due_datetime_for_assignment(start, 1, "text", provided, tz=tz)
+    assert result == datetime(2026, 3, 6, 23, 59, tzinfo=tz)
+    assert result.tzinfo is not None

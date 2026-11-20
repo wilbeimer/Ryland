@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta, tzinfo
 from uuid import UUID, uuid4
 
 from pydantic import ValidationError
@@ -258,7 +258,11 @@ def create_week(tool_input) -> tuple[dict[str, str], bool]:
         return {"content": f"Missing required fields {e}"}, True
 
 
-def create_assignment(tool_input) -> tuple[dict[str, str], bool]:
+def create_assignment(
+    tool_input,
+    *,
+    tz: tzinfo = UTC,
+) -> tuple[dict[str, str], bool]:
     assignment_id = uuid4()
     try:
         week_id = tool_input["week_id"]
@@ -275,6 +279,7 @@ def create_assignment(tool_input) -> tuple[dict[str, str], bool]:
             schedule["week_number"],
             assignment_type,
             provided,
+            tz=tz,
         )
         assignment = Assignment(
             id=assignment_id,

@@ -1,14 +1,18 @@
 import json
 import sqlite3
 from contextlib import contextmanager
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from uuid import UUID
 
 from fastapi import HTTPException
 from pydantic import SecretStr
 
-from backend.course_dates import DEFAULT_COURSE_COLOR, week_date_range
+from backend.course_dates import (
+    DEFAULT_COURSE_COLOR,
+    start_date_from_due,
+    week_date_range,
+)
 from backend.exceptions import (
     DuplicateWeekError,
     InvalidAssignmentError,
@@ -34,6 +38,45 @@ def get_conn(path=DB_PATH):
         conn.close()
 
 
+def _parse_stored_datetime(value: str) -> datetime:
+    return datetime.fromisoformat(value)
+
+
+def _backfill_course_start_dates(conn: sqlite3.Connection) -> None:
+    """Set start_date from earliest due date minus that week's offset.
+
+    Course has no created_at column, so courses with no assignments fall back
+    to today. This keeps legacy week ranges aligned with stored due dates.
+    """
+    courses = conn.execute("SELECT id FROM Course").fetchall()
+    today = date.today().isoformat()
+    for course in courses:
+        row = conn.execute(
+            """
+            SELECT a.due_date AS due_date, w.week_number AS week_number
+            FROM Assignment a
+            JOIN Week w ON a.week_id = w.id
+            WHERE w.course_id = ?
+            ORDER BY a.due_date ASC
+            LIMIT 1
+            """,
+            (course["id"],),
+        ).fetchone()
+        if row is None:
+            start = today
+        else:
+            due = _parse_stored_datetime(row["due_date"])
+            start = start_date_from_due(due, int(row["week_number"])).isoformat()
+        conn.execute(
+            """
+            UPDATE Course
+            SET start_date = ?
+            WHERE id = ?
+            """,
+            (start, course["id"]),
+        )
+
+
 def _ensure_course_columns(conn: sqlite3.Connection) -> None:
     """Add color/start_date for existing DBs without rewriting the table."""
     columns = {
@@ -45,10 +88,9 @@ def _ensure_course_columns(conn: sqlite3.Connection) -> None:
             ADD COLUMN color TEXT NOT NULL DEFAULT '{DEFAULT_COURSE_COLOR}'
             """)
     if "start_date" not in columns:
-        conn.execute("""
-            ALTER TABLE Course
-            ADD COLUMN start_date TEXT NOT NULL DEFAULT (date('now'))
-            """)
+        # Nullable first, then backfill from due dates (not deploy-day).
+        conn.execute("ALTER TABLE Course ADD COLUMN start_date TEXT")
+        _backfill_course_start_dates(conn)
 
 
 def init_db():
@@ -209,9 +251,11 @@ def get_week_schedule_context(week_id: UUID) -> dict | None:
         ).fetchone()
     if row is None:
         return None
+    raw_start = row["start_date"]
+    start = date.fromisoformat(raw_start) if raw_start else date.today()
     return {
         "week_number": int(row["week_number"]),
-        "start_date": date.fromisoformat(row["start_date"]),
+        "start_date": start,
     }
 
 
@@ -317,7 +361,8 @@ def get_weeks(course_id: UUID) -> list[dict]:
         ).fetchall()
     if course is None:
         return []
-    start = date.fromisoformat(course["start_date"])
+    raw_start = course["start_date"]
+    start = date.fromisoformat(raw_start) if raw_start else date.today()
     result = []
     for row in rows:
         item = dict(row)

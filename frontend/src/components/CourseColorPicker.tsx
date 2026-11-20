@@ -2,13 +2,13 @@ import './CourseColorPicker.css'
 
 /** Accent swatches only — course name stays on primary text for AA contrast. */
 const COURSE_COLORS = [
-  '#e5446d',
-  '#c62828',
-  '#0d7377',
-  '#1f7a52',
-  '#8a5a00',
-  '#2f6fed',
-  '#455a64',
+  { value: '#e5446d', name: 'Rose' },
+  { value: '#c62828', name: 'Red' },
+  { value: '#0d7377', name: 'Teal' },
+  { value: '#1f7a52', name: 'Green' },
+  { value: '#8a5a00', name: 'Amber' },
+  { value: '#2f6fed', name: 'Blue' },
+  { value: '#455a64', name: 'Slate' },
 ] as const
 
 type CourseColorPickerProps = {
@@ -26,22 +26,22 @@ export function CourseColorPicker({
 
   return (
     <div className="course-color-picker" role="group" aria-label="Course color">
-      {COURSE_COLORS.map((option) => {
-        const isSelected = option === selected
+      {COURSE_COLORS.map(({ value, name }) => {
+        const isSelected = value === selected
         return (
           <button
-            key={option}
+            key={value}
             type="button"
             className={
               isSelected
                 ? 'course-color-picker__option course-color-picker__option--selected'
                 : 'course-color-picker__option'
             }
-            style={{ background: option }}
-            aria-label={`Set course color to ${option}`}
+            style={{ background: value }}
+            aria-label={`Set course color to ${name}`}
             aria-pressed={isSelected}
             disabled={disabled}
-            onClick={() => onChange(option)}
+            onClick={() => onChange(value)}
           />
         )
       })}

@@ -48,6 +48,7 @@ class Agent:
         context_file=None,
         ask=None,
         course_start_date: date | None = None,
+        timezone_name: str | None = None,
     ):
         self.user_id = user_id
         self.client = client
@@ -55,6 +56,10 @@ class Agent:
         self.tools = tools if tools is not None else []
         self.ask = ask if ask is not None else ask_user
         self.course_start_date = course_start_date or date.today()
+        try:
+            self.due_tz = ZoneInfo(timezone_name) if timezone_name else UTC
+        except (ZoneInfoNotFoundError, ValueError):
+            self.due_tz = UTC
 
         self.system_prompt = ""
         if context_file:
@@ -74,7 +79,7 @@ class Agent:
             case "create_week":
                 return create_week(tool_input)
             case "create_assignment":
-                return create_assignment(tool_input)
+                return create_assignment(tool_input, tz=self.due_tz)
             case "create_quiz":
                 return create_quiz(tool_input)
             case "ask_user":
@@ -155,6 +160,7 @@ def run_agent(user_id: UUID, task: str, **kwargs) -> AgentRunResult:
         context_file=CONTEXT_FILE,
         ask=kwargs.get("ask"),
         course_start_date=kwargs.get("course_start_date"),
+        timezone_name=kwargs.get("timezone_name"),
     )
 
     course_id = None
@@ -336,6 +342,7 @@ def run_generation(
         on_course_created=on_course_created,
         should_stop=should_stop,
         course_start_date=course_start_date,
+        timezone_name=timezone_name,
     )
 
 
