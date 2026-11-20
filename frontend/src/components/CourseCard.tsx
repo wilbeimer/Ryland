@@ -20,7 +20,7 @@ export const CourseCard = forwardRef<HTMLButtonElement, CourseCardProps>(
         }
         style={{ animationDelay: `${80 + index * 40}ms` }}
       >
-        <h2 id={nameId} className="course-card__name" title={course.name}>
+        <h2 id={nameId} className="course-card__name">
           {course.name}
         </h2>
         <div className="course-card__rule" aria-hidden="true" />
@@ -31,6 +31,7 @@ export const CourseCard = forwardRef<HTMLButtonElement, CourseCardProps>(
             type="button"
             className="course-card__open"
             aria-labelledby={nameId}
+            title={course.name}
             onClick={() => onSelect(course)}
           />
         )}
