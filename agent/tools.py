@@ -67,6 +67,9 @@ TOOLS = [
         "name": "create_assignment",
         "description": (
             "Creates a new assignment within a week and adds it to the database. "
+            "A quiz is a post-learning test of only that week's taught material: "
+            "create it after the week's text work, give it a later due date, and "
+            "never use it as a diagnostic or pre-test of prior knowledge. "
             "Returns the new assignment_id. If assignment_type is 'quiz', "
             "follow up with create_quiz using that assignment_id."
         ),
@@ -144,7 +147,9 @@ TOOLS = [
         "name": "create_quiz",
         "description": (
             "Creates a quiz and its questions for an existing assignment whose "
-            "assignment_type is 'quiz'. Do not use this for text assignments."
+            "assignment_type is 'quiz'. The quiz is a post-learning test of that "
+            "week's taught material only — never a diagnostic or pre-test. "
+            "Do not use this for text assignments."
         ),
         "input_schema": {
             "type": "object",
