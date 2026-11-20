@@ -11,13 +11,23 @@
   animation: course-card-in 420ms ease backwards;
 }
 
-.course-card--interactive {
+.course-card__open {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
   cursor: pointer;
 }
 
-.course-card--interactive:focus-visible {
+.course-card__open:focus-visible {
   outline: 2px solid var(--color-text-primary);
   outline-offset: 2px;
+  border-radius: calc(var(--radius) - 2px);
 }
 
 .course-card__name {

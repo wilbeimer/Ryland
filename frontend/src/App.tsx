@@ -18,16 +18,42 @@ type LoadState =
   | { status: 'error'; message: string }
   | { status: 'ready'; courses: Course[] }
 
+/** Tab / detail selection. Course detail is also mirrored in `?course=<id>`. */
 type View =
   | { kind: 'courses' }
   | { kind: 'generate' }
   | { kind: 'course'; course: Course }
+
+function readCourseIdFromUrl(): string | null {
+  try {
+    return new URLSearchParams(window.location.search).get('course')
+  } catch {
+    return null
+  }
+}
+
+function writeCourseIdToUrl(courseId: string | null): void {
+  const url = new URL(window.location.href)
+  if (courseId) {
+    url.searchParams.set('course', courseId)
+  } else {
+    url.searchParams.delete('course')
+  }
+  const next = `${url.pathname}${url.search}${url.hash}`
+  const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
+  if (next !== current) {
+    window.history.pushState({ courseId }, '', next)
+  }
+}
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => resolveInitialTheme())
   const [view, setView] = useState<View>({ kind: 'courses' })
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const userNavigatedRef = useRef(false)
+  /** Course id to restore keyboard focus to after leaving detail. */
+  const restoreFocusCourseIdRef = useRef<string | null>(null)
+  const courseButtonRefs = useRef(new Map<string, HTMLButtonElement>())
 
   useEffect(() => {
     applyTheme(theme)
@@ -42,6 +68,17 @@ export default function App() {
           return
         }
         setState({ status: 'ready', courses })
+
+        const courseId = readCourseIdFromUrl()
+        if (courseId) {
+          const match = courses.find((course) => course.id === courseId)
+          if (match) {
+            setView({ kind: 'course', course: match })
+            return
+          }
+          writeCourseIdToUrl(null)
+        }
+
         // Once we know the list is empty, open Generate so home isn't a dead end —
         // but don't override a tab the user already chose while loading.
         if (courses.length === 0 && !userNavigatedRef.current) {
@@ -61,12 +98,54 @@ export default function App() {
     }
   }, [])
 
+  useEffect(() => {
+    function onPopState() {
+      const courseId = readCourseIdFromUrl()
+      if (!courseId) {
+        setView((current) =>
+          current.kind === 'course' ? { kind: 'courses' } : current,
+        )
+        return
+      }
+      setState((current) => {
+        if (current.status === 'ready') {
+          const match = current.courses.find((course) => course.id === courseId)
+          if (match) {
+            setView({ kind: 'course', course: match })
+          }
+        }
+        return current
+      })
+    }
+
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  useEffect(() => {
+    if (view.kind !== 'courses') {
+      return
+    }
+    const courseId = restoreFocusCourseIdRef.current
+    if (!courseId) {
+      return
+    }
+    restoreFocusCourseIdRef.current = null
+    const button = courseButtonRefs.current.get(courseId)
+    button?.focus()
+  }, [view])
+
   function handleNavigate(label: NavLabel) {
     if (label === 'Courses') {
       userNavigatedRef.current = true
+      if (view.kind === 'course') {
+        restoreFocusCourseIdRef.current = view.course.id
+      }
+      writeCourseIdToUrl(null)
       setView({ kind: 'courses' })
     } else if (label === 'Generate') {
       userNavigatedRef.current = true
+      writeCourseIdToUrl(null)
       setView({ kind: 'generate' })
     }
   }
@@ -79,6 +158,8 @@ export default function App() {
 
   function handleSelectCourse(course: Course) {
     userNavigatedRef.current = true
+    restoreFocusCourseIdRef.current = course.id
+    writeCourseIdToUrl(course.id)
     setView({ kind: 'course', course })
   }
 
@@ -96,11 +177,17 @@ export default function App() {
       </header>
 
       <main className="home__main">
-        {view.kind === 'generate' ? (
+        {/* Keep Generate mounted (hidden) so #20's polling / form state can
+            survive tab switches once that PR lands. Do not remount via ternary. */}
+        <div hidden={view.kind !== 'generate'}>
           <GeneratePage />
-        ) : view.kind === 'course' ? (
-          <CoursePage course={view.course} />
-        ) : (
+        </div>
+
+        {view.kind === 'course' && (
+          <CoursePage key={view.course.id} course={view.course} />
+        )}
+
+        {view.kind === 'courses' && (
           <>
             {state.status === 'loading' && (
               <p className="home__status" role="status">
@@ -126,6 +213,13 @@ export default function App() {
                     course={course}
                     index={index}
                     onSelect={handleSelectCourse}
+                    ref={(node) => {
+                      if (node) {
+                        courseButtonRefs.current.set(course.id, node)
+                      } else {
+                        courseButtonRefs.current.delete(course.id)
+                      }
+                    }}
                   />
                 ))}
               </section>

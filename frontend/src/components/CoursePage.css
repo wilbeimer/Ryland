@@ -37,7 +37,41 @@
 }
 
 .course-page__status--error {
-  color: var(--color-accent-primary);
+  color: var(--color-status-failure);
+}
+
+.course-page__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: 48px;
+}
+
+.course-page__error .course-page__status {
+  margin-top: 0;
+}
+
+.course-page__retry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.course-page__retry:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
 }
 
 @keyframes course-title-in {

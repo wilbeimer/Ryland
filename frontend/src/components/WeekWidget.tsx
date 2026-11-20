@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react'
 import { fetchAssignments, type Assignment, type Week } from '../api'
-import { AssignmentWidget } from './AssignmentWidget'
-import { QuizWidget } from './QuizWidget'
+import { AssignmentCard } from './AssignmentCard'
 import './WeekWidget.css'
 
 type WeekWidgetProps = {
@@ -16,6 +15,7 @@ type ItemsState =
 
 export function WeekWidget({ week, index = 0 }: WeekWidgetProps) {
   const [state, setState] = useState<ItemsState>({ status: 'loading' })
+  const [retryToken, setRetryToken] = useState(0)
 
   useEffect(() => {
     let cancelled = false
@@ -39,7 +39,7 @@ export function WeekWidget({ week, index = 0 }: WeekWidgetProps) {
     return () => {
       cancelled = true
     }
-  }, [week.id])
+  }, [week.id, retryToken])
 
   return (
     <section
@@ -58,9 +58,21 @@ export function WeekWidget({ week, index = 0 }: WeekWidgetProps) {
       )}
 
       {state.status === 'error' && (
-        <p className="week-widget__status week-widget__status--error" role="alert">
-          {state.message}
-        </p>
+        <div className="week-widget__error" role="alert">
+          <p className="week-widget__status week-widget__status--error">
+            {state.message}
+          </p>
+          <button
+            type="button"
+            className="week-widget__retry"
+            onClick={() => {
+              setState({ status: 'loading' })
+              setRetryToken((token) => token + 1)
+            }}
+          >
+            Retry
+          </button>
+        </div>
       )}
 
       {state.status === 'ready' && state.items.length === 0 && (
@@ -68,13 +80,13 @@ export function WeekWidget({ week, index = 0 }: WeekWidgetProps) {
       )}
 
       {state.status === 'ready' &&
-        state.items.map((item) =>
-          item.type === 'quiz' ? (
-            <QuizWidget key={item.id} assignment={item} />
-          ) : (
-            <AssignmentWidget key={item.id} assignment={item} />
-          ),
-        )}
+        state.items.map((item) => (
+          <AssignmentCard
+            key={item.id}
+            assignment={item}
+            variant={item.type === 'quiz' ? 'quiz' : 'text'}
+          />
+        ))}
     </section>
   )
 }

@@ -217,6 +217,7 @@ def get_assignments(week_id: UUID) -> list[dict]:
             SELECT id, type, name, description, rubric, due_date
             FROM Assignment
             WHERE week_id=?
+            ORDER BY due_date
             """,
             (str(week_id),),
         ).fetchall()

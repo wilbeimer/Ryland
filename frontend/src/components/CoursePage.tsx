@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { fetchWeeks, type Course, type Week } from '../api'
 import { WeekWidget } from './WeekWidget'
 import './CoursePage.css'
@@ -14,6 +14,12 @@ type WeeksState =
 
 export function CoursePage({ course }: CoursePageProps) {
   const [state, setState] = useState<WeeksState>({ status: 'loading' })
+  const [retryToken, setRetryToken] = useState(0)
+  const titleRef = useRef<HTMLHeadingElement>(null)
+
+  useEffect(() => {
+    titleRef.current?.focus()
+  }, [course.id])
 
   useEffect(() => {
     let cancelled = false
@@ -35,11 +41,17 @@ export function CoursePage({ course }: CoursePageProps) {
     return () => {
       cancelled = true
     }
-  }, [course.id])
+  }, [course.id, retryToken])
 
   return (
     <div className="course-page">
-      <h1 className="course-page__title">{course.name}</h1>
+      <h1
+        ref={titleRef}
+        className="course-page__title"
+        tabIndex={-1}
+      >
+        {course.name}
+      </h1>
 
       <div className="course-page__weeks">
         {state.status === 'loading' && (
@@ -49,9 +61,21 @@ export function CoursePage({ course }: CoursePageProps) {
         )}
 
         {state.status === 'error' && (
-          <p className="course-page__status course-page__status--error" role="alert">
-            {state.message}
-          </p>
+          <div className="course-page__error" role="alert">
+            <p className="course-page__status course-page__status--error">
+              {state.message}
+            </p>
+            <button
+              type="button"
+              className="course-page__retry"
+              onClick={() => {
+                setState({ status: 'loading' })
+                setRetryToken((token) => token + 1)
+              }}
+            >
+              Retry
+            </button>
+          </div>
         )}
 
         {state.status === 'ready' && state.weeks.length === 0 && (

@@ -94,6 +94,7 @@ export async function fetchWeeks(courseId: string): Promise<Week[]> {
   return data
 }
 
+/** Skips items with unknown `type` so a future assignment kind doesn't blank a week. */
 export async function fetchAssignments(weekId: string): Promise<Assignment[]> {
   const response = await fetch(`${API_BASE}/weeks/${weekId}/assignments`)
   if (!response.ok) {
@@ -101,9 +102,9 @@ export async function fetchAssignments(weekId: string): Promise<Assignment[]> {
   }
 
   const data: unknown = await response.json()
-  if (!Array.isArray(data) || !data.every(isAssignment)) {
+  if (!Array.isArray(data)) {
     throw new Error('Failed to load assignments (unexpected response)')
   }
 
-  return data
+  return data.filter(isAssignment)
 }
