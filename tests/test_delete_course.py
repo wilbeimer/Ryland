@@ -1,6 +1,6 @@
 import sqlite3
 from contextlib import contextmanager
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -90,7 +90,7 @@ def test_delete_course_removes_weeks_assignments_and_quizzes(client):
             name="Quiz one",
             description="A quiz",
             rubric={"score": 10},
-            due_date=datetime.now(timezone.utc) + timedelta(days=3),
+            due_date=datetime.now(UTC) + timedelta(days=3),
         )
     )
     add_quiz_to_db(
