@@ -8,6 +8,24 @@ type WeekWidgetProps = {
   index?: number
 }
 
+function formatWeekRange(startDate: string, endDate: string): string {
+  const start = new Date(`${startDate}T00:00:00`)
+  const end = new Date(`${endDate}T00:00:00`)
+  const sameMonth =
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth()
+  const startLabel = start.toLocaleDateString(undefined, {
+    month: 'short',
+    day: 'numeric',
+  })
+  const endLabel = end.toLocaleDateString(undefined, {
+    month: sameMonth ? undefined : 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
+  return `${startLabel} – ${endLabel}`
+}
+
 type ItemsState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
@@ -50,6 +68,9 @@ export function WeekWidget({ week, index = 0 }: WeekWidgetProps) {
       <h2 id={`week-${week.id}-label`} className="week-widget__label">
         Week {week.week_number}
       </h2>
+      <p className="week-widget__dates">
+        {formatWeekRange(week.start_date, week.end_date)}
+      </p>
 
       {state.status === 'loading' && (
         <p className="week-widget__status" role="status">

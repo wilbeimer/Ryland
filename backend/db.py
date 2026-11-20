@@ -1,13 +1,18 @@
 import json
 import sqlite3
 from contextlib import contextmanager
-from datetime import timedelta
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from uuid import UUID
 
 from fastapi import HTTPException
 from pydantic import SecretStr
 
+from backend.course_dates import (
+    DEFAULT_COURSE_COLOR,
+    start_date_from_due,
+    week_date_range,
+)
 from backend.exceptions import (
     DuplicateWeekError,
     InvalidAssignmentError,
@@ -33,6 +38,61 @@ def get_conn(path=DB_PATH):
         conn.close()
 
 
+def _parse_stored_datetime(value: str) -> datetime:
+    return datetime.fromisoformat(value)
+
+
+def _backfill_course_start_dates(conn: sqlite3.Connection) -> None:
+    """Set start_date from earliest due date minus that week's offset.
+
+    Course has no created_at column, so courses with no assignments fall back
+    to today. This keeps legacy week ranges aligned with stored due dates.
+    """
+    courses = conn.execute("SELECT id FROM Course").fetchall()
+    today = date.today().isoformat()
+    for course in courses:
+        row = conn.execute(
+            """
+            SELECT a.due_date AS due_date, w.week_number AS week_number
+            FROM Assignment a
+            JOIN Week w ON a.week_id = w.id
+            WHERE w.course_id = ?
+            ORDER BY a.due_date ASC
+            LIMIT 1
+            """,
+            (course["id"],),
+        ).fetchone()
+        if row is None:
+            start = today
+        else:
+            due = _parse_stored_datetime(row["due_date"])
+            start = start_date_from_due(due, int(row["week_number"])).isoformat()
+        conn.execute(
+            """
+            UPDATE Course
+            SET start_date = ?
+            WHERE id = ?
+            """,
+            (start, course["id"]),
+        )
+
+
+def _ensure_course_columns(conn: sqlite3.Connection) -> None:
+    """Add color/start_date for existing DBs without rewriting the table."""
+    columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(Course)").fetchall()
+    }
+    if "color" not in columns:
+        conn.execute(f"""
+            ALTER TABLE Course
+            ADD COLUMN color TEXT NOT NULL DEFAULT '{DEFAULT_COURSE_COLOR}'
+            """)
+    if "start_date" not in columns:
+        # Nullable first, then backfill from due dates (not deploy-day).
+        conn.execute("ALTER TABLE Course ADD COLUMN start_date TEXT")
+        _backfill_course_start_dates(conn)
+
+
 def init_db():
     with get_conn() as conn:
         conn.executescript("""
@@ -47,6 +107,8 @@ def init_db():
                 user_id TEXT NOT NULL,
                 name TEXT NOT NULL CHECK (length(trim(name)) > 0),
                 description TEXT NOT NULL,
+                color TEXT NOT NULL DEFAULT '#e5446d',
+                start_date TEXT NOT NULL DEFAULT (date('now')),
                 FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
             );
             CREATE INDEX IF NOT EXISTS idx_course_user ON Course(user_id);
@@ -80,6 +142,7 @@ def init_db():
                 FOREIGN KEY (assignment_id) REFERENCES Assignment(id) ON DELETE CASCADE
             );
             """)
+        _ensure_course_columns(conn)
 
 
 # USERS
@@ -120,8 +183,18 @@ def add_course_to_db(course: Course):
     try:
         with get_conn() as conn:
             conn.execute(
-                "INSERT INTO Course (id, user_id, name, description) VALUES (?, ?, ?, ?)",
-                (str(course.id), str(course.user_id), course.name, course.description),
+                """
+                INSERT INTO Course (id, user_id, name, description, color, start_date)
+                VALUES (?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    str(course.id),
+                    str(course.user_id),
+                    course.name,
+                    course.description,
+                    course.color,
+                    course.start_date.isoformat(),
+                ),
             )
         return str(course.id)
     except sqlite3.IntegrityError as e:
@@ -132,13 +205,58 @@ def get_courses(user_id: UUID) -> list[dict]:
     with get_conn() as conn:
         rows = conn.execute(
             """
-            SELECT id, name, description
+            SELECT id, name, description, color, start_date
             FROM Course
             WHERE user_id=?
             """,
             (str(user_id),),
         ).fetchall()
     return [dict(row) for row in rows]
+
+
+def update_course_color(course_id: UUID, user_id: UUID, color: str) -> dict | None:
+    with get_conn() as conn:
+        conn.execute(
+            """
+            UPDATE Course
+            SET color=?
+            WHERE id=?
+            AND user_id=?
+            """,
+            (color, str(course_id), str(user_id)),
+        )
+        row = conn.execute(
+            """
+            SELECT id, name, description, color, start_date
+            FROM Course
+            WHERE id=?
+            AND user_id=?
+            """,
+            (str(course_id), str(user_id)),
+        ).fetchone()
+    return dict(row) if row else None
+
+
+def get_week_schedule_context(week_id: UUID) -> dict | None:
+    """Return week_number and course start_date for due-date derivation."""
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT w.week_number AS week_number, c.start_date AS start_date
+            FROM Week w
+            JOIN Course c ON c.id = w.course_id
+            WHERE w.id=?
+            """,
+            (str(week_id),),
+        ).fetchone()
+    if row is None:
+        return None
+    raw_start = row["start_date"]
+    start = date.fromisoformat(raw_start) if raw_start else date.today()
+    return {
+        "week_number": int(row["week_number"]),
+        "start_date": start,
+    }
 
 
 def delete_course_from_db(course_id: UUID, user_id: UUID) -> bool:
@@ -224,6 +342,14 @@ def add_week_to_db(week: Week) -> str:
 
 def get_weeks(course_id: UUID) -> list[dict]:
     with get_conn() as conn:
+        course = conn.execute(
+            """
+            SELECT start_date
+            FROM Course
+            WHERE id=?
+            """,
+            (str(course_id),),
+        ).fetchone()
         rows = conn.execute(
             """
             SELECT id, course_id, week_number, description
@@ -233,7 +359,18 @@ def get_weeks(course_id: UUID) -> list[dict]:
             """,
             (str(course_id),),
         ).fetchall()
-    return [dict(row) for row in rows]
+    if course is None:
+        return []
+    raw_start = course["start_date"]
+    start = date.fromisoformat(raw_start) if raw_start else date.today()
+    result = []
+    for row in rows:
+        item = dict(row)
+        week_start, week_end = week_date_range(start, int(item["week_number"]))
+        item["start_date"] = week_start.isoformat()
+        item["end_date"] = week_end.isoformat()
+        result.append(item)
+    return result
 
 
 # ASSIGNMENTS
