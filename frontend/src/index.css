@@ -13,7 +13,8 @@
   --color-accent-pop: #914546;
   --color-status-success: #4cc38a;
   --color-status-warning: #e8b04b;
-  --color-status-failure: #ff5c5c;
+  /* Lightened vs Penpot for AA on surface #343534 (~4.5:1 at 16px). */
+  --color-status-failure: #ff6e6e;
   /* Active nav text: darkened for contrast on accent.primary (~4.1:1) */
   --color-nav-active-text: #532627;
   --radius: 10px;

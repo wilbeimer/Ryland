@@ -1,4 +1,4 @@
-import { forwardRef } from 'react'
+import { forwardRef, useId } from 'react'
 import type { Course } from '../api'
 import './CourseCard.css'
 
@@ -11,6 +11,7 @@ type CourseCardProps = {
 export const CourseCard = forwardRef<HTMLButtonElement, CourseCardProps>(
   function CourseCard({ course, index = 0, onSelect }, ref) {
     const interactive = typeof onSelect === 'function'
+    const nameId = useId()
 
     return (
       <article
@@ -19,27 +20,19 @@ export const CourseCard = forwardRef<HTMLButtonElement, CourseCardProps>(
         }
         style={{ animationDelay: `${80 + index * 40}ms` }}
       >
-        {interactive ? (
+        <h2 id={nameId} className="course-card__name" title={course.name}>
+          {course.name}
+        </h2>
+        <div className="course-card__rule" aria-hidden="true" />
+        <p className="course-card__description">{course.description}</p>
+        {interactive && (
           <button
             ref={ref}
             type="button"
             className="course-card__open"
+            aria-labelledby={nameId}
             onClick={() => onSelect(course)}
-          >
-            <h2 className="course-card__name" title={course.name}>
-              {course.name}
-            </h2>
-            <div className="course-card__rule" aria-hidden="true" />
-            <p className="course-card__description">{course.description}</p>
-          </button>
-        ) : (
-          <>
-            <h2 className="course-card__name" title={course.name}>
-              {course.name}
-            </h2>
-            <div className="course-card__rule" aria-hidden="true" />
-            <p className="course-card__description">{course.description}</p>
-          </>
+          />
         )}
       </article>
     )
