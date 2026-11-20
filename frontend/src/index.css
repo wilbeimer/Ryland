@@ -9,12 +9,14 @@
   --color-text-muted: #a8a394;
   --color-accent-primary: #e5446d;
   --color-accent-secondary: #f2676a;
-  --color-accent-pop: #532627;
-  /* Active nav text: Penpot accent.pop on accent.primary (~4.1:1) */
+  /* Penpot dark accent.pop (assignment maroon / nav border) */
+  --color-accent-pop: #914546;
+  /* Active nav text: darkened for contrast on accent.primary (~4.1:1) */
   --color-nav-active-text: #532627;
   --radius: 10px;
   --radius-pill: 30px;
   --font-main: 'Cormorant Garamond', Georgia, serif;
+  --font-body: 'EB Garamond', 'Cormorant Garamond', Georgia, serif;
   --page-max-width: 1280px;
   --course-grid-gap: 13px;
   --nav-height: 43px;

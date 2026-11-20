@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchCourses, type Course } from './api'
 import { CourseCard } from './components/CourseCard'
+import { CoursePage } from './components/CoursePage'
 import { GeneratePage } from './components/GeneratePage'
 import { NavBar, type NavLabel } from './components/NavBar'
 import { ThemeToggle } from './components/ThemeToggle'
@@ -17,11 +18,14 @@ type LoadState =
   | { status: 'error'; message: string }
   | { status: 'ready'; courses: Course[] }
 
-type View = Extract<NavLabel, 'Courses' | 'Generate'>
+type View =
+  | { kind: 'courses' }
+  | { kind: 'generate' }
+  | { kind: 'course'; course: Course }
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => resolveInitialTheme())
-  const [view, setView] = useState<View>('Courses')
+  const [view, setView] = useState<View>({ kind: 'courses' })
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const userNavigatedRef = useRef(false)
 
@@ -41,7 +45,7 @@ export default function App() {
         // Once we know the list is empty, open Generate so home isn't a dead end —
         // but don't override a tab the user already chose while loading.
         if (courses.length === 0 && !userNavigatedRef.current) {
-          setView('Generate')
+          setView({ kind: 'generate' })
         }
       })
       .catch((error: unknown) => {
@@ -58,9 +62,12 @@ export default function App() {
   }, [])
 
   function handleNavigate(label: NavLabel) {
-    if (label === 'Courses' || label === 'Generate') {
+    if (label === 'Courses') {
       userNavigatedRef.current = true
-      setView(label)
+      setView({ kind: 'courses' })
+    } else if (label === 'Generate') {
+      userNavigatedRef.current = true
+      setView({ kind: 'generate' })
     }
   }
 
@@ -70,19 +77,29 @@ export default function App() {
     setTheme(next)
   }
 
+  function handleSelectCourse(course: Course) {
+    userNavigatedRef.current = true
+    setView({ kind: 'course', course })
+  }
+
+  const navActive: NavLabel =
+    view.kind === 'generate' ? 'Generate' : 'Courses'
+
   return (
     <div className="home">
       <header className="home__header">
         <div className="home__toolbar">
           <ThemeToggle theme={theme} onToggle={handleThemeToggle} />
         </div>
-        <NavBar active={view} onNavigate={handleNavigate} />
-        {view === 'Courses' && <h1 className="home__title">Courses</h1>}
+        <NavBar active={navActive} onNavigate={handleNavigate} />
+        {view.kind === 'courses' && <h1 className="home__title">Courses</h1>}
       </header>
 
       <main className="home__main">
-        {view === 'Generate' ? (
+        {view.kind === 'generate' ? (
           <GeneratePage />
+        ) : view.kind === 'course' ? (
+          <CoursePage course={view.course} />
         ) : (
           <>
             {state.status === 'loading' && (
@@ -104,7 +121,12 @@ export default function App() {
             {state.status === 'ready' && state.courses.length > 0 && (
               <section className="course-list" aria-label="Course list">
                 {state.courses.map((course, index) => (
-                  <CourseCard key={course.id} course={course} index={index} />
+                  <CourseCard
+                    key={course.id}
+                    course={course}
+                    index={index}
+                    onSelect={handleSelectCourse}
+                  />
                 ))}
               </section>
             )}

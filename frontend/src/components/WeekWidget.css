@@ -1,0 +1,64 @@
+/* Penpot Week Widget — surface board, absolute Week #, centered cards */
+.week-widget {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  width: min(777px, 100%);
+  min-height: 200px;
+  padding: 50px 65px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  animation: week-widget-in 480ms ease both;
+}
+
+.week-widget__label {
+  position: absolute;
+  top: 15px;
+  left: 20px;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.week-widget__status {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.week-widget__status--error {
+  color: var(--color-accent-primary);
+}
+
+@keyframes week-widget-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 720px) {
+  .week-widget {
+    padding: 48px 20px 28px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .week-widget {
+    animation: none;
+  }
+}
