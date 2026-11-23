@@ -27,6 +27,19 @@
   line-height: 1.2;
 }
 
+.week-widget__dates {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.2;
+  text-align: right;
+}
+
 .week-widget__status {
   margin: 0;
   color: var(--color-text-muted);
@@ -82,7 +95,14 @@
 
 @media (max-width: 720px) {
   .week-widget {
-    padding: 48px 20px 28px;
+    padding: 64px 20px 28px;
+  }
+
+  .week-widget__dates {
+    top: 38px;
+    left: 20px;
+    right: auto;
+    text-align: left;
   }
 }
 

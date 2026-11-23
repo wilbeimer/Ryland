@@ -2,12 +2,16 @@ export type Course = {
   id: string
   name: string
   description: string
+  color: string
+  start_date: string
 }
 
 export type Week = {
   id: string
   week_number: number
   description: string
+  start_date: string
+  end_date: string
 }
 
 export type AssignmentType = 'text' | 'quiz'
@@ -82,6 +86,9 @@ const UUID_RE =
 const JOB_LOST_MESSAGE =
   'The server restarted, so this build was lost. Start a new build to try again.'
 
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/
+const ISO_DATE_RE = /^\d{4}-\d{2}-\d{2}$/
+
 function isCourse(value: unknown): value is Course {
   if (typeof value !== 'object' || value === null) {
     return false
@@ -90,7 +97,11 @@ function isCourse(value: unknown): value is Course {
   return (
     typeof course.id === 'string' &&
     typeof course.name === 'string' &&
-    typeof course.description === 'string'
+    typeof course.description === 'string' &&
+    typeof course.color === 'string' &&
+    HEX_COLOR_RE.test(course.color) &&
+    typeof course.start_date === 'string' &&
+    ISO_DATE_RE.test(course.start_date)
   )
 }
 
@@ -102,7 +113,11 @@ function isWeek(value: unknown): value is Week {
   return (
     typeof week.id === 'string' &&
     typeof week.week_number === 'number' &&
-    typeof week.description === 'string'
+    typeof week.description === 'string' &&
+    typeof week.start_date === 'string' &&
+    ISO_DATE_RE.test(week.start_date) &&
+    typeof week.end_date === 'string' &&
+    ISO_DATE_RE.test(week.end_date)
   )
 }
 
@@ -246,6 +261,28 @@ export async function deleteCourse(courseId: string): Promise<void> {
   if (!response.ok) {
     throw new Error(`Failed to delete course (${response.status})`)
   }
+}
+
+export async function patchCourseColor(
+  courseId: string,
+  color: string,
+): Promise<Course> {
+  const response = await fetch(
+    `${API_BASE}/courses/${encodeURIComponent(courseId)}`,
+    {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ color }),
+    },
+  )
+  if (!response.ok) {
+    throw new Error(`Failed to update course color (${response.status})`)
+  }
+  const data: unknown = await response.json()
+  if (!isCourse(data)) {
+    throw new Error('Failed to update course color (unexpected response)')
+  }
+  return data
 }
 
 export async function fetchWeeks(courseId: string): Promise<Week[]> {

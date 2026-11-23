@@ -6,6 +6,23 @@
   width: 100%;
 }
 
+.course-page__heading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  max-width: min(900px, 100%);
+  padding: 0 16px;
+}
+
+.course-page__color-chip {
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+}
+
 .course-page__title {
   margin: 0;
   color: var(--color-text-primary);
@@ -15,6 +32,14 @@
   text-align: center;
   text-shadow: 2px 2px 4px var(--shadow-raised);
   animation: course-title-in 500ms ease both;
+}
+
+.course-page .course-color-picker {
+  margin-top: 16px;
+}
+
+.course-page__color-error {
+  margin-top: 10px;
 }
 
 .course-page__delete {

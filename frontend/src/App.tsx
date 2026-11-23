@@ -216,6 +216,24 @@ export default function App() {
     setView({ kind: 'courses' })
   }
 
+  function handleCourseUpdated(course: Course) {
+    setState((current) =>
+      current.status === 'ready'
+        ? {
+            status: 'ready',
+            courses: current.courses.map((item) =>
+              item.id === course.id ? course : item,
+            ),
+          }
+        : current,
+    )
+    setView((current) =>
+      current.kind === 'course' && current.course.id === course.id
+        ? { kind: 'course', course }
+        : current,
+    )
+  }
+
   const navActive: NavLabel =
     view.kind === 'generate' ? 'Generate' : 'Courses'
 
@@ -251,6 +269,7 @@ export default function App() {
             key={view.course.id}
             course={view.course}
             onDeleted={handleCourseDeleted}
+            onCourseUpdated={handleCourseUpdated}
           />
         )}
 

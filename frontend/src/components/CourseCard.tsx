@@ -23,7 +23,11 @@ export const CourseCard = forwardRef<HTMLButtonElement, CourseCardProps>(
         <h2 id={nameId} className="course-card__name">
           {course.name}
         </h2>
-        <div className="course-card__rule" aria-hidden="true" />
+        <div
+          className="course-card__rule"
+          aria-hidden="true"
+          style={{ background: course.color }}
+        />
         <p className="course-card__description">{course.description}</p>
         {interactive && (
           <button
