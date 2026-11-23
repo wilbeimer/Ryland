@@ -21,7 +21,7 @@ type LoadState =
   | { status: 'error'; message: string }
   | { status: 'ready'; courses: Course[] }
 
-/** Tab / detail selection. Mirrored in `?course=` / `?assignment=`. */
+/** Tab / detail selection. Mirrored in `?course=` / `?assignment=` / `?view=calendar`. */
 type View =
   | { kind: 'courses' }
   | { kind: 'calendar' }
@@ -50,20 +50,29 @@ function readAssignmentIdFromUrl(): string | null {
   }
 }
 
+function readCalendarFromUrl(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).get('view') === 'calendar'
+  } catch {
+    return false
+  }
+}
+
 function writeDetailToUrl(detail: {
   courseId?: string | null
   assignmentId?: string | null
+  calendar?: boolean
 }): void {
   const url = new URL(window.location.href)
+  url.searchParams.delete('course')
+  url.searchParams.delete('assignment')
+  url.searchParams.delete('view')
   if (detail.assignmentId) {
-    url.searchParams.delete('course')
     url.searchParams.set('assignment', detail.assignmentId)
   } else if (detail.courseId) {
-    url.searchParams.delete('assignment')
     url.searchParams.set('course', detail.courseId)
-  } else {
-    url.searchParams.delete('course')
-    url.searchParams.delete('assignment')
+  } else if (detail.calendar) {
+    url.searchParams.set('view', 'calendar')
   }
   const next = `${url.pathname}${url.search}${url.hash}`
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
@@ -130,6 +139,11 @@ export default function App() {
           writeDetailToUrl({})
         }
 
+        if (readCalendarFromUrl()) {
+          setView({ kind: 'calendar' })
+          return
+        }
+
         // Once we know the list is empty, open Generate so home isn't a dead end —
         // but don't override a tab the user already chose while loading.
         if (
@@ -168,23 +182,31 @@ export default function App() {
         return
       }
       const courseId = readCourseIdFromUrl()
-      if (!courseId) {
-        setView((current) =>
-          current.kind === 'course' || current.kind === 'assignment'
-            ? { kind: 'courses' }
-            : current,
-        )
+      if (courseId) {
+        setState((current) => {
+          if (current.status === 'ready') {
+            const match = current.courses.find(
+              (course) => course.id === courseId,
+            )
+            if (match) {
+              setView({ kind: 'course', course: match })
+            }
+          }
+          return current
+        })
         return
       }
-      setState((current) => {
-        if (current.status === 'ready') {
-          const match = current.courses.find((course) => course.id === courseId)
-          if (match) {
-            setView({ kind: 'course', course: match })
-          }
-        }
-        return current
-      })
+      if (readCalendarFromUrl()) {
+        setView({ kind: 'calendar' })
+        return
+      }
+      setView((current) =>
+        current.kind === 'course' ||
+        current.kind === 'assignment' ||
+        current.kind === 'calendar'
+          ? { kind: 'courses' }
+          : current,
+      )
     }
 
     window.addEventListener('popstate', onPopState)
@@ -221,7 +243,7 @@ export default function App() {
     } else if (label === 'Calendar') {
       userNavigatedRef.current = true
       setDeletedNotice(null)
-      writeDetailToUrl({})
+      writeDetailToUrl({ calendar: true })
       setView({ kind: 'calendar' })
     } else if (label === 'Generate') {
       userNavigatedRef.current = true
@@ -266,7 +288,7 @@ export default function App() {
       return
     }
     if (assignmentReturn.kind === 'calendar') {
-      writeDetailToUrl({})
+      writeDetailToUrl({ calendar: true })
       setView({ kind: 'calendar' })
       return
     }

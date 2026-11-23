@@ -186,8 +186,6 @@ export function CoursePage({
               key={week.id}
               week={week}
               index={index}
-              courseNameFor={() => course.name}
-              courseColorFor={() => course.color}
               onSelectAssignment={
                 onSelectAssignment
                   ? (assignment: Assignment) =>
