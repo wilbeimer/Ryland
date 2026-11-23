@@ -123,6 +123,24 @@ class AssignmentOut(BaseModel):
     due_date: datetime
 
 
+class CalendarAssignmentOut(BaseModel):
+    id: UUID
+    type: AssignmentType
+    name: str
+    description: str
+    rubric: dict
+    due_date: datetime
+    course_id: UUID
+    course_name: str
+    course_color: str
+
+
+class CalendarWeekOut(BaseModel):
+    start_date: date
+    end_date: date
+    assignments: list[CalendarAssignmentOut]
+
+
 class Submission(BaseModel):
     id: UUID
     assignment_id: UUID

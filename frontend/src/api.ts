@@ -25,6 +25,18 @@ export type Assignment = {
   due_date: string
 }
 
+export type CalendarAssignment = Assignment & {
+  course_id: string
+  course_name: string
+  course_color: string
+}
+
+export type CalendarWeek = {
+  start_date: string
+  end_date: string
+  assignments: CalendarAssignment[]
+}
+
 export type GenerateCourseRequest = {
   goal: string
   level: string
@@ -134,6 +146,34 @@ function isAssignment(value: unknown): value is Assignment {
     typeof assignment.rubric === 'object' &&
     assignment.rubric !== null &&
     typeof assignment.due_date === 'string'
+  )
+}
+
+function isCalendarAssignment(value: unknown): value is CalendarAssignment {
+  if (!isAssignment(value)) {
+    return false
+  }
+  const assignment = value as Record<string, unknown>
+  return (
+    typeof assignment.course_id === 'string' &&
+    typeof assignment.course_name === 'string' &&
+    typeof assignment.course_color === 'string' &&
+    HEX_COLOR_RE.test(assignment.course_color)
+  )
+}
+
+function isCalendarWeek(value: unknown): value is CalendarWeek {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  const week = value as Record<string, unknown>
+  return (
+    typeof week.start_date === 'string' &&
+    ISO_DATE_RE.test(week.start_date) &&
+    typeof week.end_date === 'string' &&
+    ISO_DATE_RE.test(week.end_date) &&
+    Array.isArray(week.assignments) &&
+    week.assignments.every(isCalendarAssignment)
   )
 }
 
@@ -282,6 +322,34 @@ export async function patchCourseColor(
   if (!isCourse(data)) {
     throw new Error('Failed to update course color (unexpected response)')
   }
+  return data
+}
+
+export async function fetchCalendarWeeks(
+  timezone?: string,
+): Promise<CalendarWeek[]> {
+  const params = new URLSearchParams()
+  const zone =
+    timezone ||
+    (typeof Intl !== 'undefined'
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : 'UTC')
+  if (zone) {
+    params.set('timezone', zone)
+  }
+  const query = params.toString()
+  const response = await fetch(
+    `${API_BASE}/calendar/weeks${query ? `?${query}` : ''}`,
+  )
+  if (!response.ok) {
+    throw new Error(`Failed to load calendar weeks (${response.status})`)
+  }
+
+  const data: unknown = await response.json()
+  if (!Array.isArray(data) || !data.every(isCalendarWeek)) {
+    throw new Error('Failed to load calendar weeks (unexpected response)')
+  }
+
   return data
 }
 

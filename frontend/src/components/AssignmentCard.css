@@ -1,5 +1,6 @@
 /* Penpot AssignmentWidget / QuizWidget — shared card; fill via variant */
 .assignment-card {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -19,6 +20,42 @@
 /* accent.primary — salmon/pink quiz fill */
 .assignment-card--quiz {
   background: var(--color-accent-primary);
+}
+
+/* Course color as accent only (never the card fill — AA for title text). */
+.assignment-card__course-rule {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--assignment-course-color, var(--color-accent-primary));
+}
+
+.assignment-card__course {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.2;
+}
+
+.assignment-card__course-swatch {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+}
+
+.assignment-card__course-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .assignment-card__name {

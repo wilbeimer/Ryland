@@ -1,7 +1,8 @@
 import json
+import logging
 import sqlite3
 from contextlib import contextmanager
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta, tzinfo
 from pathlib import Path
 from uuid import UUID
 
@@ -10,9 +11,12 @@ from pydantic import SecretStr
 
 from backend.course_dates import (
     DEFAULT_COURSE_COLOR,
+    calendar_week_range,
     start_date_from_due,
     week_date_range,
 )
+
+logger = logging.getLogger(__name__)
 from backend.exceptions import (
     DuplicateWeekError,
     InvalidAssignmentError,
@@ -422,6 +426,86 @@ def get_assignments(week_id: UUID) -> list[dict]:
             item["rubric"] = json.loads(item["rubric"])
             result.append(item)
         return result
+
+
+def _parse_due_for_calendar(value: str) -> datetime | None:
+    try:
+        due = datetime.fromisoformat(value)
+    except ValueError:
+        logger.warning("Skipping calendar row with malformed due_date: %s", value)
+        return None
+    if due.tzinfo is None:
+        return due.replace(tzinfo=UTC)
+    return due
+
+
+def get_calendar_weeks(user_id: UUID, *, tz: tzinfo = UTC) -> list[dict]:
+    """Group the user's assignments by ISO calendar week of due_date in `tz`."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                a.id AS id,
+                a.type AS type,
+                a.name AS name,
+                a.description AS description,
+                a.rubric AS rubric,
+                a.due_date AS due_date,
+                c.id AS course_id,
+                c.name AS course_name,
+                c.color AS course_color
+            FROM Assignment a
+            JOIN Week w ON a.week_id = w.id
+            JOIN Course c ON w.course_id = c.id
+            WHERE c.user_id = ?
+            """,
+            (str(user_id),),
+        ).fetchall()
+
+    parsed: list[tuple[datetime, dict]] = []
+    for row in rows:
+        due = _parse_due_for_calendar(row["due_date"])
+        if due is None:
+            continue
+        parsed.append(
+            (
+                due,
+                {
+                    "id": row["id"],
+                    "type": row["type"],
+                    "name": row["name"],
+                    "description": row["description"],
+                    "rubric": json.loads(row["rubric"]),
+                    "due_date": row["due_date"],
+                    "course_id": row["course_id"],
+                    "course_name": row["course_name"],
+                    "course_color": row["course_color"],
+                },
+            )
+        )
+
+    type_rank = {"text": 0, "quiz": 1}
+    parsed.sort(
+        key=lambda item: (
+            item[0].astimezone(UTC),
+            type_rank.get(item[1]["type"], 2),
+            item[1]["name"],
+        )
+    )
+
+    buckets: dict[date, dict] = {}
+    for due, assignment in parsed:
+        week_start, week_end = calendar_week_range(due, tz=tz)
+        bucket = buckets.get(week_start)
+        if bucket is None:
+            bucket = {
+                "start_date": week_start.isoformat(),
+                "end_date": week_end.isoformat(),
+                "assignments": [],
+            }
+            buckets[week_start] = bucket
+        bucket["assignments"].append(assignment)
+    return [buckets[key] for key in sorted(buckets)]
 
 
 # QUIZZES
