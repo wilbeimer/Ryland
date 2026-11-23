@@ -610,6 +610,36 @@ def get_owned_assignment(assignment_id: UUID, user_id: UUID):
         return row
 
 
+def get_assignment_detail(assignment_id: UUID, user_id: UUID) -> dict:
+    """Assignment plus owning course name/color for the detail page."""
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                a.id AS id,
+                a.type AS type,
+                a.name AS name,
+                a.description AS description,
+                a.rubric AS rubric,
+                a.due_date AS due_date,
+                c.id AS course_id,
+                c.name AS course_name,
+                c.color AS course_color
+            FROM Assignment a
+            JOIN Week w ON a.week_id = w.id
+            JOIN Course c ON w.course_id = c.id
+            WHERE a.id = ?
+              AND c.user_id = ?
+            """,
+            (str(assignment_id), str(user_id)),
+        ).fetchone()
+        if row is None:
+            raise HTTPException(404, "Assignment not found")
+        item = dict(row)
+        item["rubric"] = json.loads(item["rubric"])
+        return item
+
+
 if __name__ == "__main__":
     init_db()
     add_user_to_db(

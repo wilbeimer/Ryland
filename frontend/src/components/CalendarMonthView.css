@@ -99,6 +99,22 @@
   background: var(--color-background);
 }
 
+.calendar-month__item--button {
+  width: 100%;
+  border-top: 0;
+  border-right: 0;
+  border-bottom: 0;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.calendar-month__item--button:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 1px;
+}
+
 .calendar-month__item-swatch {
   width: 8px;
   height: 8px;

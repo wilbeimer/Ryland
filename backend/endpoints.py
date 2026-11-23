@@ -22,6 +22,7 @@ from backend.db import (
     add_quiz_to_db,
     add_week_to_db,
     delete_course_from_db,
+    get_assignment_detail,
     get_assignments,
     get_calendar_weeks,
     get_courses,
@@ -44,6 +45,7 @@ from backend.exceptions import (
 from backend.models import (
     Assignment,
     AssignmentOut,
+    CalendarAssignmentOut,
     CalendarWeekOut,
     Course,
     CourseOut,
@@ -682,6 +684,14 @@ def add_assignment(
         logger.exception("Constraint violation creating assignment")
         raise HTTPException(status_code=422, detail="Invalid assignment data")
     return {"id": assignment_id}
+
+
+# ASSIGNMENTS (by id)
+@app.get("/assignments/{assignment_id}", response_model=CalendarAssignmentOut)
+def get_assignment(
+    user: Annotated[User, Depends(get_current_user)], assignment_id: UUID
+):
+    return get_assignment_detail(assignment_id=assignment_id, user_id=user.id)
 
 
 # QUIZZES

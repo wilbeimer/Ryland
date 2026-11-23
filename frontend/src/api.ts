@@ -382,6 +382,24 @@ export async function fetchAssignments(weekId: string): Promise<Assignment[]> {
   return data.filter(isAssignment)
 }
 
+export async function fetchAssignment(
+  assignmentId: string,
+): Promise<CalendarAssignment> {
+  const response = await fetch(
+    `${API_BASE}/assignments/${encodeURIComponent(assignmentId)}`,
+  )
+  if (!response.ok) {
+    throw new Error(`Failed to load assignment (${response.status})`)
+  }
+
+  const data: unknown = await response.json()
+  if (!isCalendarAssignment(data)) {
+    throw new Error('Failed to load assignment (unexpected response)')
+  }
+
+  return data
+}
+
 export async function startCourseGeneration(
   body: GenerateCourseRequest,
   signal?: AbortSignal,

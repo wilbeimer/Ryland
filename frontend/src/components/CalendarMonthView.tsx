@@ -4,6 +4,7 @@ import './CalendarMonthView.css'
 
 type CalendarMonthViewProps = {
   weeks: CalendarWeek[]
+  onSelectAssignment?: (assignmentId: string) => void
 }
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
@@ -80,7 +81,10 @@ function initialCursor(weeks: CalendarWeek[]): { year: number; month: number } {
   return { year: now.getFullYear(), month: now.getMonth() }
 }
 
-export function CalendarMonthView({ weeks }: CalendarMonthViewProps) {
+export function CalendarMonthView({
+  weeks,
+  onSelectAssignment,
+}: CalendarMonthViewProps) {
   const [cursor, setCursor] = useState(() => initialCursor(weeks))
 
   const byDay = useMemo(() => {
@@ -167,17 +171,9 @@ export function CalendarMonthView({ weeks }: CalendarMonthViewProps) {
                 </span>
               )}
               <ul className="calendar-month__items">
-                {items.map((item) => (
-                  <li key={item.id}>
-                    <div
-                      className="calendar-month__item"
-                      style={
-                        {
-                          '--assignment-course-color': item.course_color,
-                        } as CSSProperties
-                      }
-                      title={`${item.course_name}: ${item.name}`}
-                    >
+                {items.map((item) => {
+                  const content = (
+                    <>
                       <span
                         className="calendar-month__item-swatch"
                         aria-hidden="true"
@@ -190,9 +186,36 @@ export function CalendarMonthView({ weeks }: CalendarMonthViewProps) {
                           {item.name}
                         </span>
                       </span>
-                    </div>
-                  </li>
-                ))}
+                    </>
+                  )
+                  const style = {
+                    '--assignment-course-color': item.course_color,
+                  } as CSSProperties
+                  const title = `${item.course_name}: ${item.name}`
+                  return (
+                    <li key={item.id}>
+                      {onSelectAssignment ? (
+                        <button
+                          type="button"
+                          className="calendar-month__item calendar-month__item--button"
+                          style={style}
+                          title={title}
+                          onClick={() => onSelectAssignment(item.id)}
+                        >
+                          {content}
+                        </button>
+                      ) : (
+                        <div
+                          className="calendar-month__item"
+                          style={style}
+                          title={title}
+                        >
+                          {content}
+                        </div>
+                      )}
+                    </li>
+                  )
+                })}
               </ul>
             </div>
           )

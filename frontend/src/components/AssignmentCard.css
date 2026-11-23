@@ -12,6 +12,24 @@
   overflow: hidden;
 }
 
+/* Full-card hit target; content stays outside the button. */
+.assignment-card__open {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: transparent;
+  cursor: pointer;
+}
+
+.assignment-card__open:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
 /* accent.pop — maroon (dark) / soft salmon (light) */
 .assignment-card--text {
   background: var(--color-accent-pop);

@@ -1,0 +1,158 @@
+.assignment-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 0 24px 48px;
+}
+
+.assignment-page__back {
+  align-self: flex-start;
+  margin: 0 0 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.2;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.assignment-page__back:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.assignment-page__status {
+  margin: 48px auto 0;
+  max-width: 40ch;
+  color: var(--color-text-muted);
+  font-size: 18px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+.assignment-page__status--error {
+  color: var(--color-status-failure);
+}
+
+.assignment-page__error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.assignment-page__retry {
+  padding: 8px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.assignment-page__retry:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+.assignment-page__body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: min(720px, 100%);
+  padding: 20px 24px 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  border-left: 4px solid
+    var(--assignment-course-color, var(--color-accent-primary));
+  background: var(--color-surface);
+}
+
+.assignment-page__course {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.assignment-page__course-swatch {
+  width: 12px;
+  height: 12px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  background: var(--assignment-course-color, var(--color-accent-primary));
+}
+
+.assignment-page__course-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.assignment-page__title {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 36px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.assignment-page__meta {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.assignment-page__type {
+  text-transform: capitalize;
+}
+
+.assignment-page__description {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.assignment-page__description-label {
+  margin: 0;
+  color: var(--color-text-primary);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+.assignment-page__description-text {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-family: var(--font-body);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+@media (max-width: 640px) {
+  .assignment-page__title {
+    font-size: 28px;
+  }
+}

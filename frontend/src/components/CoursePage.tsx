@@ -3,6 +3,7 @@ import {
   deleteCourse,
   fetchWeeks,
   patchCourseColor,
+  type Assignment,
   type Course,
   type Week,
 } from '../api'
@@ -15,6 +16,7 @@ type CoursePageProps = {
   course: Course
   onDeleted?: (courseId: string) => void
   onCourseUpdated?: (course: Course) => void
+  onSelectAssignment?: (assignmentId: string) => void
 }
 
 type WeeksState =
@@ -26,6 +28,7 @@ export function CoursePage({
   course,
   onDeleted,
   onCourseUpdated,
+  onSelectAssignment,
 }: CoursePageProps) {
   const [state, setState] = useState<WeeksState>({ status: 'loading' })
   const [retryToken, setRetryToken] = useState(0)
@@ -179,7 +182,19 @@ export function CoursePage({
 
         {state.status === 'ready' &&
           state.weeks.map((week, index) => (
-            <WeekWidget key={week.id} week={week} index={index} />
+            <WeekWidget
+              key={week.id}
+              week={week}
+              index={index}
+              courseNameFor={() => course.name}
+              courseColorFor={() => course.color}
+              onSelectAssignment={
+                onSelectAssignment
+                  ? (assignment: Assignment) =>
+                      onSelectAssignment(assignment.id)
+                  : undefined
+              }
+            />
           ))}
       </div>
 
