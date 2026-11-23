@@ -1,10 +1,46 @@
 .course-color-picker {
+  position: relative;
+  flex-shrink: 0;
+}
+
+/* Match the former heading chip look; button reset only as needed for click/focus. */
+.course-color-picker__swatch {
+  display: block;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.course-color-picker__swatch:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
+}
+
+.course-color-picker__swatch:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.course-color-picker__palette {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  max-width: min(420px, 100%);
+  width: max-content;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: 2px 4px 16px var(--shadow-raised);
 }
 
 .course-color-picker__option {
