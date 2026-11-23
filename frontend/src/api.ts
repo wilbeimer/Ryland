@@ -325,8 +325,22 @@ export async function patchCourseColor(
   return data
 }
 
-export async function fetchCalendarWeeks(): Promise<CalendarWeek[]> {
-  const response = await fetch(`${API_BASE}/calendar/weeks`)
+export async function fetchCalendarWeeks(
+  timezone?: string,
+): Promise<CalendarWeek[]> {
+  const params = new URLSearchParams()
+  const zone =
+    timezone ||
+    (typeof Intl !== 'undefined'
+      ? Intl.DateTimeFormat().resolvedOptions().timeZone
+      : 'UTC')
+  if (zone) {
+    params.set('timezone', zone)
+  }
+  const query = params.toString()
+  const response = await fetch(
+    `${API_BASE}/calendar/weeks${query ? `?${query}` : ''}`,
+  )
   if (!response.ok) {
     throw new Error(`Failed to load calendar weeks (${response.status})`)
   }

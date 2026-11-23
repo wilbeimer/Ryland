@@ -18,16 +18,21 @@ def week_date_range(start_date: date, week_number: int) -> tuple[date, date]:
     return week_start, week_end
 
 
-def calendar_week_range(due: datetime) -> tuple[date, date]:
-    """ISO calendar week (Mon–Sun) containing the due datetime's local day.
+def calendar_week_range(
+    due: datetime,
+    *,
+    tz: tzinfo = UTC,
+) -> tuple[date, date]:
+    """ISO calendar week (Mon–Sun) in a single display timezone.
 
-    Uses the datetime's own offset when present; otherwise treats it as UTC so
-    naive and aware values still bucket consistently.
+    Converts `due` into `tz` before taking the calendar day so the same instant
+    never lands in two different weeks based on how the offset was stored.
+    Naive datetimes are treated as already in `tz`.
     """
     if due.tzinfo is None:
-        local = due.replace(tzinfo=UTC)
+        local = due.replace(tzinfo=tz)
     else:
-        local = due
+        local = due.astimezone(tz)
     due_day = local.date()
     week_start = due_day - timedelta(days=due_day.weekday())
     week_end = week_start + timedelta(days=6)

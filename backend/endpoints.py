@@ -7,9 +7,10 @@ from dataclasses import dataclass, field, replace
 from datetime import date
 from typing import Annotated
 from uuid import UUID, uuid4
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI, HTTPException, Response
+from fastapi import Depends, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
 
 from agent.agent_loop import MAX_ITERATIONS, AskCancelled, run_generation
@@ -587,9 +588,24 @@ def submit_generation_answers(
 
 # CALENDAR
 @app.get("/calendar/weeks", response_model=list[CalendarWeekOut])
-def list_calendar_weeks(user: Annotated[User, Depends(get_current_user)]):
+def list_calendar_weeks(
+    user: Annotated[User, Depends(get_current_user)],
+    timezone: Annotated[
+        str,
+        Query(
+            description="IANA timezone used to bucket due dates into calendar weeks",
+        ),
+    ] = "UTC",
+):
     """Assignments across all courses, grouped by ISO week of due_date."""
-    return get_calendar_weeks(user.id)
+    try:
+        display_tz = ZoneInfo(timezone)
+    except (ZoneInfoNotFoundError, ValueError):
+        raise HTTPException(
+            status_code=422,
+            detail="timezone must be an IANA timezone name, for example America/New_York",
+        )
+    return get_calendar_weeks(user.id, tz=display_tz)
 
 
 # WEEKS

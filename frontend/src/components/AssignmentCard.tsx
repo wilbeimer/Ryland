@@ -1,18 +1,26 @@
+import type { CSSProperties } from 'react'
 import type { Assignment } from '../api'
 import './AssignmentCard.css'
 
 type AssignmentCardProps = {
   assignment: Assignment
   variant: 'text' | 'quiz'
-  /** When set, overrides the default text/quiz accent fill (e.g. course color). */
-  accentColor?: string
+  /** Course label shown next to the color accent (calendar view). */
+  courseName?: string
+  /** Accent only — left border / chip; never the card fill (AA contrast). */
+  courseColor?: string
 }
 
 export function AssignmentCard({
   assignment,
   variant,
-  accentColor,
+  courseName,
+  courseColor,
 }: AssignmentCardProps) {
+  const accentStyle = courseColor
+    ? ({ '--assignment-course-color': courseColor } as CSSProperties)
+    : undefined
+
   return (
     <article
       className={
@@ -20,8 +28,23 @@ export function AssignmentCard({
           ? 'assignment-card assignment-card--quiz'
           : 'assignment-card assignment-card--text'
       }
-      style={accentColor ? { background: accentColor } : undefined}
+      style={accentStyle}
     >
+      {courseColor && (
+        <div className="assignment-card__course-rule" aria-hidden="true" />
+      )}
+      {courseName && (
+        <p className="assignment-card__course">
+          {courseColor && (
+            <span
+              className="assignment-card__course-swatch"
+              style={{ background: courseColor }}
+              aria-hidden="true"
+            />
+          )}
+          <span className="assignment-card__course-name">{courseName}</span>
+        </p>
+      )}
       <h3 className="assignment-card__name">{assignment.name}</h3>
       <div className="assignment-card__description">
         <p className="assignment-card__description-text">

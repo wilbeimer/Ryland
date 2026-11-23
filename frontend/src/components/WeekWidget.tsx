@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react'
-import {
-  fetchAssignments,
-  type Assignment,
-  type Week,
-} from '../api'
+import { fetchAssignments, type Assignment, type Week } from '../api'
 import { AssignmentCard } from './AssignmentCard'
 import './WeekWidget.css'
 
@@ -14,7 +10,8 @@ type WeekWidgetProps = {
   label?: string
   /** When provided, skip the per-week fetch and render these items. */
   items?: Assignment[]
-  accentColorFor?: (assignment: Assignment) => string | undefined
+  courseNameFor?: (assignment: Assignment) => string | undefined
+  courseColorFor?: (assignment: Assignment) => string | undefined
 }
 
 function formatWeekRange(startDate: string, endDate: string): string {
@@ -45,7 +42,8 @@ export function WeekWidget({
   index = 0,
   label,
   items: providedItems,
-  accentColorFor,
+  courseNameFor,
+  courseColorFor,
 }: WeekWidgetProps) {
   const [fetched, setFetched] = useState<ItemsState>({ status: 'loading' })
   const [retryToken, setRetryToken] = useState(0)
@@ -132,7 +130,8 @@ export function WeekWidget({
             key={item.id}
             assignment={item}
             variant={item.type === 'quiz' ? 'quiz' : 'text'}
-            accentColor={accentColorFor?.(item)}
+            courseName={courseNameFor?.(item)}
+            courseColor={courseColorFor?.(item)}
           />
         ))}
     </section>

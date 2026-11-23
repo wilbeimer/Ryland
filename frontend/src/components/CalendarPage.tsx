@@ -78,7 +78,7 @@ export function CalendarPage() {
       )}
 
       {state.status === 'ready' && state.weeks.length === 0 && (
-        <p className="calendar-page__status">No upcoming coursework yet.</p>
+        <p className="calendar-page__status">No coursework yet.</p>
       )}
 
       {state.status === 'ready' && state.weeks.length > 0 && (
@@ -96,7 +96,10 @@ export function CalendarPage() {
               index={index}
               label={weekOfLabel(week.start_date)}
               items={week.assignments}
-              accentColorFor={(assignment) =>
+              courseNameFor={(assignment) =>
+                (assignment as CalendarAssignment).course_name
+              }
+              courseColorFor={(assignment) =>
                 (assignment as CalendarAssignment).course_color
               }
             />

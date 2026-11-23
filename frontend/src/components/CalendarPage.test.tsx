@@ -9,7 +9,7 @@ describe('CalendarPage', () => {
     vi.restoreAllMocks()
   })
 
-  it('renders coursework grouped by calendar week with course color', async () => {
+  it('renders coursework with course name accent, not color fill', async () => {
     mockApi([
       (url) =>
         url.pathname === '/api/calendar/weeks'
@@ -36,7 +36,7 @@ describe('CalendarPage', () => {
                       name: 'Bio quiz',
                       description: 'Quiz',
                       rubric: {},
-                      due_date: '2026-03-05T03:00:00+00:00',
+                      due_date: '2026-03-09T03:00:00+00:00',
                       course_id: 'c2',
                       course_name: 'Biology',
                       course_color: '#0d7377',
@@ -52,11 +52,15 @@ describe('CalendarPage', () => {
 
     expect(await screen.findByText('Alg essay')).toBeInTheDocument()
     expect(screen.getByText('Bio quiz')).toBeInTheDocument()
+    expect(screen.getByText('Algebra')).toBeInTheDocument()
+    expect(screen.getByText('Biology')).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: /Week of/ })).toBeInTheDocument()
 
     const alg = screen.getByText('Alg essay').closest('article')
     const bio = screen.getByText('Bio quiz').closest('article')
-    expect(alg).toHaveStyle({ background: '#e5446d' })
-    expect(bio).toHaveStyle({ background: '#0d7377' })
+    expect(alg).toHaveClass('assignment-card--text')
+    expect(bio).toHaveClass('assignment-card--quiz')
+    expect(alg).not.toHaveStyle({ background: '#e5446d' })
+    expect(bio).not.toHaveStyle({ background: '#0d7377' })
   })
 })
