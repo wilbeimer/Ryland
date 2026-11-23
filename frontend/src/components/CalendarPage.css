@@ -5,13 +5,34 @@
   width: 100%;
 }
 
-.calendar-page__subtitle {
-  margin: 0;
-  color: var(--color-text-muted);
+.calendar-page__modes {
+  display: flex;
+  gap: 8px;
+}
+
+.calendar-page__mode {
+  min-width: 72px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
   font-family: var(--font-body);
-  font-size: 18px;
-  font-weight: 400;
+  font-size: 16px;
   line-height: 1.2;
+  cursor: pointer;
+}
+
+.calendar-page__mode--active {
+  border-color: var(--color-accent-primary);
+  background: var(--color-accent-primary);
+  color: var(--color-nav-active-text);
+}
+
+.calendar-page__mode:focus-visible {
+  outline: 2px solid var(--color-text-primary);
+  outline-offset: 2px;
 }
 
 .calendar-page__weeks {
