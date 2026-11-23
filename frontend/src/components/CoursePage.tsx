@@ -106,23 +106,17 @@ export function CoursePage({
   return (
     <div className="course-page">
       <div className="course-page__heading">
-        <span
-          className="course-page__color-chip"
-          style={{ background: course.color }}
-          aria-hidden="true"
+        <CourseColorPicker
+          color={course.color}
+          disabled={colorBusy}
+          onChange={(color) => {
+            void handleColorChange(color)
+          }}
         />
         <h1 ref={titleRef} className="course-page__title" tabIndex={-1}>
           {course.name}
         </h1>
       </div>
-
-      <CourseColorPicker
-        color={course.color}
-        disabled={colorBusy}
-        onChange={(color) => {
-          void handleColorChange(color)
-        }}
-      />
 
       {colorError && (
         <p

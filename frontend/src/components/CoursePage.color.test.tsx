@@ -68,9 +68,12 @@ describe('CoursePage color and week dates', () => {
       await screen.findByText((text) => /Jan/.test(text) && /5/.test(text)),
     ).toBeInTheDocument()
 
-    await user.click(
-      screen.getByRole('button', { name: 'Course color Rose' }),
-    )
+    const swatch = screen.getByRole('button', { name: 'Course color Rose' })
+    expect(
+      screen.getAllByRole('button', { name: /^Course color / }),
+    ).toHaveLength(1)
+
+    await user.click(swatch)
     await user.click(
       screen.getByRole('button', { name: 'Set course color to Teal' }),
     )
@@ -82,7 +85,6 @@ describe('CoursePage color and week dates', () => {
       )
     })
 
-    const swatch = screen.getByRole('button', { name: /Course color/ })
     await waitFor(() => {
       expect(swatch).toHaveFocus()
     })
