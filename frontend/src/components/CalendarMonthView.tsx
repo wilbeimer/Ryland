@@ -132,12 +132,24 @@ export function CalendarMonthView({ weeks }: CalendarMonthViewProps) {
         ))}
       </div>
 
-      <div className="calendar-month__grid" role="grid" aria-label={title}>
+      <div className="calendar-month__grid">
         {cells.map((cell) => {
           const items =
             cell.inMonth && cell.day !== null
               ? (byDay.get(dateKey(cursor.year, cursor.month, cell.day)) ?? [])
               : []
+          const dayLabel =
+            cell.day !== null
+              ? new Date(cursor.year, cursor.month, cell.day).toLocaleDateString(
+                  undefined,
+                  {
+                    weekday: 'long',
+                    month: 'long',
+                    day: 'numeric',
+                    year: 'numeric',
+                  },
+                )
+              : undefined
           return (
             <div
               key={cell.key}
@@ -146,10 +158,12 @@ export function CalendarMonthView({ weeks }: CalendarMonthViewProps) {
                   ? 'calendar-month__cell'
                   : 'calendar-month__cell calendar-month__cell--muted'
               }
-              role="gridcell"
+              aria-label={dayLabel}
             >
               {cell.day !== null && (
-                <span className="calendar-month__day">{cell.day}</span>
+                <span className="calendar-month__day" aria-hidden="true">
+                  {cell.day}
+                </span>
               )}
               <ul className="calendar-month__items">
                 {items.map((item) => (
