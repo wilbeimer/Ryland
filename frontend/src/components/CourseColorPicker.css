@@ -27,7 +27,7 @@
 .course-color-picker__palette {
   position: absolute;
   top: calc(100% + 8px);
-  left: 50%;
+  left: 0;
   z-index: 1;
   display: flex;
   flex-wrap: wrap;
@@ -35,8 +35,12 @@
   justify-content: center;
   gap: 8px;
   width: max-content;
-  max-width: min(420px, 100vw);
-  transform: translateX(-50%);
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: var(--color-surface);
+  box-shadow: 2px 4px 16px var(--shadow-raised);
 }
 
 .course-color-picker__option {
