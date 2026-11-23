@@ -1,3 +1,4 @@
+import { useEffect, useId, useRef, useState } from 'react'
 import './CourseColorPicker.css'
 
 /** Accent swatches only — course name stays on primary text for AA contrast. */
@@ -17,34 +18,88 @@ type CourseColorPickerProps = {
   onChange: (color: string) => void
 }
 
+function colorName(color: string): string {
+  const match = COURSE_COLORS.find(({ value }) => value === color.toLowerCase())
+  return match?.name ?? color
+}
+
 export function CourseColorPicker({
   color,
   disabled = false,
   onChange,
 }: CourseColorPickerProps) {
+  const [open, setOpen] = useState(false)
+  const rootRef = useRef<HTMLDivElement>(null)
+  const paletteId = useId()
   const selected = color.toLowerCase()
 
+  useEffect(() => {
+    if (!open) return
+
+    const onPointerDown = (event: MouseEvent) => {
+      if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+        setOpen(false)
+      }
+    }
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', onPointerDown)
+    document.addEventListener('keydown', onKeyDown)
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown)
+      document.removeEventListener('keydown', onKeyDown)
+    }
+  }, [open])
+
   return (
-    <div className="course-color-picker" role="group" aria-label="Course color">
-      {COURSE_COLORS.map(({ value, name }) => {
-        const isSelected = value === selected
-        return (
-          <button
-            key={value}
-            type="button"
-            className={
-              isSelected
-                ? 'course-color-picker__option course-color-picker__option--selected'
-                : 'course-color-picker__option'
-            }
-            style={{ background: value }}
-            aria-label={`Set course color to ${name}`}
-            aria-pressed={isSelected}
-            disabled={disabled}
-            onClick={() => onChange(value)}
-          />
-        )
-      })}
+    <div ref={rootRef} className="course-color-picker">
+      <button
+        type="button"
+        className="course-color-picker__swatch"
+        style={{ background: color }}
+        aria-label={`Course color ${colorName(color)}`}
+        aria-expanded={open}
+        aria-controls={paletteId}
+        disabled={disabled}
+        onClick={() => setOpen((value) => !value)}
+      />
+
+      {open && (
+        <div
+          id={paletteId}
+          className="course-color-picker__palette"
+          role="group"
+          aria-label="Course color options"
+        >
+          {COURSE_COLORS.map(({ value, name }) => {
+            const isSelected = value === selected
+            return (
+              <button
+                key={value}
+                type="button"
+                className={
+                  isSelected
+                    ? 'course-color-picker__option course-color-picker__option--selected'
+                    : 'course-color-picker__option'
+                }
+                style={{ background: value }}
+                aria-label={`Set course color to ${name}`}
+                aria-pressed={isSelected}
+                disabled={disabled}
+                onClick={() => {
+                  onChange(value)
+                  setOpen(false)
+                }}
+              />
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

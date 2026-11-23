@@ -69,6 +69,9 @@ describe('CoursePage color and week dates', () => {
     ).toBeInTheDocument()
 
     await user.click(
+      screen.getByRole('button', { name: 'Course color Rose' }),
+    )
+    await user.click(
       screen.getByRole('button', { name: 'Set course color to Teal' }),
     )
 
