@@ -3,7 +3,7 @@ import './NavBar.css'
 /** Order: middle tabs, then Generate (2nd from right), Account/profile (rightmost). */
 const NAV_ITEMS = [
   { label: 'Courses', available: true },
-  { label: 'Weeks', available: false },
+  { label: 'Calendar', available: true },
   { label: 'Quizzes', available: false },
   { label: 'Generate', available: true },
   { label: 'Account', available: false },

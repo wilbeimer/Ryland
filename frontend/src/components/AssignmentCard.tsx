@@ -4,9 +4,15 @@ import './AssignmentCard.css'
 type AssignmentCardProps = {
   assignment: Assignment
   variant: 'text' | 'quiz'
+  /** When set, overrides the default text/quiz accent fill (e.g. course color). */
+  accentColor?: string
 }
 
-export function AssignmentCard({ assignment, variant }: AssignmentCardProps) {
+export function AssignmentCard({
+  assignment,
+  variant,
+  accentColor,
+}: AssignmentCardProps) {
   return (
     <article
       className={
@@ -14,6 +20,7 @@ export function AssignmentCard({ assignment, variant }: AssignmentCardProps) {
           ? 'assignment-card assignment-card--quiz'
           : 'assignment-card assignment-card--text'
       }
+      style={accentColor ? { background: accentColor } : undefined}
     >
       <h3 className="assignment-card__name">{assignment.name}</h3>
       <div className="assignment-card__description">

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchCourses, type Course } from './api'
+import { CalendarPage } from './components/CalendarPage'
 import { CourseCard } from './components/CourseCard'
 import { CoursePage } from './components/CoursePage'
 import { GeneratePage } from './components/GeneratePage'
@@ -22,6 +23,7 @@ type LoadState =
 /** Tab / detail selection. Course detail is also mirrored in `?course=<id>`. */
 type View =
   | { kind: 'courses' }
+  | { kind: 'calendar' }
   | { kind: 'generate' }
   | { kind: 'course'; course: Course }
 
@@ -176,6 +178,11 @@ export default function App() {
       }
       writeCourseIdToUrl(null)
       setView({ kind: 'courses' })
+    } else if (label === 'Calendar') {
+      userNavigatedRef.current = true
+      setDeletedNotice(null)
+      writeCourseIdToUrl(null)
+      setView({ kind: 'calendar' })
     } else if (label === 'Generate') {
       userNavigatedRef.current = true
       setDeletedNotice(null)
@@ -235,7 +242,11 @@ export default function App() {
   }
 
   const navActive: NavLabel =
-    view.kind === 'generate' ? 'Generate' : 'Courses'
+    view.kind === 'generate'
+      ? 'Generate'
+      : view.kind === 'calendar'
+        ? 'Calendar'
+        : 'Courses'
 
   return (
     <div className="home">
@@ -247,6 +258,11 @@ export default function App() {
         {view.kind === 'courses' && (
           <h1 ref={coursesHeadingRef} className="home__title" tabIndex={-1}>
             Courses
+          </h1>
+        )}
+        {view.kind === 'calendar' && (
+          <h1 className="home__title" tabIndex={-1}>
+            Calendar
           </h1>
         )}
       </header>
@@ -272,6 +288,8 @@ export default function App() {
             onCourseUpdated={handleCourseUpdated}
           />
         )}
+
+        {view.kind === 'calendar' && <CalendarPage />}
 
         {view.kind === 'courses' && (
           <>

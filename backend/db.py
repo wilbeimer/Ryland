@@ -10,6 +10,7 @@ from pydantic import SecretStr
 
 from backend.course_dates import (
     DEFAULT_COURSE_COLOR,
+    calendar_week_range,
     start_date_from_due,
     week_date_range,
 )
@@ -422,6 +423,59 @@ def get_assignments(week_id: UUID) -> list[dict]:
             item["rubric"] = json.loads(item["rubric"])
             result.append(item)
         return result
+
+
+def get_calendar_weeks(user_id: UUID) -> list[dict]:
+    """Group the user's assignments by ISO calendar week of due_date."""
+    with get_conn() as conn:
+        rows = conn.execute(
+            """
+            SELECT
+                a.id AS id,
+                a.type AS type,
+                a.name AS name,
+                a.description AS description,
+                a.rubric AS rubric,
+                a.due_date AS due_date,
+                c.id AS course_id,
+                c.name AS course_name,
+                c.color AS course_color
+            FROM Assignment a
+            JOIN Week w ON a.week_id = w.id
+            JOIN Course c ON w.course_id = c.id
+            WHERE c.user_id = ?
+            ORDER BY a.due_date ASC,
+                     CASE a.type WHEN 'text' THEN 0 WHEN 'quiz' THEN 1 ELSE 2 END
+            """,
+            (str(user_id),),
+        ).fetchall()
+
+    buckets: dict[date, dict] = {}
+    for row in rows:
+        due = datetime.fromisoformat(row["due_date"])
+        week_start, week_end = calendar_week_range(due)
+        bucket = buckets.get(week_start)
+        if bucket is None:
+            bucket = {
+                "start_date": week_start.isoformat(),
+                "end_date": week_end.isoformat(),
+                "assignments": [],
+            }
+            buckets[week_start] = bucket
+        bucket["assignments"].append(
+            {
+                "id": row["id"],
+                "type": row["type"],
+                "name": row["name"],
+                "description": row["description"],
+                "rubric": json.loads(row["rubric"]),
+                "due_date": row["due_date"],
+                "course_id": row["course_id"],
+                "course_name": row["course_name"],
+                "course_color": row["course_color"],
+            }
+        )
+    return [buckets[key] for key in sorted(buckets)]
 
 
 # QUIZZES

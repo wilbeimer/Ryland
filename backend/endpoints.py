@@ -22,6 +22,7 @@ from backend.db import (
     add_week_to_db,
     delete_course_from_db,
     get_assignments,
+    get_calendar_weeks,
     get_courses,
     get_owned_assignment,
     get_owned_course,
@@ -42,6 +43,7 @@ from backend.exceptions import (
 from backend.models import (
     Assignment,
     AssignmentOut,
+    CalendarWeekOut,
     Course,
     CourseOut,
     GenerateAnswersRequest,
@@ -581,6 +583,13 @@ def submit_generation_answers(
         job.input_ready.set()
         snapshot = replace(job)
     return _job_response(snapshot)
+
+
+# CALENDAR
+@app.get("/calendar/weeks", response_model=list[CalendarWeekOut])
+def list_calendar_weeks(user: Annotated[User, Depends(get_current_user)]):
+    """Assignments across all courses, grouped by ISO week of due_date."""
+    return get_calendar_weeks(user.id)
 
 
 # WEEKS

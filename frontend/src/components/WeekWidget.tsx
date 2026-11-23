@@ -1,11 +1,20 @@
 import { useEffect, useState } from 'react'
-import { fetchAssignments, type Assignment, type Week } from '../api'
+import {
+  fetchAssignments,
+  type Assignment,
+  type Week,
+} from '../api'
 import { AssignmentCard } from './AssignmentCard'
 import './WeekWidget.css'
 
 type WeekWidgetProps = {
   week: Week
   index?: number
+  /** Override the "Week N" label (e.g. calendar "Week of …"). */
+  label?: string
+  /** When provided, skip the per-week fetch and render these items. */
+  items?: Assignment[]
+  accentColorFor?: (assignment: Assignment) => string | undefined
 }
 
 function formatWeekRange(startDate: string, endDate: string): string {
@@ -31,17 +40,27 @@ type ItemsState =
   | { status: 'error'; message: string }
   | { status: 'ready'; items: Assignment[] }
 
-export function WeekWidget({ week, index = 0 }: WeekWidgetProps) {
-  const [state, setState] = useState<ItemsState>({ status: 'loading' })
+export function WeekWidget({
+  week,
+  index = 0,
+  label,
+  items: providedItems,
+  accentColorFor,
+}: WeekWidgetProps) {
+  const [fetched, setFetched] = useState<ItemsState>({ status: 'loading' })
   const [retryToken, setRetryToken] = useState(0)
 
   useEffect(() => {
+    if (providedItems !== undefined) {
+      return
+    }
+
     let cancelled = false
 
     fetchAssignments(week.id)
       .then((items) => {
         if (!cancelled) {
-          setState({ status: 'ready', items })
+          setFetched({ status: 'ready', items })
         }
       })
       .catch((error: unknown) => {
@@ -50,14 +69,21 @@ export function WeekWidget({ week, index = 0 }: WeekWidgetProps) {
             error instanceof Error
               ? error.message
               : 'Failed to load assignments'
-          setState({ status: 'error', message })
+          setFetched({ status: 'error', message })
         }
       })
 
     return () => {
       cancelled = true
     }
-  }, [week.id, retryToken])
+  }, [week.id, retryToken, providedItems])
+
+  const state: ItemsState =
+    providedItems !== undefined
+      ? { status: 'ready', items: providedItems }
+      : fetched
+
+  const heading = label ?? `Week ${week.week_number}`
 
   return (
     <section
@@ -66,7 +92,7 @@ export function WeekWidget({ week, index = 0 }: WeekWidgetProps) {
       aria-labelledby={`week-${week.id}-label`}
     >
       <h2 id={`week-${week.id}-label`} className="week-widget__label">
-        Week {week.week_number}
+        {heading}
       </h2>
       <p className="week-widget__dates">
         {formatWeekRange(week.start_date, week.end_date)}
@@ -87,7 +113,7 @@ export function WeekWidget({ week, index = 0 }: WeekWidgetProps) {
             type="button"
             className="week-widget__retry"
             onClick={() => {
-              setState({ status: 'loading' })
+              setFetched({ status: 'loading' })
               setRetryToken((token) => token + 1)
             }}
           >
@@ -106,6 +132,7 @@ export function WeekWidget({ week, index = 0 }: WeekWidgetProps) {
             key={item.id}
             assignment={item}
             variant={item.type === 'quiz' ? 'quiz' : 'text'}
+            accentColor={accentColorFor?.(item)}
           />
         ))}
     </section>
