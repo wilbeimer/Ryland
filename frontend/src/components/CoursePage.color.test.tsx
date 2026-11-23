@@ -81,5 +81,14 @@ describe('CoursePage color and week dates', () => {
         expect.objectContaining({ color: '#0d7377' }),
       )
     })
+
+    const swatch = screen.getByRole('button', { name: /Course color/ })
+    await waitFor(() => {
+      expect(swatch).toHaveFocus()
+    })
+
+    await user.click(swatch)
+    await user.keyboard('{Escape}')
+    expect(swatch).toHaveFocus()
   })
 })

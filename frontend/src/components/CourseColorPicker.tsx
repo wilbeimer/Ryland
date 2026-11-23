@@ -30,8 +30,24 @@ export function CourseColorPicker({
 }: CourseColorPickerProps) {
   const [open, setOpen] = useState(false)
   const rootRef = useRef<HTMLDivElement>(null)
+  const swatchRef = useRef<HTMLButtonElement>(null)
+  const restoreFocusRef = useRef(false)
   const paletteId = useId()
   const selected = color.toLowerCase()
+
+  const closePalette = (restoreFocus: boolean) => {
+    if (restoreFocus) {
+      restoreFocusRef.current = true
+    }
+    setOpen(false)
+  }
+
+  useEffect(() => {
+    if (!open && restoreFocusRef.current && !disabled) {
+      restoreFocusRef.current = false
+      swatchRef.current?.focus()
+    }
+  }, [open, disabled])
 
   useEffect(() => {
     if (!open) return
@@ -44,6 +60,7 @@ export function CourseColorPicker({
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        restoreFocusRef.current = true
         setOpen(false)
       }
     }
@@ -59,6 +76,7 @@ export function CourseColorPicker({
   return (
     <div ref={rootRef} className="course-color-picker">
       <button
+        ref={swatchRef}
         type="button"
         className="course-color-picker__swatch"
         style={{ background: color }}
@@ -93,7 +111,7 @@ export function CourseColorPicker({
                 disabled={disabled}
                 onClick={() => {
                   onChange(value)
-                  setOpen(false)
+                  closePalette(true)
                 }}
               />
             )
