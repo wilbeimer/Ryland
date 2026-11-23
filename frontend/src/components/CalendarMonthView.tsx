@@ -158,6 +158,7 @@ export function CalendarMonthView({ weeks }: CalendarMonthViewProps) {
                   ? 'calendar-month__cell'
                   : 'calendar-month__cell calendar-month__cell--muted'
               }
+              role={dayLabel ? 'group' : undefined}
               aria-label={dayLabel}
             >
               {cell.day !== null && (
