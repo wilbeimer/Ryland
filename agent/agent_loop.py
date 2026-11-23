@@ -21,7 +21,8 @@ from backend.db import init_db
 
 load_dotenv()
 
-MAX_ITERATIONS = 10
+# Course generator agent turn cap. Override with AGENT_MAX_ITERATIONS.
+MAX_ITERATIONS = int(os.getenv("AGENT_MAX_ITERATIONS", "20"))
 MODEL = "claude-haiku-4-5"
 CONTEXT_FILE = Path(__file__).resolve().parent / "CONTEXT.md"
 
