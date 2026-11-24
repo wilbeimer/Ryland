@@ -13,24 +13,22 @@ type SettingsPageProps = {
 }
 
 /**
- * Basic settings layout. Name and email stay empty: there is no current-user
- * endpoint, and the server User row has no name. Theme and default calendar
- * view persist locally; other controls are placeholders only.
+ * Basic settings layout. Name stays empty: there is no current-user endpoint,
+ * and the server User row has no name. Theme and default calendar view persist
+ * locally. Email is not an editable profile/inbox field — only confirmation
+ * and necessary notifications. Notification toggles remain placeholders.
  */
 export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
   const baseId = useId()
   const nameId = `${baseId}-name`
-  const emailId = `${baseId}-email`
   const themeId = `${baseId}-theme`
   const calendarViewId = `${baseId}-calendar-view`
+  const notificationsHintId = `${baseId}-notifications-hint`
 
   const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
   const [calendarView, setCalendarView] = useState<CalendarViewMode>(() =>
     resolveInitialCalendarView(),
   )
-  const [emailNotifications, setEmailNotifications] = useState(false)
-  const [dueReminders, setDueReminders] = useState(false)
 
   function handleCalendarViewChange(next: string) {
     if (next !== 'weeks' && next !== 'month') {
@@ -68,21 +66,10 @@ export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
             onChange={(event) => setName(event.target.value)}
           />
         </div>
-        <div className="settings-page__field">
-          <label className="settings-page__label" htmlFor={emailId}>
-            Email
-          </label>
-          <input
-            id={emailId}
-            className="settings-page__control"
-            type="email"
-            name="email"
-            autoComplete="email"
-            placeholder="Not set"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </div>
+        <p className="settings-page__hint">
+          Your email will only be used for account confirmation and necessary
+          notifications. We don&apos;t keep an inbox or message archive.
+        </p>
       </section>
 
       <section
@@ -134,21 +121,17 @@ export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
         <h2 id={`${baseId}-notifications`} className="settings-page__heading">
           Notifications
         </h2>
+        <p id={notificationsHintId} className="settings-page__hint">
+          Only necessary course reminders. No general email marketing or inbox.
+        </p>
         <label className="settings-page__check">
           <input
             type="checkbox"
-            checked={emailNotifications}
-            onChange={(event) => setEmailNotifications(event.target.checked)}
+            checked={false}
+            disabled
+            aria-describedby={notificationsHintId}
           />
-          Email notifications
-        </label>
-        <label className="settings-page__check">
-          <input
-            type="checkbox"
-            checked={dueReminders}
-            onChange={(event) => setDueReminders(event.target.checked)}
-          />
-          Due date reminders
+          Due date reminders (coming soon)
         </label>
       </section>
 
