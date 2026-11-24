@@ -4,7 +4,7 @@ import { SettingsPage } from './SettingsPage'
 
 describe('SettingsPage', () => {
   it('renders its section headings', () => {
-    render(<SettingsPage />)
+    render(<SettingsPage theme="dark" onThemeChange={() => {}} />)
 
     expect(
       screen.getByRole('heading', { name: 'Profile' }),

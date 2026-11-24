@@ -1,15 +1,20 @@
 import { useId, useState } from 'react'
+import type { Theme } from '../theme'
 import './SettingsPage.css'
 
-type ThemePreference = 'system' | 'light' | 'dark'
 type CalendarViewPreference = 'weeks' | 'month'
+
+type SettingsPageProps = {
+  theme: Theme
+  onThemeChange: (theme: Theme) => void
+}
 
 /**
  * Basic settings layout. Name and email stay empty: there is no current-user
- * endpoint, and the server User row has no name. Controls hold local state
- * only and are not persisted.
+ * endpoint, and the server User row has no name. Theme is the app theme.
+ * Other controls hold local state only and are not persisted.
  */
-export function SettingsPage() {
+export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
   const baseId = useId()
   const nameId = `${baseId}-name`
   const emailId = `${baseId}-email`
@@ -18,8 +23,6 @@ export function SettingsPage() {
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [themePreference, setThemePreference] =
-    useState<ThemePreference>('system')
   const [calendarView, setCalendarView] =
     useState<CalendarViewPreference>('weeks')
   const [emailNotifications, setEmailNotifications] = useState(false)
@@ -84,12 +87,14 @@ export function SettingsPage() {
           <select
             id={themeId}
             className="settings-page__control"
-            value={themePreference}
-            onChange={(event) =>
-              setThemePreference(event.target.value as ThemePreference)
-            }
+            value={theme}
+            onChange={(event) => {
+              const next = event.target.value
+              if (next === 'light' || next === 'dark') {
+                onThemeChange(next)
+              }
+            }}
           >
-            <option value="system">System</option>
             <option value="light">Light</option>
             <option value="dark">Dark</option>
           </select>

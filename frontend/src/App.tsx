@@ -198,10 +198,13 @@ export default function App() {
     }
   }
 
-  function handleThemeToggle() {
-    const next = theme === 'dark' ? 'light' : 'dark'
+  function handleThemeChange(next: Theme) {
     persistTheme(next)
     setTheme(next)
+  }
+
+  function handleThemeToggle() {
+    handleThemeChange(theme === 'dark' ? 'light' : 'dark')
   }
 
   function handleSelectCourse(course: Course) {
@@ -305,7 +308,9 @@ export default function App() {
 
         {view.kind === 'calendar' && <CalendarPage />}
 
-        {view.kind === 'settings' && <SettingsPage />}
+        {view.kind === 'settings' && (
+          <SettingsPage theme={theme} onThemeChange={handleThemeChange} />
+        )}
 
         {view.kind === 'courses' && (
           <>
