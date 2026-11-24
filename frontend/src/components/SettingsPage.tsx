@@ -10,22 +10,29 @@ import './SettingsPage.css'
 type SettingsPageProps = {
   theme: Theme
   onThemeChange: (theme: Theme) => void
+  username?: string
+  onSignOut?: () => void
 }
 
 /**
- * Basic settings layout. Name stays empty: there is no current-user endpoint,
- * and the server User row has no name. Theme and default calendar view persist
- * locally. Email is not an editable profile/inbox field — only confirmation
+ * Theme and default calendar view persist locally. The signed-in username is
+ * shown read-only. Email is not an editable profile field — only confirmation
  * and necessary notifications. Notification toggles remain placeholders.
  */
-export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
+export function SettingsPage({
+  theme,
+  onThemeChange,
+  username,
+  onSignOut,
+}: SettingsPageProps) {
   const baseId = useId()
   const nameId = `${baseId}-name`
   const themeId = `${baseId}-theme`
   const calendarViewId = `${baseId}-calendar-view`
   const notificationsHintId = `${baseId}-notifications-hint`
 
-  const [name, setName] = useState('')
+  const [nameDraft, setNameDraft] = useState('')
+  const usernameValue = username ?? nameDraft
   const [calendarView, setCalendarView] = useState<CalendarViewMode>(() =>
     resolveInitialCalendarView(),
   )
@@ -53,17 +60,18 @@ export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
         </h2>
         <div className="settings-page__field">
           <label className="settings-page__label" htmlFor={nameId}>
-            Name
+            Username
           </label>
           <input
             id={nameId}
             className="settings-page__control"
             type="text"
-            name="name"
-            autoComplete="name"
+            name="username"
+            autoComplete="username"
             placeholder="Not set"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
+            readOnly={username !== undefined}
+            value={usernameValue}
+            onChange={(event) => setNameDraft(event.target.value)}
           />
         </div>
         <p className="settings-page__hint">
@@ -143,9 +151,16 @@ export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
           Account
         </h2>
         <p className="settings-page__hint">
-          Sign-out is not available yet.
+          {onSignOut
+            ? 'Sign out of this account on this browser.'
+            : 'Sign-out is not available yet.'}
         </p>
-        <button type="button" className="settings-page__button" disabled>
+        <button
+          type="button"
+          className="settings-page__button"
+          disabled={!onSignOut}
+          onClick={onSignOut}
+        >
           Sign out
         </button>
       </section>

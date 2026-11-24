@@ -44,6 +44,7 @@ It is also a place to try agentic planning: one model, a narrow set of tools, an
 - Quizzes with short-answer and multiple-choice questions
 - Public quiz responses that omit correct answers
 - Ownership checks so each user only sees their own courses
+- Username and password sign-in, with email used only to confirm the account
 - FastAPI REST API
 - SQLite persistence
 - GitHub Actions CI (Ruff, Black, Pytest)
@@ -84,7 +85,7 @@ The agent and the API share one schema. The agent writes rows through the same d
 
 A course belongs to a user. A week belongs to a course, and week numbers are unique within that course. An assignment is either `text` or `quiz` and belongs to a week. A quiz belongs to one assignment and stores a time limit plus questions. Correct answers stay in the database. The quiz read endpoint returns the public shape, which leaves them out.
 
-Authentication is a stand-in. Every request resolves to a single seeded user. There is no login flow yet.
+Sign-in uses a username and password. Email is collected at sign-up and is only used to confirm the account. A signed-in request sends `Authorization: Bearer <token>`. The token is an opaque session stored in SQLite.
 
 ---
 
@@ -108,21 +109,28 @@ pip install -r requirements.txt
 
 ### Seed the database
 
-The API and the agent both act as one fixed user. Create the database and that user before anything else:
+The API and the terminal agent can attach courses to one local account. That account is not created unless you opt in. Put this in `.env` (it stays off in any deployed environment):
+
+```bash
+RYLAND_DEV_SEED=1
+```
+
+Then create the database. `python -m backend.db` loads `.env`:
 
 ```bash
 python -m backend.db
 ```
 
-This writes `backend/curriculum.db` and inserts:
+With the flag set, this writes `backend/curriculum.db` and inserts a verified user you can sign in with:
 
 | Field | Value |
 | --- | --- |
 | id | `00000000-0000-0000-0000-000000000001` |
+| username | `test` |
 | email | `test@mail.com` |
 | password | `password` |
 
-The password is stored as plain text. This seed exists so local runs have a user to attach courses to. It is not an authentication system.
+The password is stored as a scrypt hash. Email is not a login. Re-run the same command, still with `RYLAND_DEV_SEED=1`, on an older database to hash a plaintext seed password and set the username. Without the flag, startup does not create or auto-verify `test` / `password`. The terminal agent still writes courses for this user when the account exists, so they show up when you sign in as `test`.
 
 ### Run the API
 
@@ -146,7 +154,9 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The `/api` proxy only works on the Vite dev server in this setup: it forwards `/api` to `http://127.0.0.1:8000` so the home page can call `GET /courses` without CORS. A static `dist/` deploy does not get that proxy; set `VITE_API_BASE_URL` to the API origin (for example `http://localhost:8000`) before `npm run build` if you need that path.
+Open `http://localhost:5173`. The home page asks you to sign in. After seeding with `RYLAND_DEV_SEED=1`, use username `test` and password `password`, or create an account. New accounts stay signed out until the verification link is opened (`/verify-email?token=...`). With SMTP unset, that link is printed in the API terminal. If sign-in says the email is not confirmed yet, use Resend verification email on that page. Signing up again with the same username and email works once that link has expired.
+
+The `/api` proxy only works on the Vite dev server in this setup: it forwards `/api` to `http://127.0.0.1:8000` so the page can call the API without CORS. A static `dist/` deploy does not get that proxy; set `VITE_API_BASE_URL` to the API origin (for example `http://localhost:8000`) before `npm run build` if you need that path. The browser stores the session token in `localStorage` and sends `Authorization: Bearer`.
 
 ### Call it from a local page
 
@@ -158,6 +168,21 @@ CORS_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 
 Put `CORS_ORIGINS` and `ANTHROPIC_API_KEY` in a `.env` file in the repository root. The API loads that file on startup. Restart uvicorn after editing it. Run a single worker. Generation jobs live in that process and are gone after a restart or a reload.
 
+### Email verification
+
+Sign-up sends a confirmation link. The account cannot sign in until that link is opened. Copy `.env.example` to `.env` and leave the SMTP variables empty to print the link in the API console. To send mail, set a free SMTP account (a Gmail address with an [app password](https://support.google.com/accounts/answer/185833) works):
+
+| Variable | Purpose |
+| --- | --- |
+| `SMTP_HOST` | SMTP server. Unset means log the link instead of sending. |
+| `SMTP_PORT` | Default `587` (STARTTLS). Use `465` for implicit TLS. |
+| `SMTP_USER` | SMTP username, often the mailbox address. |
+| `SMTP_PASSWORD` | SMTP password or app password. Never commit this. |
+| `SMTP_FROM` | From address. Falls back to `SMTP_USER`. |
+| `APP_PUBLIC_URL` | Origin used in the link. Default `http://localhost:5173`. |
+
+`.env` is gitignored. Do not commit real passwords.
+
 ### Generate a course over HTTP
 
 `POST /courses/generate` takes the details the terminal agent asks for, starts a build, and returns immediately with a job id. Poll `GET /courses/generate/{job_id}` until `status` is `succeeded`, `incomplete`, or `failed`. On `succeeded` or `incomplete` the body includes `course_id` and the course `name` and `description`. Weeks, assignments, and quizzes are the existing read routes. A second POST returns `409` while that user's worker is still running. A build still `pending` or `running` after 15 minutes is asked to stop. The worker checks that flag before each model turn and each tool call, then stops. A call already in flight can finish. The job stays on the `409` until the worker exits, then `status` is `failed`. If a course was saved before the stop, that failed job still includes its `course_id`.
@@ -165,6 +190,7 @@ Put `CORS_ORIGINS` and `ANTHROPIC_API_KEY` in a `.env` file in the repository ro
 ```bash
 curl -s -X POST http://localhost:8000/courses/generate \
   -H 'Content-Type: application/json' \
+  -H 'Authorization: Bearer <token>' \
   -d '{
     "goal": "Learn SQL joins well enough to write reports",
     "level": "beginner, comfortable with SELECT",
@@ -176,12 +202,13 @@ curl -s -X POST http://localhost:8000/courses/generate \
 The response is `202` with `job_id` and `status: "pending"`. The `Location` header points at the status route.
 
 ```bash
-curl -s http://localhost:8000/courses/generate/<job_id>
+curl -s http://localhost:8000/courses/generate/<job_id> \
+  -H 'Authorization: Bearer <token>'
 ```
 
 While the job runs, `detail` moves through the turns (`Turn 2`, `Using create_week`). That is the progress a page can show. The build calls Claude and can take a while. Polling keeps this to ordinary requests: the page does not hold a stream open, and refreshing the status call does not start a second build. The job is only in memory. Finished jobs are dropped after 30 minutes, and only the 20 newest finished jobs are kept.
 
-`timezone` must be an IANA name such as `America/New_York`. Anything else is `422` and does not start a build. The server uses that zone, together with the current time, so the agent can set due dates. The seeded user from `python -m backend.db` has to exist first. The course is saved for that user. This path does not read from the terminal. If the model still calls `ask_user`, the tool answers from the request instead of waiting for input.
+`timezone` must be an IANA name such as `America/New_York`. Anything else is `422` and does not start a build. The server uses that zone, together with the current time, so the agent can set due dates. The course is saved for the signed-in user, so the request needs `Authorization: Bearer <token>` from `POST /auth/signin`. This path does not read from the terminal. If the model still calls `ask_user`, the tool answers from the request instead of waiting for input. The terminal agent (`python -m agent.agent_loop`) still writes as the seeded `test` user and does not use the HTTP session.
 
 `succeeded` means the agent finished and created a course. `incomplete` means it hit the turn cap after creating the course: `course_id` is set, and `detail` says the course may be missing weeks, assignments, or quizzes. `error` is set only when `status` is `failed`. If it never creates a course, `status` is `failed` and `error` says why.
 
@@ -214,10 +241,16 @@ pytest tests/test_generate.py
 
 ## API
 
-Every route depends on `get_current_user`, which always loads the seeded user above. Requests do not send an `Authorization` header.
+Course routes depend on `get_current_user`, which reads `Authorization: Bearer <token>` from `POST /auth/signin`. Sign-up, verify, and sign-in are public. Email is not accepted as a username.
 
 | Method | Path | Body | Success |
 | --- | --- | --- | --- |
+| `POST` | `/auth/signup` | `username`, `password`, `email` | `201` account, `email_verified: false`. Sends or logs a confirmation link. An unverified account with an expired link can sign up again. |
+| `POST` | `/auth/resend` | `username`, `password` | `200` sends or logs a new link for an unverified account |
+| `POST` | `/auth/verify` | `token` | `200` `email_verified: true` |
+| `POST` | `/auth/signin` | `username`, `password` | `200` `{token, user}` after the email is confirmed |
+| `POST` | `/auth/signout` | | `204` |
+| `GET` | `/auth/me` | | `200` the signed-in user, without the password |
 | `GET` | `/courses` | | `200` list of courses |
 | `POST` | `/courses` | `name`, `description` | `201` `{"id"}` |
 | `POST` | `/courses/generate` | `goal`, `level`, `time_available`, `timezone` | `202` job `{job_id, status}` |
@@ -239,8 +272,10 @@ Every route depends on `get_current_user`, which always loads the seeded user ab
 
 | Status | When |
 | --- | --- |
+| `401` | A protected route has no session, or the username and password do not match |
+| `403` | The account exists but the email is not confirmed yet |
 | `404` | The course, week, assignment, quiz, or generation job is missing, or it belongs to another user |
-| `409` | A week with that number already exists on the course, or a course build is already in progress |
+| `409` | A week with that number already exists on the course, a course build is already in progress, or the username or email is already registered |
 | `422` | The row violates a database constraint (empty name, invalid type, bad date, non-positive quiz time limit, invalid JSON), or a generate field is missing, blank, or not a real IANA timezone |
 
 ---
@@ -305,14 +340,16 @@ Active development. What works today:
 - Course, week, assignment, and quiz persistence
 - A tool-calling agent that fills those tables from a learning goal
 - `POST /courses/generate` to start that agent from a page, plus a status poll
-- A read/write HTTP API scoped to one seeded user
+- A read/write HTTP API scoped to the signed-in user
+- Username/password sign-in and email confirmation over SMTP (or the API console when SMTP is unset)
 - CORS for a local Vite origin
 - A TypeScript courses home page that lists courses from the API
+- Sign-in, sign-up, and email verification pages
 - CI for lint, format, backend tests, and the frontend build
 
 Not built yet:
 
-- Real authentication (the current user is hard-coded)
+- Password reset, OAuth, and rate limiting
 - A grading pipeline (`Submission` is modeled in `backend/models.py` and has no table or routes)
 - Course detail / generate / assignment pages beyond the home list
 - Retrieval over external learning resources
@@ -327,7 +364,7 @@ Not built yet:
 - [x] SQLite persistence
 - [x] HTTP course generation (job id and status poll)
 - [x] GitHub Actions CI
-- [ ] User authentication
+- [x] User authentication (username, password, email confirmation)
 - [ ] Submission storage and grading
 - [x] Courses home frontend
 - [ ] Course detail and generate UI
