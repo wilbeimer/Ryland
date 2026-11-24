@@ -23,12 +23,12 @@ export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
   const nameId = `${baseId}-name`
   const themeId = `${baseId}-theme`
   const calendarViewId = `${baseId}-calendar-view`
+  const notificationsHintId = `${baseId}-notifications-hint`
 
   const [name, setName] = useState('')
   const [calendarView, setCalendarView] = useState<CalendarViewMode>(() =>
     resolveInitialCalendarView(),
   )
-  const [dueReminders, setDueReminders] = useState(false)
 
   function handleCalendarViewChange(next: string) {
     if (next !== 'weeks' && next !== 'month') {
@@ -67,8 +67,8 @@ export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
           />
         </div>
         <p className="settings-page__hint">
-          Email is for account confirmation and necessary notifications only.
-          It is not saved as an inbox or message archive.
+          Your email will only be used for account confirmation and necessary
+          notifications. We don&apos;t keep an inbox or message archive.
         </p>
       </section>
 
@@ -121,16 +121,17 @@ export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
         <h2 id={`${baseId}-notifications`} className="settings-page__heading">
           Notifications
         </h2>
-        <p className="settings-page__hint">
+        <p id={notificationsHintId} className="settings-page__hint">
           Only necessary course reminders. No general email marketing or inbox.
         </p>
         <label className="settings-page__check">
           <input
             type="checkbox"
-            checked={dueReminders}
-            onChange={(event) => setDueReminders(event.target.checked)}
+            checked={false}
+            disabled
+            aria-describedby={notificationsHintId}
           />
-          Due date reminders
+          Due date reminders (coming soon)
         </label>
       </section>
 

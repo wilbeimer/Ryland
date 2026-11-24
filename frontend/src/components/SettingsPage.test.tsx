@@ -21,12 +21,14 @@ describe('SettingsPage', () => {
 
     expect(
       screen.getByText(
-        /email is for account confirmation and necessary notifications only/i,
+        /your email will only be used for account confirmation and necessary notifications/i,
       ),
     ).toBeInTheDocument()
-    expect(
-      screen.getByRole('checkbox', { name: 'Due date reminders' }),
-    ).toBeInTheDocument()
+    const dueReminders = screen.getByRole('checkbox', {
+      name: /due date reminders \(coming soon\)/i,
+    })
+    expect(dueReminders).toBeInTheDocument()
+    expect(dueReminders).toBeDisabled()
     expect(
       screen.queryByRole('checkbox', { name: 'Email notifications' }),
     ).not.toBeInTheDocument()
