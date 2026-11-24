@@ -9,6 +9,7 @@ type AssignmentCardProps = {
   courseName?: string
   /** Accent only — left border / chip; never the card fill (AA contrast). */
   courseColor?: string
+  onSelect?: (assignment: Assignment) => void
 }
 
 export function AssignmentCard({
@@ -16,10 +17,12 @@ export function AssignmentCard({
   variant,
   courseName,
   courseColor,
+  onSelect,
 }: AssignmentCardProps) {
   const accentStyle = courseColor
     ? ({ '--assignment-course-color': courseColor } as CSSProperties)
     : undefined
+  const interactive = typeof onSelect === 'function'
 
   return (
     <article
@@ -51,6 +54,14 @@ export function AssignmentCard({
           {assignment.description}
         </p>
       </div>
+      {interactive && (
+        <button
+          type="button"
+          className="assignment-card__open"
+          aria-label={`Open ${assignment.name}`}
+          onClick={() => onSelect(assignment)}
+        />
+      )}
     </article>
   )
 }

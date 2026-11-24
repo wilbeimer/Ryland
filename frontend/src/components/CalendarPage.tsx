@@ -8,6 +8,10 @@ import { CalendarMonthView } from './CalendarMonthView'
 import { WeekWidget } from './WeekWidget'
 import './CalendarPage.css'
 
+type CalendarPageProps = {
+  onSelectAssignment?: (assignmentId: string) => void
+}
+
 type LoadState =
   | { status: 'loading' }
   | { status: 'error'; message: string }
@@ -24,7 +28,7 @@ function weekOfLabel(startDate: string): string {
   return `Week of ${label}`
 }
 
-export function CalendarPage() {
+export function CalendarPage({ onSelectAssignment }: CalendarPageProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const [retryToken, setRetryToken] = useState(0)
   const [mode, setMode] = useState<CalendarViewMode>('weeks')
@@ -137,6 +141,11 @@ export function CalendarPage() {
                 courseColorFor={(assignment) =>
                   (assignment as CalendarAssignment).course_color
                 }
+                onSelectAssignment={
+                  onSelectAssignment
+                    ? (assignment) => onSelectAssignment(assignment.id)
+                    : undefined
+                }
               />
             ))}
           </div>
@@ -144,7 +153,12 @@ export function CalendarPage() {
 
       {state.status === 'ready' &&
         state.weeks.length > 0 &&
-        mode === 'month' && <CalendarMonthView weeks={state.weeks} />}
+        mode === 'month' && (
+          <CalendarMonthView
+            weeks={state.weeks}
+            onSelectAssignment={onSelectAssignment}
+          />
+        )}
     </div>
   )
 }

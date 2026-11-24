@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { fetchCourses, type Course } from './api'
+import { AssignmentPage } from './components/AssignmentPage'
 import { CalendarPage } from './components/CalendarPage'
 import { CourseCard } from './components/CourseCard'
 import { CoursePage } from './components/CoursePage'
@@ -20,11 +21,17 @@ type LoadState =
   | { status: 'error'; message: string }
   | { status: 'ready'; courses: Course[] }
 
-/** Tab / detail selection. Course detail is also mirrored in `?course=<id>`. */
+/** Tab / detail selection. Mirrored in `?course=` / `?assignment=` / `?view=calendar`. */
 type View =
   | { kind: 'courses' }
   | { kind: 'calendar' }
   | { kind: 'generate' }
+  | { kind: 'course'; course: Course }
+  | { kind: 'assignment'; assignmentId: string }
+
+type ReturnView =
+  | { kind: 'courses' }
+  | { kind: 'calendar' }
   | { kind: 'course'; course: Course }
 
 function readCourseIdFromUrl(): string | null {
@@ -35,17 +42,42 @@ function readCourseIdFromUrl(): string | null {
   }
 }
 
-function writeCourseIdToUrl(courseId: string | null): void {
+function readAssignmentIdFromUrl(): string | null {
+  try {
+    return new URLSearchParams(window.location.search).get('assignment')
+  } catch {
+    return null
+  }
+}
+
+function readCalendarFromUrl(): boolean {
+  try {
+    return new URLSearchParams(window.location.search).get('view') === 'calendar'
+  } catch {
+    return false
+  }
+}
+
+function writeDetailToUrl(detail: {
+  courseId?: string | null
+  assignmentId?: string | null
+  calendar?: boolean
+}): void {
   const url = new URL(window.location.href)
-  if (courseId) {
-    url.searchParams.set('course', courseId)
-  } else {
-    url.searchParams.delete('course')
+  url.searchParams.delete('course')
+  url.searchParams.delete('assignment')
+  url.searchParams.delete('view')
+  if (detail.assignmentId) {
+    url.searchParams.set('assignment', detail.assignmentId)
+  } else if (detail.courseId) {
+    url.searchParams.set('course', detail.courseId)
+  } else if (detail.calendar) {
+    url.searchParams.set('view', 'calendar')
   }
   const next = `${url.pathname}${url.search}${url.hash}`
   const current = `${window.location.pathname}${window.location.search}${window.location.hash}`
   if (next !== current) {
-    window.history.pushState({ courseId }, '', next)
+    window.history.pushState({}, '', next)
   }
 }
 
@@ -61,6 +93,9 @@ export default function App() {
   const courseButtonRefs = useRef(new Map<string, HTMLButtonElement>())
   const coursesHeadingRef = useRef<HTMLHeadingElement>(null)
   const focusCoursesHeadingRef = useRef(false)
+  const [assignmentReturn, setAssignmentReturn] = useState<ReturnView>({
+    kind: 'courses',
+  })
 
   const {
     phase: generationPhase,
@@ -87,6 +122,13 @@ export default function App() {
         }
         setState({ status: 'ready', courses })
 
+        const assignmentId = readAssignmentIdFromUrl()
+        if (assignmentId) {
+          setAssignmentReturn({ kind: 'courses' })
+          setView({ kind: 'assignment', assignmentId })
+          return
+        }
+
         const courseId = readCourseIdFromUrl()
         if (courseId) {
           const match = courses.find((course) => course.id === courseId)
@@ -94,7 +136,12 @@ export default function App() {
             setView({ kind: 'course', course: match })
             return
           }
-          writeCourseIdToUrl(null)
+          writeDetailToUrl({})
+        }
+
+        if (readCalendarFromUrl()) {
+          setView({ kind: 'calendar' })
+          return
         }
 
         // Once we know the list is empty, open Generate so home isn't a dead end —
@@ -129,22 +176,37 @@ export default function App() {
 
   useEffect(() => {
     function onPopState() {
-      const courseId = readCourseIdFromUrl()
-      if (!courseId) {
-        setView((current) =>
-          current.kind === 'course' ? { kind: 'courses' } : current,
-        )
+      const assignmentId = readAssignmentIdFromUrl()
+      if (assignmentId) {
+        setView({ kind: 'assignment', assignmentId })
         return
       }
-      setState((current) => {
-        if (current.status === 'ready') {
-          const match = current.courses.find((course) => course.id === courseId)
-          if (match) {
-            setView({ kind: 'course', course: match })
+      const courseId = readCourseIdFromUrl()
+      if (courseId) {
+        setState((current) => {
+          if (current.status === 'ready') {
+            const match = current.courses.find(
+              (course) => course.id === courseId,
+            )
+            if (match) {
+              setView({ kind: 'course', course: match })
+            }
           }
-        }
-        return current
-      })
+          return current
+        })
+        return
+      }
+      if (readCalendarFromUrl()) {
+        setView({ kind: 'calendar' })
+        return
+      }
+      setView((current) =>
+        current.kind === 'course' ||
+        current.kind === 'assignment' ||
+        current.kind === 'calendar'
+          ? { kind: 'courses' }
+          : current,
+      )
     }
 
     window.addEventListener('popstate', onPopState)
@@ -176,17 +238,17 @@ export default function App() {
       if (view.kind === 'course') {
         restoreFocusCourseIdRef.current = view.course.id
       }
-      writeCourseIdToUrl(null)
+      writeDetailToUrl({})
       setView({ kind: 'courses' })
     } else if (label === 'Calendar') {
       userNavigatedRef.current = true
       setDeletedNotice(null)
-      writeCourseIdToUrl(null)
+      writeDetailToUrl({ calendar: true })
       setView({ kind: 'calendar' })
     } else if (label === 'Generate') {
       userNavigatedRef.current = true
       setDeletedNotice(null)
-      writeCourseIdToUrl(null)
+      writeDetailToUrl({})
       setView({ kind: 'generate' })
     }
   }
@@ -201,8 +263,37 @@ export default function App() {
     userNavigatedRef.current = true
     setDeletedNotice(null)
     restoreFocusCourseIdRef.current = course.id
-    writeCourseIdToUrl(course.id)
+    writeDetailToUrl({ courseId: course.id })
     setView({ kind: 'course', course })
+  }
+
+  function handleSelectAssignment(assignmentId: string) {
+    userNavigatedRef.current = true
+    setDeletedNotice(null)
+    if (view.kind === 'course') {
+      setAssignmentReturn({ kind: 'course', course: view.course })
+    } else if (view.kind === 'calendar') {
+      setAssignmentReturn({ kind: 'calendar' })
+    } else {
+      setAssignmentReturn({ kind: 'courses' })
+    }
+    writeDetailToUrl({ assignmentId })
+    setView({ kind: 'assignment', assignmentId })
+  }
+
+  function handleAssignmentBack() {
+    if (assignmentReturn.kind === 'course') {
+      writeDetailToUrl({ courseId: assignmentReturn.course.id })
+      setView({ kind: 'course', course: assignmentReturn.course })
+      return
+    }
+    if (assignmentReturn.kind === 'calendar') {
+      writeDetailToUrl({ calendar: true })
+      setView({ kind: 'calendar' })
+      return
+    }
+    writeDetailToUrl({})
+    setView({ kind: 'courses' })
   }
 
   function handleCourseDeleted(courseId: string) {
@@ -210,7 +301,7 @@ export default function App() {
     restoreFocusCourseIdRef.current = null
     focusCoursesHeadingRef.current = true
     courseButtonRefs.current.delete(courseId)
-    writeCourseIdToUrl(null)
+    writeDetailToUrl({})
     setDeletedNotice('Course deleted')
     setState((current) =>
       current.status === 'ready'
@@ -244,7 +335,8 @@ export default function App() {
   const navActive: NavLabel =
     view.kind === 'generate'
       ? 'Generate'
-      : view.kind === 'calendar'
+      : view.kind === 'calendar' ||
+          (view.kind === 'assignment' && assignmentReturn.kind === 'calendar')
         ? 'Calendar'
         : 'Courses'
 
@@ -286,10 +378,21 @@ export default function App() {
             course={view.course}
             onDeleted={handleCourseDeleted}
             onCourseUpdated={handleCourseUpdated}
+            onSelectAssignment={handleSelectAssignment}
           />
         )}
 
-        {view.kind === 'calendar' && <CalendarPage />}
+        {view.kind === 'assignment' && (
+          <AssignmentPage
+            key={view.assignmentId}
+            assignmentId={view.assignmentId}
+            onBack={handleAssignmentBack}
+          />
+        )}
+
+        {view.kind === 'calendar' && (
+          <CalendarPage onSelectAssignment={handleSelectAssignment} />
+        )}
 
         {view.kind === 'courses' && (
           <>

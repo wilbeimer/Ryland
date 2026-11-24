@@ -12,6 +12,7 @@ type WeekWidgetProps = {
   items?: Assignment[]
   courseNameFor?: (assignment: Assignment) => string | undefined
   courseColorFor?: (assignment: Assignment) => string | undefined
+  onSelectAssignment?: (assignment: Assignment) => void
 }
 
 function formatWeekRange(startDate: string, endDate: string): string {
@@ -44,6 +45,7 @@ export function WeekWidget({
   items: providedItems,
   courseNameFor,
   courseColorFor,
+  onSelectAssignment,
 }: WeekWidgetProps) {
   const [fetched, setFetched] = useState<ItemsState>({ status: 'loading' })
   const [retryToken, setRetryToken] = useState(0)
@@ -132,6 +134,7 @@ export function WeekWidget({
             variant={item.type === 'quiz' ? 'quiz' : 'text'}
             courseName={courseNameFor?.(item)}
             courseColor={courseColorFor?.(item)}
+            onSelect={onSelectAssignment}
           />
         ))}
     </section>
