@@ -6,6 +6,7 @@ import { CourseCard } from './components/CourseCard'
 import { CoursePage } from './components/CoursePage'
 import { GeneratePage } from './components/GeneratePage'
 import { NavBar, type NavLabel } from './components/NavBar'
+import { SettingsPage } from './components/SettingsPage'
 import { ThemeToggle } from './components/ThemeToggle'
 import {
   applyTheme,
@@ -26,6 +27,7 @@ type View =
   | { kind: 'courses' }
   | { kind: 'calendar' }
   | { kind: 'generate' }
+  | { kind: 'settings' }
   | { kind: 'course'; course: Course }
   | { kind: 'assignment'; assignmentId: string }
 
@@ -250,13 +252,21 @@ export default function App() {
       setDeletedNotice(null)
       writeDetailToUrl({})
       setView({ kind: 'generate' })
+    } else if (label === 'Account') {
+      userNavigatedRef.current = true
+      setDeletedNotice(null)
+      writeCourseIdToUrl(null)
+      setView({ kind: 'settings' })
     }
   }
 
-  function handleThemeToggle() {
-    const next = theme === 'dark' ? 'light' : 'dark'
+  function handleThemeChange(next: Theme) {
     persistTheme(next)
     setTheme(next)
+  }
+
+  function handleThemeToggle() {
+    handleThemeChange(theme === 'dark' ? 'light' : 'dark')
   }
 
   function handleSelectCourse(course: Course) {
@@ -338,7 +348,9 @@ export default function App() {
       : view.kind === 'calendar' ||
           (view.kind === 'assignment' && assignmentReturn.kind === 'calendar')
         ? 'Calendar'
-        : 'Courses'
+        : view.kind === 'settings'
+          ? 'Account'
+          : 'Courses'
 
   return (
     <div className="home">
@@ -355,6 +367,11 @@ export default function App() {
         {view.kind === 'calendar' && (
           <h1 className="home__title" tabIndex={-1}>
             Calendar
+          </h1>
+        )}
+        {view.kind === 'settings' && (
+          <h1 className="home__title" tabIndex={-1}>
+            Settings
           </h1>
         )}
       </header>
@@ -392,6 +409,10 @@ export default function App() {
 
         {view.kind === 'calendar' && (
           <CalendarPage onSelectAssignment={handleSelectAssignment} />
+        )}
+
+        {view.kind === 'settings' && (
+          <SettingsPage theme={theme} onThemeChange={handleThemeChange} />
         )}
 
         {view.kind === 'courses' && (

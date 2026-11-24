@@ -6,7 +6,7 @@ const NAV_ITEMS = [
   { label: 'Calendar', available: true },
   { label: 'Quizzes', available: false },
   { label: 'Generate', available: true },
-  { label: 'Account', available: false },
+  { label: 'Account', available: true },
 ] as const
 
 export type NavLabel = (typeof NAV_ITEMS)[number]['label']
