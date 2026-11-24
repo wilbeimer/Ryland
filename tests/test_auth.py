@@ -30,6 +30,7 @@ def client(tmp_path, monkeypatch, act_as_seed_user):
     monkeypatch.delenv("SMTP_HOST", raising=False)
     monkeypatch.delenv("SMTP_FROM", raising=False)
     monkeypatch.delenv("SMTP_USER", raising=False)
+    monkeypatch.delenv("RYLAND_DEV_SEED", raising=False)
     app.dependency_overrides.pop(get_current_user, None)
     init_db()
 
@@ -149,3 +150,88 @@ def test_signup_rejects_duplicate_username_and_email(client: TestClient):
         },
     )
     assert duplicate_email.status_code == 409
+
+
+def test_resend_and_resignup_after_expired_link(
+    client: TestClient, capsys: pytest.CaptureFixture[str]
+):
+    body = {
+        "username": "ada",
+        "password": "correct-horse",
+        "email": "ada@example.com",
+    }
+    created = client.post("/auth/signup", json=body)
+    assert created.status_code == 201
+    capsys.readouterr()
+
+    resent = client.post(
+        "/auth/resend",
+        json={"username": "ada", "password": "correct-horse"},
+    )
+    assert resent.status_code == 200
+    assert resent.json()["delivery"] == "logged"
+    assert "token=" in capsys.readouterr().out
+    blocked = client.post(
+        "/auth/signup",
+        json={**body, "password": "another-password"},
+    )
+    assert blocked.status_code == 409
+
+    with db.get_conn() as conn:
+        conn.execute(
+            "UPDATE EmailVerification SET expires_at = ?",
+            ("2000-01-01T00:00:00+00:00",),
+        )
+    replaced = client.post(
+        "/auth/signup",
+        json={**body, "password": "another-password"},
+    )
+    assert replaced.status_code == 201
+    assert (
+        client.post(
+            "/auth/signin",
+            json={"username": "ada", "password": "correct-horse"},
+        ).status_code
+        == 401
+    )
+    assert (
+        client.post(
+            "/auth/signin",
+            json={"username": "ada", "password": "another-password"},
+        ).status_code
+        == 403
+    )
+
+
+def test_seed_user_requires_dev_flag(tmp_path, monkeypatch):
+    database = tmp_path / "curriculum.db"
+
+    @contextmanager
+    def connect(path=database):
+        conn = sqlite3.connect(path)
+        conn.row_factory = sqlite3.Row
+        try:
+            with conn:
+                yield conn
+        finally:
+            conn.commit()
+            conn.close()
+
+    monkeypatch.setattr("backend.db.get_conn", connect)
+    monkeypatch.delenv("RYLAND_DEV_SEED", raising=False)
+    db.ensure_seed_user()
+    with connect() as conn:
+        count = conn.execute("SELECT COUNT(*) AS n FROM User").fetchone()
+    assert count is not None
+    assert count["n"] == 0
+
+    monkeypatch.setenv("RYLAND_DEV_SEED", "1")
+    db.ensure_seed_user()
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT username, email_verified, password FROM User"
+        ).fetchone()
+    assert row is not None
+    assert row["username"] == "test"
+    assert row["email_verified"] == 1
+    assert str(row["password"]).startswith("scrypt$")

@@ -109,13 +109,19 @@ pip install -r requirements.txt
 
 ### Seed the database
 
-The API and the terminal agent still attach courses to one local account. Create the database and that account before anything else:
+The API and the terminal agent can attach courses to one local account. That account is not created unless you opt in. Put this in `.env` (it stays off in any deployed environment):
+
+```bash
+RYLAND_DEV_SEED=1
+```
+
+Then create the database. `python -m backend.db` loads `.env`:
 
 ```bash
 python -m backend.db
 ```
 
-This writes `backend/curriculum.db` and inserts a verified user you can sign in with:
+With the flag set, this writes `backend/curriculum.db` and inserts a verified user you can sign in with:
 
 | Field | Value |
 | --- | --- |
@@ -124,7 +130,7 @@ This writes `backend/curriculum.db` and inserts a verified user you can sign in 
 | email | `test@mail.com` |
 | password | `password` |
 
-The password is stored as a scrypt hash. Email is not a login. Re-run the same command on an older database to hash a plaintext seed password and set the username. The terminal agent still writes courses for this user, so they show up when you sign in as `test`.
+The password is stored as a scrypt hash. Email is not a login. Re-run the same command, still with `RYLAND_DEV_SEED=1`, on an older database to hash a plaintext seed password and set the username. Without the flag, startup does not create or auto-verify `test` / `password`. The terminal agent still writes courses for this user when the account exists, so they show up when you sign in as `test`.
 
 ### Run the API
 
@@ -148,7 +154,7 @@ npm install
 npm run dev
 ```
 
-Open `http://localhost:5173`. The home page asks you to sign in. Use username `test` and password `password` after seeding, or create an account. New accounts stay signed out until the verification link is opened (`/verify-email?token=...`). With SMTP unset, that link is printed in the API terminal.
+Open `http://localhost:5173`. The home page asks you to sign in. After seeding with `RYLAND_DEV_SEED=1`, use username `test` and password `password`, or create an account. New accounts stay signed out until the verification link is opened (`/verify-email?token=...`). With SMTP unset, that link is printed in the API terminal. If sign-in says the email is not confirmed yet, use Resend verification email on that page. Signing up again with the same username and email works once that link has expired.
 
 The `/api` proxy only works on the Vite dev server in this setup: it forwards `/api` to `http://127.0.0.1:8000` so the page can call the API without CORS. A static `dist/` deploy does not get that proxy; set `VITE_API_BASE_URL` to the API origin (for example `http://localhost:8000`) before `npm run build` if you need that path. The browser stores the session token in `localStorage` and sends `Authorization: Bearer`.
 
@@ -239,7 +245,8 @@ Course routes depend on `get_current_user`, which reads `Authorization: Bearer <
 
 | Method | Path | Body | Success |
 | --- | --- | --- | --- |
-| `POST` | `/auth/signup` | `username`, `password`, `email` | `201` account, `email_verified: false`. Sends or logs a confirmation link. |
+| `POST` | `/auth/signup` | `username`, `password`, `email` | `201` account, `email_verified: false`. Sends or logs a confirmation link. An unverified account with an expired link can sign up again. |
+| `POST` | `/auth/resend` | `username`, `password` | `200` sends or logs a new link for an unverified account |
 | `POST` | `/auth/verify` | `token` | `200` `email_verified: true` |
 | `POST` | `/auth/signin` | `username`, `password` | `200` `{token, user}` after the email is confirmed |
 | `POST` | `/auth/signout` | | `204` |

@@ -649,6 +649,35 @@ export async function signUp(body: {
   }
 }
 
+export async function resendVerification(
+  username: string,
+  password: string,
+): Promise<SignUpResult> {
+  const response = await apiFetch(`${API_BASE}/auth/resend`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, await readErrorDetail(response))
+  }
+  const data: unknown = await response.json()
+  if (!isAuthUser(data)) {
+    throw new Error('Failed to resend verification (unexpected response)')
+  }
+  const record = data as AuthUser & { delivery?: unknown }
+  if (record.delivery !== 'sent' && record.delivery !== 'logged') {
+    throw new Error('Failed to resend verification (unexpected response)')
+  }
+  return {
+    id: record.id,
+    username: record.username,
+    email: record.email,
+    email_verified: record.email_verified,
+    delivery: record.delivery,
+  }
+}
+
 export async function verifyEmail(token: string): Promise<void> {
   const response = await apiFetch(`${API_BASE}/auth/verify`, {
     method: 'POST',

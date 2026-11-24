@@ -498,6 +498,28 @@ def sign_up(body: SignUpRequest):
     )
 
 
+@app.post("/auth/resend", response_model=SignUpOut)
+def resend_verification(body: SignInRequest):
+    user = get_user_by_username(body.username)
+    password = body.password.get_secret_value()
+    stored = user.password.get_secret_value() if user is not None else None
+    if user is None or stored is None or not verify_password(password, stored):
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    if user.email_verified:
+        raise HTTPException(status_code=400, detail="This account is already confirmed")
+    if not user.username:
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    token = issue_verification_token(user.id)
+    delivery = send_verification_email(user.email, verification_link(token))
+    return SignUpOut(
+        id=user.id,
+        username=user.username,
+        email=user.email,
+        email_verified=False,
+        delivery=delivery,
+    )
+
+
 @app.post("/auth/verify", response_model=VerifyEmailOut)
 def verify_email(body: VerifyEmailRequest):
     if not confirm_email_token(body.token):

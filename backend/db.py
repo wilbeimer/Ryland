@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import sqlite3
 from contextlib import contextmanager
 from datetime import UTC, date, datetime, timedelta, tzinfo
@@ -33,6 +34,11 @@ SEED_USER_ID = "00000000-0000-0000-0000-000000000001"
 SEED_USERNAME = "test"
 SEED_EMAIL = "test@mail.com"
 SEED_PASSWORD = "password"
+
+
+def dev_seed_enabled() -> bool:
+    """True only when local dev explicitly opts in to the test/password account."""
+    return os.getenv("RYLAND_DEV_SEED", "").strip() == "1"
 
 
 @contextmanager
@@ -105,11 +111,13 @@ def _ensure_user_columns(conn: sqlite3.Connection) -> None:
 
 
 def _promote_seed_user(conn: sqlite3.Connection) -> None:
-    """Let the original seeded account sign in with username ``test``.
+    """Give an existing seed row username ``test`` and mark it verified.
 
-    Does not insert a row and does not rehash the password. ``python -m
-    backend.db`` hashes the seed password; a later sign-in does too.
+    Runs only when ``RYLAND_DEV_SEED=1``. Does not insert a row and does not
+    rehash the password.
     """
+    if not dev_seed_enabled():
+        return
     row = conn.execute(
         "SELECT username FROM User WHERE id = ?",
         (SEED_USER_ID,),
@@ -247,6 +255,19 @@ def add_user_to_db(user: User):
         raise InvalidUserError("Invalid user details provided") from e
 
 
+def _has_live_verification(conn: sqlite3.Connection, user_id: str, now: str) -> bool:
+    row = conn.execute(
+        """
+        SELECT 1
+        FROM EmailVerification
+        WHERE user_id = ?
+          AND expires_at > ?
+        """,
+        (user_id, now),
+    ).fetchone()
+    return row is not None
+
+
 def create_account(
     *,
     user_id: UUID,
@@ -254,21 +275,36 @@ def create_account(
     email: str,
     password_hash: str,
 ) -> None:
+    now = datetime.now(UTC).isoformat()
     with get_conn() as conn:
-        conflict = conn.execute(
+        conflicts = conn.execute(
             """
-            SELECT username, email
+            SELECT id, username, email, email_verified
             FROM User
             WHERE username = ? COLLATE NOCASE
                OR email = ? COLLATE NOCASE
             """,
             (username, email),
-        ).fetchone()
-        if conflict is not None:
-            existing_username = conflict["username"] or ""
-            if existing_username.lower() == username.lower():
-                raise DuplicateUsernameError("That username is already taken")
-            raise DuplicateEmailError("That email is already registered")
+        ).fetchall()
+        expired: list[sqlite3.Row] = []
+        for conflict in conflicts:
+            live = _has_live_verification(conn, conflict["id"], now)
+            if conflict["email_verified"] or live:
+                existing_username = conflict["username"] or ""
+                if existing_username.lower() == username.lower():
+                    raise DuplicateUsernameError("That username is already taken")
+                raise DuplicateEmailError("That email is already registered")
+            expired.append(conflict)
+        for conflict in expired:
+            conn.execute(
+                "DELETE FROM Session WHERE user_id = ?",
+                (conflict["id"],),
+            )
+            conn.execute(
+                "DELETE FROM EmailVerification WHERE user_id = ?",
+                (conflict["id"],),
+            )
+            conn.execute("DELETE FROM User WHERE id = ?", (conflict["id"],))
         try:
             conn.execute(
                 """
@@ -862,10 +898,16 @@ def get_assignment_detail(assignment_id: UUID, user_id: UUID) -> dict:
 
 
 def ensure_seed_user() -> None:
-    """Insert the local seed account, or hash a legacy plaintext password."""
+    """Insert the local seed account when ``RYLAND_DEV_SEED=1``.
+
+    With the flag unset this only creates the schema. It does not add or
+    verify the well-known ``test`` / ``password`` account.
+    """
     from backend.passwords import hash_password, is_password_hash
 
     init_db()
+    if not dev_seed_enabled():
+        return
     with get_conn() as conn:
         row = conn.execute(
             "SELECT password FROM User WHERE id = ?",
@@ -893,4 +935,7 @@ def ensure_seed_user() -> None:
 
 
 if __name__ == "__main__":
+    from dotenv import load_dotenv
+
+    load_dotenv()
     ensure_seed_user()

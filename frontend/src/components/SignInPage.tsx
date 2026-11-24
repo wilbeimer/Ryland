@@ -1,5 +1,5 @@
 import { useId, useState, type FormEvent } from 'react'
-import { ApiError, signIn, type AuthUser } from '../api'
+import { ApiError, resendVerification, signIn, type AuthUser } from '../api'
 import './AuthPages.css'
 
 type SignInPageProps = {
@@ -14,11 +14,15 @@ export function SignInPage({ onSignedIn, onSignUp }: SignInPageProps) {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [unverified, setUnverified] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setError(null)
+    setNotice(null)
+    setUnverified(false)
     setSubmitting(true)
     try {
       const user = await signIn(username.trim(), password)
@@ -30,7 +34,33 @@ export function SignInPage({ onSignedIn, onSignUp }: SignInPageProps) {
           : caught instanceof Error
             ? caught.message
             : 'Could not sign in'
+      setUnverified(caught instanceof ApiError && caught.status === 403)
       setError(message)
+      setSubmitting(false)
+    }
+  }
+
+  async function handleResend() {
+    setError(null)
+    setNotice(null)
+    setSubmitting(true)
+    try {
+      const result = await resendVerification(username.trim(), password)
+      setNotice(
+        result.delivery === 'logged'
+          ? 'A new verification link was printed in the API server console.'
+          : 'A new verification link was sent.',
+      )
+      setUnverified(false)
+    } catch (caught) {
+      const message =
+        caught instanceof ApiError
+          ? caught.detail
+          : caught instanceof Error
+            ? caught.message
+            : 'Could not resend the verification email'
+      setError(message)
+    } finally {
       setSubmitting(false)
     }
   }
@@ -75,6 +105,23 @@ export function SignInPage({ onSignedIn, onSignUp }: SignInPageProps) {
           <p className="auth-page__error" role="alert">
             {error}
           </p>
+        )}
+        {notice && (
+          <p className="auth-page__success" role="status">
+            {notice}
+          </p>
+        )}
+        {unverified && (
+          <button
+            className="auth-page__link"
+            type="button"
+            disabled={submitting}
+            onClick={() => {
+              void handleResend()
+            }}
+          >
+            Resend verification email
+          </button>
         )}
         <button className="auth-page__submit" type="submit" disabled={submitting}>
           {submitting ? 'Signing in…' : 'Sign in'}
