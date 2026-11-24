@@ -4,6 +4,10 @@ import {
   type CalendarAssignment,
   type CalendarWeek,
 } from '../api'
+import {
+  resolveInitialCalendarView,
+  type CalendarViewMode,
+} from '../calendarView'
 import { CalendarMonthView } from './CalendarMonthView'
 import { WeekWidget } from './WeekWidget'
 import './CalendarPage.css'
@@ -17,8 +21,6 @@ type LoadState =
   | { status: 'error'; message: string }
   | { status: 'ready'; weeks: CalendarWeek[] }
 
-type CalendarViewMode = 'weeks' | 'month'
-
 function weekOfLabel(startDate: string): string {
   const start = new Date(`${startDate}T00:00:00`)
   const label = start.toLocaleDateString(undefined, {
@@ -31,7 +33,10 @@ function weekOfLabel(startDate: string): string {
 export function CalendarPage({ onSelectAssignment }: CalendarPageProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const [retryToken, setRetryToken] = useState(0)
-  const [mode, setMode] = useState<CalendarViewMode>('weeks')
+  // Session-only; default comes from Settings via localStorage.
+  const [mode, setMode] = useState<CalendarViewMode>(() =>
+    resolveInitialCalendarView(),
+  )
 
   useEffect(() => {
     let cancelled = false

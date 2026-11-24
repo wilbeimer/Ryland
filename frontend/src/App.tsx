@@ -255,7 +255,7 @@ export default function App() {
     } else if (label === 'Account') {
       userNavigatedRef.current = true
       setDeletedNotice(null)
-      writeCourseIdToUrl(null)
+      writeDetailToUrl({})
       setView({ kind: 'settings' })
     }
   }
