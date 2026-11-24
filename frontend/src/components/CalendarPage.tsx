@@ -5,7 +5,6 @@ import {
   type CalendarWeek,
 } from '../api'
 import {
-  persistCalendarView,
   resolveInitialCalendarView,
   type CalendarViewMode,
 } from '../calendarView'
@@ -34,14 +33,10 @@ function weekOfLabel(startDate: string): string {
 export function CalendarPage({ onSelectAssignment }: CalendarPageProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const [retryToken, setRetryToken] = useState(0)
+  // Session-only; default comes from Settings via localStorage.
   const [mode, setMode] = useState<CalendarViewMode>(() =>
     resolveInitialCalendarView(),
   )
-
-  function handleModeChange(next: CalendarViewMode) {
-    persistCalendarView(next)
-    setMode(next)
-  }
 
   useEffect(() => {
     let cancelled = false
@@ -82,7 +77,7 @@ export function CalendarPage({ onSelectAssignment }: CalendarPageProps) {
               : 'calendar-page__mode'
           }
           aria-pressed={mode === 'weeks'}
-          onClick={() => handleModeChange('weeks')}
+          onClick={() => setMode('weeks')}
         >
           Weeks
         </button>
@@ -94,7 +89,7 @@ export function CalendarPage({ onSelectAssignment }: CalendarPageProps) {
               : 'calendar-page__mode'
           }
           aria-pressed={mode === 'month'}
-          onClick={() => handleModeChange('month')}
+          onClick={() => setMode('month')}
         >
           Month
         </button>

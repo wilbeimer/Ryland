@@ -19,7 +19,7 @@ export function resolveInitialCalendarView(): CalendarViewMode {
   return getStoredCalendarView() ?? 'weeks'
 }
 
-/** Persist an explicit user choice (Settings default, or Calendar toggle). */
+/** Persist Settings “Default calendar view” only (not the Calendar toggle). */
 export function persistCalendarView(mode: CalendarViewMode): void {
   try {
     localStorage.setItem(STORAGE_KEY, mode)
