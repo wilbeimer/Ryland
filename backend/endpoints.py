@@ -471,10 +471,9 @@ def _user_out(user: User) -> UserOut:
 # AUTH
 @app.post("/auth/signup", response_model=SignUpOut, status_code=201)
 def sign_up(body: SignUpRequest):
-    user_id = uuid4()
     try:
-        create_account(
-            user_id=user_id,
+        user_id = create_account(
+            user_id=uuid4(),
             username=body.username,
             email=body.email,
             password_hash=hash_password(body.password.get_secret_value()),

@@ -1,6 +1,7 @@
 import re
 import sqlite3
 from contextlib import contextmanager
+from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
@@ -201,6 +202,51 @@ def test_resend_and_resignup_after_expired_link(
         ).status_code
         == 403
     )
+
+
+def test_signup_keeps_unverified_user_that_never_had_a_token(client: TestClient):
+    user_id = uuid4()
+    course_id = uuid4()
+    with db.get_conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO User (id, email, password, username, email_verified)
+            VALUES (?, ?, ?, ?, 0)
+            """,
+            (str(user_id), "legacy@example.com", "password", "legacy"),
+        )
+        conn.execute(
+            """
+            INSERT INTO Course (id, user_id, name, description)
+            VALUES (?, ?, ?, ?)
+            """,
+            (str(course_id), str(user_id), "Kept", "Still here"),
+        )
+
+    response = client.post(
+        "/auth/signup",
+        json={
+            "username": "legacy",
+            "password": "another-password",
+            "email": "legacy@example.com",
+        },
+    )
+    assert response.status_code == 409
+
+    with db.get_conn() as conn:
+        user = conn.execute(
+            "SELECT id, password FROM User WHERE username = ?",
+            ("legacy",),
+        ).fetchone()
+        course = conn.execute(
+            "SELECT user_id FROM Course WHERE id = ?",
+            (str(course_id),),
+        ).fetchone()
+    assert user is not None
+    assert user["id"] == str(user_id)
+    assert user["password"] == "password"
+    assert course is not None
+    assert course["user_id"] == str(user_id)
 
 
 def test_seed_user_requires_dev_flag(tmp_path, monkeypatch):

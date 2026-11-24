@@ -268,43 +268,87 @@ def _has_live_verification(conn: sqlite3.Connection, user_id: str, now: str) -> 
     return row is not None
 
 
+def _raise_signup_conflict(conflict: sqlite3.Row, username: str) -> None:
+    existing_username = conflict["username"] or ""
+    if existing_username.lower() == username.lower():
+        raise DuplicateUsernameError("That username is already taken")
+    raise DuplicateEmailError("That email is already registered")
+
+
+def _replaceable_signup(conn: sqlite3.Connection, row: sqlite3.Row, now: str) -> bool:
+    """An unverified sign-up with an expired link and no courses can be reused.
+
+    A legacy row that never received a token, or one that already owns a
+    course, stays in place. Foreign keys are off, so those rows must not be
+    deleted.
+    """
+    if row["email_verified"]:
+        return False
+    if not str(row["password"] or "").startswith("scrypt$"):
+        return False
+    if _has_live_verification(conn, row["id"], now):
+        return False
+    expired = conn.execute(
+        """
+        SELECT 1
+        FROM EmailVerification
+        WHERE user_id = ?
+          AND expires_at <= ?
+        LIMIT 1
+        """,
+        (row["id"], now),
+    ).fetchone()
+    if expired is None:
+        return False
+    course = conn.execute(
+        "SELECT 1 FROM Course WHERE user_id = ? LIMIT 1",
+        (row["id"],),
+    ).fetchone()
+    return course is None
+
+
 def create_account(
     *,
     user_id: UUID,
     username: str,
     email: str,
     password_hash: str,
-) -> None:
+) -> UUID:
+    """Insert a new account, or refresh one expired unverified sign-up.
+
+    Returns the id that was stored. A refresh keeps the existing id and
+    updates that row in place.
+    """
     now = datetime.now(UTC).isoformat()
     with get_conn() as conn:
         conflicts = conn.execute(
             """
-            SELECT id, username, email, email_verified
+            SELECT id, username, email, email_verified, password
             FROM User
             WHERE username = ? COLLATE NOCASE
                OR email = ? COLLATE NOCASE
             """,
             (username, email),
         ).fetchall()
-        expired: list[sqlite3.Row] = []
+        replaceable: list[sqlite3.Row] = []
         for conflict in conflicts:
-            live = _has_live_verification(conn, conflict["id"], now)
-            if conflict["email_verified"] or live:
-                existing_username = conflict["username"] or ""
-                if existing_username.lower() == username.lower():
-                    raise DuplicateUsernameError("That username is already taken")
-                raise DuplicateEmailError("That email is already registered")
-            expired.append(conflict)
-        for conflict in expired:
+            if _replaceable_signup(conn, conflict, now):
+                replaceable.append(conflict)
+                continue
+            _raise_signup_conflict(conflict, username)
+        if len(replaceable) == 1:
+            kept = replaceable[0]["id"]
             conn.execute(
-                "DELETE FROM Session WHERE user_id = ?",
-                (conflict["id"],),
+                """
+                UPDATE User
+                SET email = ?, password = ?, username = ?, email_verified = 0
+                WHERE id = ?
+                """,
+                (email, password_hash, username, kept),
             )
-            conn.execute(
-                "DELETE FROM EmailVerification WHERE user_id = ?",
-                (conflict["id"],),
-            )
-            conn.execute("DELETE FROM User WHERE id = ?", (conflict["id"],))
+            return UUID(kept)
+        if replaceable:
+            _raise_signup_conflict(replaceable[0], username)
         try:
             conn.execute(
                 """
@@ -320,6 +364,7 @@ def create_account(
             if "email" in message:
                 raise DuplicateEmailError("That email is already registered") from exc
             raise InvalidUserError("Invalid user details provided") from exc
+        return user_id
 
 
 def get_user_by_username(username: str) -> User | None:
