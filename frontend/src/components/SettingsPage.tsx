@@ -1,8 +1,11 @@
 import { useId, useState } from 'react'
+import {
+  persistCalendarView,
+  resolveInitialCalendarView,
+  type CalendarViewMode,
+} from '../calendarView'
 import type { Theme } from '../theme'
 import './SettingsPage.css'
-
-type CalendarViewPreference = 'weeks' | 'month'
 
 type SettingsPageProps = {
   theme: Theme
@@ -11,8 +14,8 @@ type SettingsPageProps = {
 
 /**
  * Basic settings layout. Name and email stay empty: there is no current-user
- * endpoint, and the server User row has no name. Theme is the app theme.
- * Other controls hold local state only and are not persisted.
+ * endpoint, and the server User row has no name. Theme and default calendar
+ * view persist locally; other controls are placeholders only.
  */
 export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
   const baseId = useId()
@@ -23,15 +26,24 @@ export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
 
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
-  const [calendarView, setCalendarView] =
-    useState<CalendarViewPreference>('weeks')
+  const [calendarView, setCalendarView] = useState<CalendarViewMode>(() =>
+    resolveInitialCalendarView(),
+  )
   const [emailNotifications, setEmailNotifications] = useState(false)
   const [dueReminders, setDueReminders] = useState(false)
+
+  function handleCalendarViewChange(next: string) {
+    if (next !== 'weeks' && next !== 'month') {
+      return
+    }
+    persistCalendarView(next)
+    setCalendarView(next)
+  }
 
   return (
     <div className="settings-page">
       <p className="settings-page__note">
-        These controls are placeholders and are not saved.
+        Profile and notification controls are placeholders and are not saved.
       </p>
 
       <section
@@ -107,9 +119,7 @@ export function SettingsPage({ theme, onThemeChange }: SettingsPageProps) {
             id={calendarViewId}
             className="settings-page__control"
             value={calendarView}
-            onChange={(event) =>
-              setCalendarView(event.target.value as CalendarViewPreference)
-            }
+            onChange={(event) => handleCalendarViewChange(event.target.value)}
           >
             <option value="weeks">Weeks</option>
             <option value="month">Month</option>

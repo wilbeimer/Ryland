@@ -4,6 +4,11 @@ import {
   type CalendarAssignment,
   type CalendarWeek,
 } from '../api'
+import {
+  persistCalendarView,
+  resolveInitialCalendarView,
+  type CalendarViewMode,
+} from '../calendarView'
 import { CalendarMonthView } from './CalendarMonthView'
 import { WeekWidget } from './WeekWidget'
 import './CalendarPage.css'
@@ -17,8 +22,6 @@ type LoadState =
   | { status: 'error'; message: string }
   | { status: 'ready'; weeks: CalendarWeek[] }
 
-type CalendarViewMode = 'weeks' | 'month'
-
 function weekOfLabel(startDate: string): string {
   const start = new Date(`${startDate}T00:00:00`)
   const label = start.toLocaleDateString(undefined, {
@@ -31,7 +34,14 @@ function weekOfLabel(startDate: string): string {
 export function CalendarPage({ onSelectAssignment }: CalendarPageProps) {
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const [retryToken, setRetryToken] = useState(0)
-  const [mode, setMode] = useState<CalendarViewMode>('weeks')
+  const [mode, setMode] = useState<CalendarViewMode>(() =>
+    resolveInitialCalendarView(),
+  )
+
+  function handleModeChange(next: CalendarViewMode) {
+    persistCalendarView(next)
+    setMode(next)
+  }
 
   useEffect(() => {
     let cancelled = false
@@ -72,7 +82,7 @@ export function CalendarPage({ onSelectAssignment }: CalendarPageProps) {
               : 'calendar-page__mode'
           }
           aria-pressed={mode === 'weeks'}
-          onClick={() => setMode('weeks')}
+          onClick={() => handleModeChange('weeks')}
         >
           Weeks
         </button>
@@ -84,7 +94,7 @@ export function CalendarPage({ onSelectAssignment }: CalendarPageProps) {
               : 'calendar-page__mode'
           }
           aria-pressed={mode === 'month'}
-          onClick={() => setMode('month')}
+          onClick={() => handleModeChange('month')}
         >
           Month
         </button>
