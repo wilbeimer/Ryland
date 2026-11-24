@@ -5,6 +5,7 @@ import { CourseCard } from './components/CourseCard'
 import { CoursePage } from './components/CoursePage'
 import { GeneratePage } from './components/GeneratePage'
 import { NavBar, type NavLabel } from './components/NavBar'
+import { SettingsPage } from './components/SettingsPage'
 import { ThemeToggle } from './components/ThemeToggle'
 import {
   applyTheme,
@@ -25,6 +26,7 @@ type View =
   | { kind: 'courses' }
   | { kind: 'calendar' }
   | { kind: 'generate' }
+  | { kind: 'settings' }
   | { kind: 'course'; course: Course }
 
 function readCourseIdFromUrl(): string | null {
@@ -188,6 +190,11 @@ export default function App() {
       setDeletedNotice(null)
       writeCourseIdToUrl(null)
       setView({ kind: 'generate' })
+    } else if (label === 'Account') {
+      userNavigatedRef.current = true
+      setDeletedNotice(null)
+      writeCourseIdToUrl(null)
+      setView({ kind: 'settings' })
     }
   }
 
@@ -246,7 +253,9 @@ export default function App() {
       ? 'Generate'
       : view.kind === 'calendar'
         ? 'Calendar'
-        : 'Courses'
+        : view.kind === 'settings'
+          ? 'Account'
+          : 'Courses'
 
   return (
     <div className="home">
@@ -263,6 +272,11 @@ export default function App() {
         {view.kind === 'calendar' && (
           <h1 className="home__title" tabIndex={-1}>
             Calendar
+          </h1>
+        )}
+        {view.kind === 'settings' && (
+          <h1 className="home__title" tabIndex={-1}>
+            Settings
           </h1>
         )}
       </header>
@@ -290,6 +304,8 @@ export default function App() {
         )}
 
         {view.kind === 'calendar' && <CalendarPage />}
+
+        {view.kind === 'settings' && <SettingsPage />}
 
         {view.kind === 'courses' && (
           <>
