@@ -12,15 +12,25 @@ from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI, HTTPException, Query, Response
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import HTTPAuthorizationCredentials
 
 from agent.agent_loop import MAX_ITERATIONS, AskCancelled, run_generation
-from backend.auth import get_current_user
+from backend.auth import (
+    bearer_scheme,
+    confirm_email_token,
+    end_session,
+    get_current_user,
+    issue_verification_token,
+    start_session,
+    verification_link,
+)
 from backend.course_dates import DEFAULT_COURSE_COLOR, due_datetime_for_assignment
 from backend.db import (
     add_assignment_to_db,
     add_course_to_db,
     add_quiz_to_db,
     add_week_to_db,
+    create_account,
     delete_course_from_db,
     get_assignment_detail,
     get_assignments,
@@ -30,18 +40,23 @@ from backend.db import (
     get_owned_course,
     get_owned_week,
     get_quiz,
+    get_user_by_username,
     get_week_schedule_context,
     get_weeks,
     init_db,
     update_course_color,
+    update_user_password,
 )
 from backend.exceptions import (
+    DuplicateEmailError,
+    DuplicateUsernameError,
     DuplicateWeekError,
     InvalidAssignmentError,
     InvalidCourseError,
     InvalidQuizError,
     InvalidWeekError,
 )
+from backend.mail import send_verification_email
 from backend.models import (
     Assignment,
     AssignmentOut,
@@ -59,10 +74,18 @@ from backend.models import (
     RequestAddQuiz,
     RequestAddWeek,
     RequestPatchCourse,
+    SignInOut,
+    SignInRequest,
+    SignUpOut,
+    SignUpRequest,
     User,
+    UserOut,
+    VerifyEmailOut,
+    VerifyEmailRequest,
     Week,
     WeekOut,
 )
+from backend.passwords import hash_password, is_password_hash, verify_password
 
 
 @asynccontextmanager
@@ -434,6 +457,86 @@ def _run_generation_job(
         )
     finally:
         _update_job(job_id, mark_done=True)
+
+
+def _user_out(user: User) -> UserOut:
+    return UserOut(
+        id=user.id,
+        username=user.username or "",
+        email=user.email,
+        email_verified=user.email_verified,
+    )
+
+
+# AUTH
+@app.post("/auth/signup", response_model=SignUpOut, status_code=201)
+def sign_up(body: SignUpRequest):
+    user_id = uuid4()
+    try:
+        create_account(
+            user_id=user_id,
+            username=body.username,
+            email=body.email,
+            password_hash=hash_password(body.password.get_secret_value()),
+        )
+    except DuplicateUsernameError as exc:
+        raise HTTPException(
+            status_code=409, detail="That username is already taken"
+        ) from exc
+    except DuplicateEmailError as exc:
+        raise HTTPException(
+            status_code=409, detail="That email is already registered"
+        ) from exc
+    token = issue_verification_token(user_id)
+    delivery = send_verification_email(body.email, verification_link(token))
+    return SignUpOut(
+        id=user_id,
+        username=body.username,
+        email=body.email,
+        email_verified=False,
+        delivery=delivery,
+    )
+
+
+@app.post("/auth/verify", response_model=VerifyEmailOut)
+def verify_email(body: VerifyEmailRequest):
+    if not confirm_email_token(body.token):
+        raise HTTPException(
+            status_code=400,
+            detail="This verification link is invalid or has expired",
+        )
+    return VerifyEmailOut(email_verified=True)
+
+
+@app.post("/auth/signin", response_model=SignInOut)
+def sign_in(body: SignInRequest):
+    user = get_user_by_username(body.username)
+    password = body.password.get_secret_value()
+    stored = user.password.get_secret_value() if user is not None else None
+    if user is None or stored is None or not verify_password(password, stored):
+        raise HTTPException(status_code=401, detail="Incorrect username or password")
+    if not is_password_hash(stored):
+        update_user_password(user.id, hash_password(password))
+    if not user.email_verified or not user.username:
+        raise HTTPException(
+            status_code=403, detail="Confirm your email before signing in"
+        )
+    token = start_session(user.id)
+    return SignInOut(token=token, user=_user_out(user))
+
+
+@app.post("/auth/signout", status_code=204)
+def sign_out(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_scheme)],
+):
+    if credentials is not None and credentials.credentials:
+        end_session(credentials.credentials)
+    return Response(status_code=204)
+
+
+@app.get("/auth/me", response_model=UserOut)
+def read_me(user: Annotated[User, Depends(get_current_user)]):
+    return _user_out(user)
 
 
 # COURSES

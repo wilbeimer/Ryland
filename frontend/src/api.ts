@@ -66,6 +66,8 @@ export type GenerateAnswersRequest = {
   answers: string[]
 }
 
+import { getAuthToken, setAuthToken } from './session'
+
 export class ApiError extends Error {
   readonly status: number
   readonly detail: string
@@ -82,6 +84,15 @@ const API_BASE = (import.meta.env.VITE_API_BASE_URL || '/api').replace(
   /\/$/,
   '',
 )
+
+async function apiFetch(input: string, init?: RequestInit): Promise<Response> {
+  const headers = new Headers(init?.headers)
+  const token = getAuthToken()
+  if (token && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${token}`)
+  }
+  return fetch(input, { ...init, headers })
+}
 
 /** sessionStorage key for the in-flight generate job (survives tab switches). */
 export const ACTIVE_GENERATE_JOB_KEY = 'ryland-active-generate-job'
@@ -280,7 +291,7 @@ export function parseConflictJobId(detail: string): string | null {
 }
 
 export async function fetchCourses(): Promise<Course[]> {
-  const response = await fetch(`${API_BASE}/courses`)
+  const response = await apiFetch(`${API_BASE}/courses`)
   if (!response.ok) {
     throw new ApiError(response.status, await readErrorDetail(response))
   }
@@ -294,7 +305,7 @@ export async function fetchCourses(): Promise<Course[]> {
 }
 
 export async function deleteCourse(courseId: string): Promise<void> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/courses/${encodeURIComponent(courseId)}`,
     { method: 'DELETE' },
   )
@@ -307,7 +318,7 @@ export async function patchCourseColor(
   courseId: string,
   color: string,
 ): Promise<Course> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/courses/${encodeURIComponent(courseId)}`,
     {
       method: 'PATCH',
@@ -338,7 +349,7 @@ export async function fetchCalendarWeeks(
     params.set('timezone', zone)
   }
   const query = params.toString()
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/calendar/weeks${query ? `?${query}` : ''}`,
   )
   if (!response.ok) {
@@ -354,7 +365,7 @@ export async function fetchCalendarWeeks(
 }
 
 export async function fetchWeeks(courseId: string): Promise<Week[]> {
-  const response = await fetch(`${API_BASE}/courses/${courseId}/weeks`)
+  const response = await apiFetch(`${API_BASE}/courses/${courseId}/weeks`)
   if (!response.ok) {
     throw new Error(`Failed to load weeks (${response.status})`)
   }
@@ -369,7 +380,7 @@ export async function fetchWeeks(courseId: string): Promise<Week[]> {
 
 /** Skips items with unknown `type` so a future assignment kind doesn't blank a week. */
 export async function fetchAssignments(weekId: string): Promise<Assignment[]> {
-  const response = await fetch(`${API_BASE}/weeks/${weekId}/assignments`)
+  const response = await apiFetch(`${API_BASE}/weeks/${weekId}/assignments`)
   if (!response.ok) {
     throw new Error(`Failed to load assignments (${response.status})`)
   }
@@ -385,7 +396,7 @@ export async function fetchAssignments(weekId: string): Promise<Assignment[]> {
 export async function fetchAssignment(
   assignmentId: string,
 ): Promise<CalendarAssignment> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/assignments/${encodeURIComponent(assignmentId)}`,
   )
   if (!response.ok) {
@@ -404,7 +415,7 @@ export async function startCourseGeneration(
   body: GenerateCourseRequest,
   signal?: AbortSignal,
 ): Promise<GenerationJob> {
-  const response = await fetch(`${API_BASE}/courses/generate`, {
+  const response = await apiFetch(`${API_BASE}/courses/generate`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
@@ -426,7 +437,7 @@ export async function fetchGenerationJob(
   jobId: string,
   signal?: AbortSignal,
 ): Promise<GenerationJob> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/courses/generate/${encodeURIComponent(jobId)}`,
     { signal },
   )
@@ -451,7 +462,7 @@ export async function submitGenerationAnswers(
   body: GenerateAnswersRequest,
   signal?: AbortSignal,
 ): Promise<GenerationJob> {
-  const response = await fetch(
+  const response = await apiFetch(
     `${API_BASE}/courses/generate/${encodeURIComponent(jobId)}/answers`,
     {
       method: 'POST',
@@ -578,4 +589,117 @@ export async function pollGenerationJob(
 
     await sleep(intervalMs, signal)
   }
+}
+
+export type AuthUser = {
+  id: string
+  username: string
+  email: string
+  email_verified: boolean
+}
+
+export type SignUpResult = {
+  id: string
+  username: string
+  email: string
+  email_verified: boolean
+  delivery: 'sent' | 'logged'
+}
+
+function isAuthUser(value: unknown): value is AuthUser {
+  if (typeof value !== 'object' || value === null) {
+    return false
+  }
+  const user = value as Record<string, unknown>
+  return (
+    typeof user.id === 'string' &&
+    typeof user.username === 'string' &&
+    typeof user.email === 'string' &&
+    typeof user.email_verified === 'boolean'
+  )
+}
+
+export async function signUp(body: {
+  username: string
+  password: string
+  email: string
+}): Promise<SignUpResult> {
+  const response = await apiFetch(`${API_BASE}/auth/signup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, await readErrorDetail(response))
+  }
+  const data: unknown = await response.json()
+  if (!isAuthUser(data) || typeof data !== 'object' || data === null) {
+    throw new Error('Failed to sign up (unexpected response)')
+  }
+  const record = data as AuthUser & { delivery?: unknown }
+  if (record.delivery !== 'sent' && record.delivery !== 'logged') {
+    throw new Error('Failed to sign up (unexpected response)')
+  }
+  return {
+    id: record.id,
+    username: record.username,
+    email: record.email,
+    email_verified: record.email_verified,
+    delivery: record.delivery,
+  }
+}
+
+export async function verifyEmail(token: string): Promise<void> {
+  const response = await apiFetch(`${API_BASE}/auth/verify`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, await readErrorDetail(response))
+  }
+}
+
+export async function signIn(
+  username: string,
+  password: string,
+): Promise<AuthUser> {
+  const response = await apiFetch(`${API_BASE}/auth/signin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password }),
+  })
+  if (!response.ok) {
+    throw new ApiError(response.status, await readErrorDetail(response))
+  }
+  const data: unknown = await response.json()
+  if (typeof data !== 'object' || data === null) {
+    throw new Error('Failed to sign in (unexpected response)')
+  }
+  const record = data as { token?: unknown; user?: unknown }
+  if (typeof record.token !== 'string' || !isAuthUser(record.user)) {
+    throw new Error('Failed to sign in (unexpected response)')
+  }
+  setAuthToken(record.token)
+  return record.user
+}
+
+export async function signOut(): Promise<void> {
+  try {
+    await apiFetch(`${API_BASE}/auth/signout`, { method: 'POST' })
+  } finally {
+    setAuthToken(null)
+  }
+}
+
+export async function fetchCurrentUser(): Promise<AuthUser> {
+  const response = await apiFetch(`${API_BASE}/auth/me`)
+  if (!response.ok) {
+    throw new ApiError(response.status, await readErrorDetail(response))
+  }
+  const data: unknown = await response.json()
+  if (!isAuthUser(data)) {
+    throw new Error('Failed to load account (unexpected response)')
+  }
+  return data
 }

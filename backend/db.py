@@ -7,7 +7,6 @@ from pathlib import Path
 from uuid import UUID
 
 from fastapi import HTTPException
-from pydantic import SecretStr
 
 from backend.course_dates import (
     DEFAULT_COURSE_COLOR,
@@ -18,6 +17,8 @@ from backend.course_dates import (
 
 logger = logging.getLogger(__name__)
 from backend.exceptions import (
+    DuplicateEmailError,
+    DuplicateUsernameError,
     DuplicateWeekError,
     InvalidAssignmentError,
     InvalidCourseError,
@@ -28,6 +29,10 @@ from backend.exceptions import (
 from backend.models import Assignment, Course, Quiz, User, Week
 
 DB_PATH = Path(__file__).parent / "curriculum.db"
+SEED_USER_ID = "00000000-0000-0000-0000-000000000001"
+SEED_USERNAME = "test"
+SEED_EMAIL = "test@mail.com"
+SEED_PASSWORD = "password"
 
 
 @contextmanager
@@ -81,6 +86,49 @@ def _backfill_course_start_dates(conn: sqlite3.Connection) -> None:
         )
 
 
+def _ensure_user_columns(conn: sqlite3.Connection) -> None:
+    """Add username and email_verified on databases created before sign-in."""
+    columns = {
+        row["name"] for row in conn.execute("PRAGMA table_info(User)").fetchall()
+    }
+    if "username" not in columns:
+        conn.execute("ALTER TABLE User ADD COLUMN username TEXT COLLATE NOCASE")
+    if "email_verified" not in columns:
+        conn.execute(
+            "ALTER TABLE User ADD COLUMN email_verified INTEGER NOT NULL DEFAULT 0"
+        )
+    conn.execute("""
+        CREATE UNIQUE INDEX IF NOT EXISTS idx_user_username
+        ON User(username COLLATE NOCASE)
+        """)
+    _promote_seed_user(conn)
+
+
+def _promote_seed_user(conn: sqlite3.Connection) -> None:
+    """Let the original seeded account sign in with username ``test``.
+
+    Does not insert a row and does not rehash the password. ``python -m
+    backend.db`` hashes the seed password; a later sign-in does too.
+    """
+    row = conn.execute(
+        "SELECT username FROM User WHERE id = ?",
+        (SEED_USER_ID,),
+    ).fetchone()
+    if row is None:
+        return
+    username = row["username"]
+    if username is None or not str(username).strip():
+        username = SEED_USERNAME
+    conn.execute(
+        """
+        UPDATE User
+        SET username = ?, email_verified = 1
+        WHERE id = ?
+        """,
+        (username, SEED_USER_ID),
+    )
+
+
 def _ensure_course_columns(conn: sqlite3.Connection) -> None:
     """Add color/start_date for existing DBs without rewriting the table."""
     columns = {
@@ -103,7 +151,23 @@ def init_db():
             CREATE TABLE IF NOT EXISTS User (
                 id TEXT PRIMARY KEY,
                 email TEXT NOT NULL UNIQUE COLLATE NOCASE,
-                password TEXT NOT NULL
+                password TEXT NOT NULL,
+                username TEXT COLLATE NOCASE,
+                email_verified INTEGER NOT NULL DEFAULT 0
+            );
+
+            CREATE TABLE IF NOT EXISTS EmailVerification (
+                token_hash TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
+            );
+
+            CREATE TABLE IF NOT EXISTS Session (
+                token_hash TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                expires_at TEXT NOT NULL,
+                FOREIGN KEY (user_id) REFERENCES User(id) ON DELETE CASCADE
             );
 
             CREATE TABLE IF NOT EXISTS Course (
@@ -146,6 +210,7 @@ def init_db():
                 FOREIGN KEY (assignment_id) REFERENCES Assignment(id) ON DELETE CASCADE
             );
             """)
+        _ensure_user_columns(conn)
         _ensure_course_columns(conn)
 
 
@@ -180,6 +245,162 @@ def add_user_to_db(user: User):
         return str(user.id)
     except sqlite3.IntegrityError as e:
         raise InvalidUserError("Invalid user details provided") from e
+
+
+def create_account(
+    *,
+    user_id: UUID,
+    username: str,
+    email: str,
+    password_hash: str,
+) -> None:
+    with get_conn() as conn:
+        conflict = conn.execute(
+            """
+            SELECT username, email
+            FROM User
+            WHERE username = ? COLLATE NOCASE
+               OR email = ? COLLATE NOCASE
+            """,
+            (username, email),
+        ).fetchone()
+        if conflict is not None:
+            existing_username = conflict["username"] or ""
+            if existing_username.lower() == username.lower():
+                raise DuplicateUsernameError("That username is already taken")
+            raise DuplicateEmailError("That email is already registered")
+        try:
+            conn.execute(
+                """
+                INSERT INTO User (id, email, password, username, email_verified)
+                VALUES (?, ?, ?, ?, 0)
+                """,
+                (str(user_id), email, password_hash, username),
+            )
+        except sqlite3.IntegrityError as exc:
+            message = str(exc).lower()
+            if "username" in message:
+                raise DuplicateUsernameError("That username is already taken") from exc
+            if "email" in message:
+                raise DuplicateEmailError("That email is already registered") from exc
+            raise InvalidUserError("Invalid user details provided") from exc
+
+
+def get_user_by_username(username: str) -> User | None:
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT id, email, password, username, email_verified
+            FROM User
+            WHERE username = ? COLLATE NOCASE
+            """,
+            (username,),
+        ).fetchone()
+    if row is None:
+        return None
+    return User.model_validate(dict(row))
+
+
+def update_user_password(user_id: UUID, password_hash: str) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            "UPDATE User SET password = ? WHERE id = ?",
+            (password_hash, str(user_id)),
+        )
+
+
+def replace_verification_token(user_id: UUID, token_hash: str, expires_at: str) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            "DELETE FROM EmailVerification WHERE user_id = ?",
+            (str(user_id),),
+        )
+        conn.execute(
+            """
+            INSERT INTO EmailVerification (token_hash, user_id, expires_at)
+            VALUES (?, ?, ?)
+            """,
+            (token_hash, str(user_id), expires_at),
+        )
+
+
+def confirm_verification(token_hash: str, now: str) -> bool:
+    """Mark the matching account verified. The token stays valid until expiry.
+
+    A second confirm (for example React Strict Mode, or opening the link
+    twice) still succeeds while the token is unexpired.
+    """
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT user_id, expires_at
+            FROM EmailVerification
+            WHERE token_hash = ?
+            """,
+            (token_hash,),
+        ).fetchone()
+        if row is None:
+            return False
+        if row["expires_at"] <= now:
+            conn.execute(
+                "DELETE FROM EmailVerification WHERE token_hash = ?",
+                (token_hash,),
+            )
+            return False
+        conn.execute(
+            "UPDATE User SET email_verified = 1 WHERE id = ?",
+            (row["user_id"],),
+        )
+    return True
+
+
+def insert_session(user_id: UUID, token_hash: str, expires_at: str) -> None:
+    with get_conn() as conn:
+        conn.execute(
+            """
+            INSERT INTO Session (token_hash, user_id, expires_at)
+            VALUES (?, ?, ?)
+            """,
+            (token_hash, str(user_id), expires_at),
+        )
+
+
+def get_user_by_session_hash(token_hash: str) -> User | None:
+    now = datetime.now(UTC).isoformat()
+    with get_conn() as conn:
+        row = conn.execute(
+            """
+            SELECT
+                u.id AS id,
+                u.email AS email,
+                u.password AS password,
+                u.username AS username,
+                u.email_verified AS email_verified,
+                s.expires_at AS expires_at
+            FROM Session s
+            JOIN User u ON u.id = s.user_id
+            WHERE s.token_hash = ?
+            """,
+            (token_hash,),
+        ).fetchone()
+        if row is None:
+            return None
+        if row["expires_at"] <= now:
+            conn.execute("DELETE FROM Session WHERE token_hash = ?", (token_hash,))
+            return None
+        data = {
+            "id": row["id"],
+            "email": row["email"],
+            "password": row["password"],
+            "username": row["username"],
+            "email_verified": row["email_verified"],
+        }
+    return User.model_validate(data)
+
+
+def delete_session_hash(token_hash: str) -> None:
+    with get_conn() as conn:
+        conn.execute("DELETE FROM Session WHERE token_hash = ?", (token_hash,))
 
 
 # COURSES
@@ -640,12 +861,36 @@ def get_assignment_detail(assignment_id: UUID, user_id: UUID) -> dict:
         return item
 
 
-if __name__ == "__main__":
+def ensure_seed_user() -> None:
+    """Insert the local seed account, or hash a legacy plaintext password."""
+    from backend.passwords import hash_password, is_password_hash
+
     init_db()
-    add_user_to_db(
-        User(
-            id=UUID("00000000-0000-0000-0000-000000000001"),
-            email="test@mail.com",
-            password=SecretStr("password"),
-        )
-    )
+    with get_conn() as conn:
+        row = conn.execute(
+            "SELECT password FROM User WHERE id = ?",
+            (SEED_USER_ID,),
+        ).fetchone()
+        if row is None:
+            conn.execute(
+                """
+                INSERT INTO User (id, email, password, username, email_verified)
+                VALUES (?, ?, ?, ?, 1)
+                """,
+                (
+                    SEED_USER_ID,
+                    SEED_EMAIL,
+                    hash_password(SEED_PASSWORD),
+                    SEED_USERNAME,
+                ),
+            )
+            return
+        if not is_password_hash(row["password"]):
+            conn.execute(
+                "UPDATE User SET password = ? WHERE id = ?",
+                (hash_password(row["password"]), SEED_USER_ID),
+            )
+
+
+if __name__ == "__main__":
+    ensure_seed_user()

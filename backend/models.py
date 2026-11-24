@@ -24,6 +24,90 @@ class User(BaseModel):
     id: UUID
     email: str
     password: SecretStr
+    username: str | None = None
+    email_verified: bool = False
+
+
+class UserOut(BaseModel):
+    id: UUID
+    username: str
+    email: str
+    email_verified: bool
+
+
+class SignUpRequest(BaseModel):
+    username: str
+    password: SecretStr
+    email: str
+
+    @field_validator("username")
+    @classmethod
+    def normalize_username(cls, value: str) -> str:
+        stripped = value.strip()
+        if not fullmatch(r"[A-Za-z0-9_]{3,32}", stripped):
+            raise ValueError(
+                "username must be 3-32 characters and use only "
+                "letters, numbers, and underscores"
+            )
+        return stripped
+
+    @field_validator("email")
+    @classmethod
+    def normalize_email(cls, value: str) -> str:
+        stripped = value.strip().lower()
+        if not fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", stripped):
+            raise ValueError("email must be a valid email address")
+        return stripped
+
+    @field_validator("password")
+    @classmethod
+    def password_length(cls, value: SecretStr) -> SecretStr:
+        length = len(value.get_secret_value())
+        if length < 8 or length > 128:
+            raise ValueError("password must be 8 to 128 characters")
+        return value
+
+
+class SignInRequest(BaseModel):
+    username: str
+    password: SecretStr
+
+    @field_validator("username")
+    @classmethod
+    def strip_username(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("username is required")
+        return stripped
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str
+
+    @field_validator("token")
+    @classmethod
+    def token_present(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped or len(stripped) > 256:
+            raise ValueError("token is invalid")
+        return stripped
+
+
+class SignUpOut(BaseModel):
+    id: UUID
+    username: str
+    email: str
+    email_verified: bool
+    delivery: Literal["sent", "logged"]
+
+
+class SignInOut(BaseModel):
+    token: str
+    user: UserOut
+
+
+class VerifyEmailOut(BaseModel):
+    email_verified: bool
 
 
 def _normalize_hex_color(value: str) -> str:

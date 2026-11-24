@@ -1,5 +1,12 @@
-import { useEffect, useRef, useState } from 'react'
-import { fetchCourses, type Course } from './api'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
+import {
+  ApiError,
+  fetchCourses,
+  fetchCurrentUser,
+  signOut,
+  type AuthUser,
+  type Course,
+} from './api'
 import { AssignmentPage } from './components/AssignmentPage'
 import { CalendarPage } from './components/CalendarPage'
 import { CourseCard } from './components/CourseCard'
@@ -7,7 +14,11 @@ import { CoursePage } from './components/CoursePage'
 import { GeneratePage } from './components/GeneratePage'
 import { NavBar, type NavLabel } from './components/NavBar'
 import { SettingsPage } from './components/SettingsPage'
+import { SignInPage } from './components/SignInPage'
+import { SignUpPage } from './components/SignUpPage'
 import { ThemeToggle } from './components/ThemeToggle'
+import { VerifyEmailPage } from './components/VerifyEmailPage'
+import { getAuthToken, setAuthToken } from './session'
 import {
   applyTheme,
   persistTheme,
@@ -60,6 +71,31 @@ function readCalendarFromUrl(): boolean {
   }
 }
 
+type AuthRoute = 'sign-in' | 'sign-up' | 'verify' | 'app'
+
+function readAuthRoute(): AuthRoute {
+  try {
+    const path = window.location.pathname.replace(/\/+$/, '') || '/'
+    if (path === '/sign-in') {
+      return 'sign-in'
+    }
+    if (path === '/sign-up') {
+      return 'sign-up'
+    }
+    if (path === '/verify-email') {
+      return 'verify'
+    }
+  } catch {
+    return 'app'
+  }
+  return 'app'
+}
+
+type SessionState =
+  | { status: 'loading' }
+  | { status: 'anonymous' }
+  | { status: 'ready'; user: AuthUser }
+
 function writeDetailToUrl(detail: {
   courseId?: string | null
   assignmentId?: string | null
@@ -85,6 +121,10 @@ function writeDetailToUrl(detail: {
 
 export default function App() {
   const [theme, setTheme] = useState<Theme>(() => resolveInitialTheme())
+  const [session, setSession] = useState<SessionState>(() =>
+    getAuthToken() ? { status: 'loading' } : { status: 'anonymous' },
+  )
+  const [authRoute, setAuthRoute] = useState<AuthRoute>(() => readAuthRoute())
   const [view, setView] = useState<View>({ kind: 'courses' })
   const [state, setState] = useState<LoadState>({ status: 'loading' })
   const [coursesVersion, setCoursesVersion] = useState(0)
@@ -114,6 +154,41 @@ export default function App() {
   }, [theme])
 
   useEffect(() => {
+    if (!getAuthToken()) {
+      return
+    }
+    let cancelled = false
+    fetchCurrentUser()
+      .then((user) => {
+        if (!cancelled) {
+          setSession({ status: 'ready', user })
+        }
+      })
+      .catch(() => {
+        if (cancelled) {
+          return
+        }
+        setAuthToken(null)
+        setSession({ status: 'anonymous' })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (session.status !== 'ready') {
+      return
+    }
+    if (authRoute === 'sign-in' || authRoute === 'sign-up') {
+      window.history.replaceState({}, '', '/')
+    }
+  }, [session.status, authRoute])
+
+  useEffect(() => {
+    if (session.status !== 'ready') {
+      return
+    }
     let cancelled = false
     const isInitialLoad = coursesVersion === 0
 
@@ -160,6 +235,11 @@ export default function App() {
         if (cancelled) {
           return
         }
+        if (error instanceof ApiError && error.status === 401) {
+          setAuthToken(null)
+          setSession({ status: 'anonymous' })
+          return
+        }
         const message =
           error instanceof Error ? error.message : 'Failed to load courses'
         // Initial load: show the error. Later refreshes (e.g. after generate)
@@ -174,10 +254,11 @@ export default function App() {
     return () => {
       cancelled = true
     }
-  }, [coursesVersion])
+  }, [coursesVersion, session.status])
 
   useEffect(() => {
     function onPopState() {
+      setAuthRoute(readAuthRoute())
       const assignmentId = readAssignmentIdFromUrl()
       if (assignmentId) {
         setView({ kind: 'assignment', assignmentId })
@@ -233,6 +314,28 @@ export default function App() {
     button?.focus()
   }, [view])
 
+  function openAuth(path: '/sign-in' | '/sign-up') {
+    window.history.pushState({}, '', path)
+    setAuthRoute(readAuthRoute())
+  }
+
+  function handleSignedIn(user: AuthUser) {
+    setSession({ status: 'ready', user })
+    setState({ status: 'loading' })
+    setCoursesVersion((version) => version + 1)
+    window.history.pushState({}, '', '/')
+    setAuthRoute('app')
+  }
+
+  function handleSignOut() {
+    void signOut().finally(() => {
+      setSession({ status: 'anonymous' })
+      setState({ status: 'loading' })
+      window.history.pushState({}, '', '/sign-in')
+      setAuthRoute('sign-in')
+    })
+  }
+
   function handleNavigate(label: NavLabel) {
     if (label === 'Courses') {
       userNavigatedRef.current = true
@@ -263,10 +366,6 @@ export default function App() {
   function handleThemeChange(next: Theme) {
     persistTheme(next)
     setTheme(next)
-  }
-
-  function handleThemeToggle() {
-    handleThemeChange(theme === 'dark' ? 'light' : 'dark')
   }
 
   function handleSelectCourse(course: Course) {
@@ -342,6 +441,43 @@ export default function App() {
     )
   }
 
+  function handleThemeToggle() {
+    handleThemeChange(theme === 'dark' ? 'light' : 'dark')
+  }
+
+  const route: AuthRoute =
+    session.status === 'ready' &&
+    (authRoute === 'sign-in' || authRoute === 'sign-up')
+      ? 'app'
+      : authRoute
+
+  if (route === 'verify') {
+    return (
+      <AuthLayout theme={theme} onToggle={handleThemeToggle}>
+        <VerifyEmailPage onSignIn={() => openAuth('/sign-in')} />
+      </AuthLayout>
+    )
+  }
+
+  if (session.status !== 'ready') {
+    return (
+      <AuthLayout theme={theme} onToggle={handleThemeToggle}>
+        {session.status === 'loading' ? (
+          <p className="home__status" role="status">
+            Loading…
+          </p>
+        ) : route === 'sign-up' ? (
+          <SignUpPage onSignIn={() => openAuth('/sign-in')} />
+        ) : (
+          <SignInPage
+            onSignedIn={handleSignedIn}
+            onSignUp={() => openAuth('/sign-up')}
+          />
+        )}
+      </AuthLayout>
+    )
+  }
+
   const navActive: NavLabel =
     view.kind === 'generate'
       ? 'Generate'
@@ -412,7 +548,12 @@ export default function App() {
         )}
 
         {view.kind === 'settings' && (
-          <SettingsPage theme={theme} onThemeChange={handleThemeChange} />
+          <SettingsPage
+            theme={theme}
+            onThemeChange={handleThemeChange}
+            username={session.user.username}
+            onSignOut={handleSignOut}
+          />
         )}
 
         {view.kind === 'courses' && (
@@ -461,6 +602,27 @@ export default function App() {
           </>
         )}
       </main>
+    </div>
+  )
+}
+
+function AuthLayout({
+  theme,
+  onToggle,
+  children,
+}: {
+  theme: Theme
+  onToggle: () => void
+  children: ReactNode
+}) {
+  return (
+    <div className="home">
+      <header className="home__header">
+        <div className="home__toolbar">
+          <ThemeToggle theme={theme} onToggle={onToggle} />
+        </div>
+      </header>
+      <main className="home__main">{children}</main>
     </div>
   )
 }

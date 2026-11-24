@@ -39,8 +39,17 @@ const ASSIGNMENTS = [
   },
 ]
 
+const AUTH_USER = {
+  id: '00000000-0000-0000-0000-000000000001',
+  username: 'test',
+  email: 'test@mail.com',
+  email_verified: true,
+}
+
 function installHappyPathMocks() {
   mockApi([
+    (url) =>
+      url.pathname === '/api/auth/me' ? { body: AUTH_USER } : null,
     (url) =>
       url.pathname === '/api/courses'
         ? { body: [COURSE] }
@@ -58,6 +67,7 @@ function installHappyPathMocks() {
 
 describe('course detail', () => {
   beforeEach(() => {
+    localStorage.setItem('ryland-auth-token', 'test-token')
     window.history.replaceState({}, '', '/')
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
@@ -76,6 +86,7 @@ describe('course detail', () => {
   })
 
   afterEach(() => {
+    localStorage.removeItem('ryland-auth-token')
     vi.unstubAllGlobals()
     vi.restoreAllMocks()
   })

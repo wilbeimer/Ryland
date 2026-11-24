@@ -20,3 +20,11 @@ class InvalidQuizError(Exception):
 
 class InvalidUserError(Exception):
     pass
+
+
+class DuplicateUsernameError(InvalidUserError):
+    pass
+
+
+class DuplicateEmailError(InvalidUserError):
+    pass
